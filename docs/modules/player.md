@@ -6,8 +6,9 @@
 
 ## Estructura
 
-- `src/models/player/player_placeholder.tscn`: cuerpo, colisión, sprite geométrico, indicador de prioridad, lector de entrada, área de rescate de dash y estela.
-- `src/models/player/player_controller.gd`: movimiento, animación, dash, aceleración, IA y empujes detectados.
+- `src/models/player/player_placeholder.tscn`: cuerpo, colisión, sprite geométrico, anclajes y capa, indicador de prioridad, lector de entrada, área de rescate de dash y estela.
+- `src/models/player/player_controller.gd`: movimiento, animación, dash, escalada, aceleración, IA, simulación de capa y empujes detectados.
+- `src/models/player/cape.tscn` / `cape.gd`: relleno, contorno y simulación Verlet cosmética, sin colisión.
 - `src/models/player/player_input_reader.gd`: puente a las acciones configuradas.
 - `src/models/player/player_action_catalog.gd`: catálogo de teclas y colores.
 
@@ -16,15 +17,20 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara 3 l
 ## Funcionamiento
 
 1. Al iniciar, el controlador configura su `PlayerInputReader` con `input_prefix` y asigna colores de estado.
-2. `_physics_process()` calcula el movimiento horizontal, aplica aceleración o frenado y gravedad, procesa salto y ejecuta `move_and_slide()`.
-3. El salto usa búfer de entrada y tiempo de coyote; soltar el salto durante el ascenso reduce la velocidad vertical.
-4. Dash reemplaza temporalmente la velocidad por `dash_direction * dash_speed`, activa el área de rescate y dibuja una estela. El área solo puede rescatar un globo por dash.
-5. Boost acelera durante un periodo con enfriamiento y tope de velocidad horizontal propios.
-6. Las colisiones laterales emiten `player_bumped`; `MatchManager` aplica el empuje según prioridad y dash.
+2. `_physics_process()` calcula movimiento horizontal con una carrera de 90 px/s, acelera a 1000 px/s² y aplica control aéreo de 0.65. El exceso de velocidad decae a 400 px/s² cuando se mantiene la dirección; al soltar o invertirla, vuelve rápidamente a la velocidad objetivo.
+3. La gravedad es de 900 px/s², limita la caída a 160 px/s y permite una caída rápida de 240 px/s a 300 px/s². El salto de -105 px/s combina 0.1 s de coyote, 0.08 s de búfer y hasta 0.2 s de altura variable; saltar con dirección añade 40 px/s horizontales.
+4. Dash consume una carga, congela solo al jugador durante 0.05 s y después recorre ocho direcciones a 240 px/s por 0.15 s. La carga se recupera al aterrizar tras la demora de 0.1 s; el dash termina a 160 px/s. Su área de rescate y estela se activan al terminar el freeze, y el área solo puede rescatar un globo por dash.
+5. Las técnicas encadenadas conservan el movimiento: saltar desde un dash horizontal hace un super de 260 px/s y -105 px/s; el dash diagonal hacia abajo que aterriza hace un ultra de 1.2x y permite agacharse para un hyper de 325 px/s y -52.5 px/s. Saltar durante un dash hacia arriba junto a una pared hace un rebote de 170 px/s y -160 px/s, con salto variable y dirección forzada por sus ventanas configuradas.
+6. Boost acelera durante un periodo con enfriamiento y tope de velocidad horizontal propios.
+7. Las colisiones laterales emiten `player_bumped`; `MatchManager` aplica el empuje según prioridad y dash.
+8. En el aire, empujar hacia una pared limita la caída desde 20 hasta 160 px/s a lo largo de 1.2 s. Saltar junto a una pared hace un wall jump de 130 px/s alejándose y -105 px/s, aun sin Grab. Mantener Grab a 2 px de una pared entra en escalada sin gravedad: arriba va a -45 px/s y consume 45.5 de stamina/s; quieto consume 10/s, abajo baja a 80 px/s sin costo. El salto de pared consume 27.5 y fuerza la dirección de salida por 0.16 s. La stamina máxima es 110, solo se restaura en el suelo, y por debajo de 20 el jugador parpadea.
+9. `PlayerCape` simula seis filas de partículas Verlet en coordenadas globales después del movimiento, fija sus dos anclajes por tick y dibuja un polígono afinado con vértices redondeados. Cada jugador conserva su propia capa; teletransportes, respawns y puntos no finitos la reinician. Durante el freeze local del dash, la simulación se pausa.
+10. El color de capa se deriva del jugador: con dash disponible conserva el tono con saturación mínima 0.9 y brillo 1.0; al gastar dash mantiene el tono con saturación 0.35x y brillo 0.6x hasta aterrizar. El relleno permanece opaco y el contorno usa el color oscurecido 0.4.
 
 ## Componentes principales
 
 - `PlayerController._physics_process()`: bucle de control físico.
+- `PlayerCape.simulate()`: integra partículas y restricciones de la capa.
 - `_begin_dash()` / `_end_dash()`: activan y apagan el área y la estela.
 - `_on_dash_rescue_area_body_entered()`: llama `BalloonController.apply_dash_rescue()`.
 - `try_activate_accelerate()`: inicia boost si terminó el enfriamiento.
@@ -34,11 +40,13 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara 3 l
 
 ## Interacciones
 
-El controlador obtiene `MatchManager` y `BalloonController` como hermanos dentro de `Arena`. La entrada humana pasa por `PlayerInputReader`. El bot usa `MatchManager.expected_balloon_player` para moverse, saltar y rescatar solo durante su turno; si detecta al jugador 1 cerca del globo, intenta desafiarlo con dash. El globo recibe la llamada de rescate y la partida decide si el toque era válido.
+El controlador obtiene `MatchManager` y `BalloonController` como hermanos dentro de `Arena`. La entrada humana pasa por `PlayerInputReader`. El bot usa `MatchManager.expected_balloon_player` para moverse, saltar y rescatar solo durante su turno; si detecta al jugador 1 cerca del globo, intenta desafiarlo con dash. El globo recibe la llamada de rescate y la partida decide si el toque era válido. Los nuevos estados conservan las capas de colisión, los empujes `player_bumped` escalados por prioridad, el rescate del globo y el boost existente; el bot mantiene su control de turno y usa el mismo movimiento, salto y dash locales.
 
 ## Configuración
 
-Los valores son propiedades exportadas en `player_controller.gd`. Los principales son `max_run_speed` (140), `gravity` (900), `jump_velocity` (-340), `air_control` (0.65), `dash_speed` (360), `dash_duration` (0.16), `dash_cooldown` (0.45), `accelerate_speed_multiplier` (1.35), `accelerate_duration` (0.8), `accelerate_cooldown` (4.0) y `accelerate_max_speed` (210). El tamaño del área de rescate se ajusta con `dash_rescue_half_extents`.
+La configuración objetivo de movimiento y capa está centralizada en `src/models/player/player_movement_constants.gd`; el proyecto fija la física en 60 ticks por segundo. Además de los valores de carrera, gravedad y salto descritos arriba, incluye los valores de dash, pared, escalada, stamina y feedback de fatiga; la capa usa seis filas, segmentos de 2.5 px, gravedad de 250 px/s² y cuatro iteraciones de restricciones. Los valores se mantienen en el módulo central para que el controlador, la simulación y sus pruebas compartan el mismo ajuste.
+
+Dash, sus estados, pared, escalada, stamina, capa, paleta y sus tiempos usan `player_movement_constants.gd`; agacharse reduce la cápsula 6 px y la restaura al salir de la postura. La capa usa segmentos de 2.5 px, gravedad de 250 px/s², damping de 0.90, empuje de viento de 3.0, cuatro iteraciones, taper de 0.6 y reinicio a 48 px. Boost conserva `accelerate_speed_multiplier` (1.35), `accelerate_duration` (0.8), `accelerate_cooldown` (4.0) y `accelerate_max_speed` (210). El tamaño del área de rescate se ajusta con `dash_rescue_half_extents`.
 
 El bot usa distancias constantes privadas al principio del script: tolerancia horizontal, alineación de salto, rango de dash y distancia de amenaza.
 

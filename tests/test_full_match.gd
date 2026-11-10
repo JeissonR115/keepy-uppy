@@ -22,7 +22,8 @@ func _on_coin_toss_completed(_result: String, _server: CharacterBody2D) -> void:
 
 
 func _award_point_to(winner: CharacterBody2D) -> void:
-	manager.last_valid_toucher = manager.player_2 if winner == manager.player_1 else manager.player_1
+	manager.last_valid_toucher = winner
+	manager.round_has_valid_contact = true
 	balloon.ground_contact_reported = false
 	balloon.ground_touched.emit()
 	for _frame in range(10):
@@ -38,6 +39,11 @@ func _run_test() -> void:
 	manager.round_intermission = 0.001
 	manager.coin_toss_completed.connect(_on_coin_toss_completed)
 	root.add_child(main_scene)
+	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
 	await process_frame
 	balloon = main_scene.get_node("Arena/Balloon")
 	var player_1: CharacterBody2D = manager.player_1

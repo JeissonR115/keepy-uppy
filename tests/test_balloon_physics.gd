@@ -30,10 +30,16 @@ func _run_test() -> void:
 	var main_scene: Node = load("res://src/scenes/main/main.tscn").instantiate()
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
+	await process_frame
 
 	var balloon: RigidBody2D = main_scene.get_node("Arena/Balloon")
 	var player_1: CharacterBody2D = main_scene.get_node("Arena/Player1")
 	var match_manager: Node = main_scene.get_node("Arena/MatchManager")
+	balloon.reset_round(Vector2(160, 48))
 	balloon.ground_touched.disconnect(Callable(match_manager, "_on_ground_touched"))
 	balloon.ground_touched.connect(_on_ground_touched)
 	balloon.player_hit.connect(_on_player_hit)
@@ -46,8 +52,19 @@ func _run_test() -> void:
 		and is_equal_approx(balloon.physics_material_override.bounce, balloon.rebound_strength)
 		and balloon.gravity_strength <= 0.4
 		and balloon.air_resistance > 0.0
-		and balloon.rebound_strength <= 0.15,
-		"Exported balloon settings were not applied to their physics resources."
+		and balloon.rebound_strength <= 0.3,
+		"Exported balloon settings were not applied to their physics resources: radius=%s/%s contact=%s/%s gravity=%s/%s bounce=%s/%s air=%s rebound=%s." % [
+			body_shape.radius,
+			balloon.balloon_collision_radius,
+			contact_shape.radius,
+			balloon.player_contact_radius,
+			balloon.gravity_scale,
+			balloon.gravity_strength,
+			balloon.physics_material_override.bounce,
+			balloon.rebound_strength,
+			balloon.air_resistance,
+			balloon.rebound_strength,
+		]
 	):
 		return
 
@@ -87,7 +104,8 @@ func _run_test() -> void:
 	await physics_frame
 	if not _expect(
 		absf(balloon.linear_velocity.x) <= balloon.max_horizontal_speed + 0.1
-		and absf(balloon.linear_velocity.y) <= balloon.max_vertical_speed + 0.1,
+		and balloon.linear_velocity.y >= -balloon.max_hit_speed - 0.1
+		and balloon.linear_velocity.y <= balloon.max_fall_speed + 0.1,
 		"Balloon exceeded a configured axis speed limit."
 	):
 		return

@@ -23,7 +23,7 @@ Este módulo define las acciones para ambos jugadores, las traduce desde el Inpu
 
 ## Componentes principales
 
-- `PlayerActionCatalog.PLAYERS`: datos para P1/P2, incluidas las siete acciones por jugador.
+- `PlayerActionCatalog.PLAYERS`: datos para P1/P2, incluidas las ocho acciones por jugador.
 - `ControlSettingsManager.validate_binding()`: rechaza entradas que no sean teclas, teclas reservadas, combinaciones modificadas y duplicados entre acciones configurables.
 - `try_set_binding()`: actualiza el Input Map y revierte el cambio si no se puede guardar.
 - `load_or_restore_settings()`: exige versión compatible y un conjunto completo de acciones.
@@ -43,6 +43,7 @@ Este módulo define las acciones para ambos jugadores, las traduce desde el Inpu
 | Saltar | F | 1 |
 | Dash | G | 2 |
 | Acelerar | H | 3 |
+| Agarrar pared | R | 4 |
 
 Los nombres y las teclas predeterminadas están en `PlayerActionCatalog`. `ControlSettingsManager.SETTINGS_VERSION` es `1`, la ruta local es `user://controls.cfg`; Escape, F1–F12, modificadores y combinaciones con modificadores se reservan.
 

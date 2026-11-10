@@ -17,6 +17,11 @@ func _run_test() -> void:
 	var main_scene: Node = load("res://src/scenes/main/main.tscn").instantiate()
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
+	await process_frame
 
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
@@ -151,6 +156,23 @@ func _run_test() -> void:
 	if not _expect(
 		player_1.global_position.x > p1_before and player_2.global_position.x < p2_before,
 		"Side bounds prevented players from moving back into the arena."
+	):
+		return
+
+	player_1.global_position = Vector2(72, 152)
+	player_2.global_position = Vector2(248, 110)
+	player_1.velocity = Vector2.ZERO
+	player_2.velocity = Vector2.ZERO
+	balloon.global_position = Vector2(180, 48)
+	match_manager.match_state = match_manager.MatchState.ACTIVE
+	match_manager.expected_balloon_player = player_2
+	player_2.bot_enabled = true
+	var bot_start_x := player_2.global_position.x
+	for _frame in range(10):
+		await physics_frame
+	if not _expect(
+		player_2.global_position.x < bot_start_x,
+		"Local bot did not steer toward the balloon during its turn."
 	):
 		return
 

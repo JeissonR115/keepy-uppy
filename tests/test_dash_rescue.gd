@@ -25,16 +25,19 @@ func _run_test() -> void:
 	var main_scene: Node = load("res://src/scenes/main/main.tscn").instantiate()
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
 
 	var player: CharacterBody2D = main_scene.get_node("Arena/Player1")
 	var balloon: RigidBody2D = main_scene.get_node("Arena/Balloon")
+	balloon.max_hit_speed = balloon.max_dash_rescue_impulse
+	balloon.max_horizontal_speed = balloon.max_dash_rescue_impulse
 	var match_manager: Node = main_scene.get_node("Arena/MatchManager")
 	var trail: Line2D = player.get_node("DashTrail")
 	var rescue_area: Area2D = player.get_node("DashRescueArea")
 	balloon.dash_rescued.connect(_on_dash_rescued)
-	player.dash_speed = 150.0
-	player.dash_duration = 0.25
-	player.dash_cooldown = 0.5
 	player.global_position = Vector2(120, 90)
 	player.velocity = Vector2.ZERO
 	balloon.reset_round(Vector2(160, 90))
@@ -44,15 +47,20 @@ func _run_test() -> void:
 		return
 	Input.action_press("player_1_right")
 	Input.action_press("player_1_dash")
-	await physics_frame
-	await physics_frame
+	for _frame in range(8):
+		await physics_frame
+		if rescue_area.monitoring:
+			break
 	if not _expect(rescue_area.monitoring and trail.visible, "Dash zone and trail did not activate."):
 		return
 	for _frame in range(3):
 		await physics_frame
 	if not _expect(rescue_count == 1, "The active dash zone did not rescue the balloon exactly once."):
 		return
-	if not _expect(rescued_direction.x > 0.0 and rescued_direction.y < 0.0, "Rescue impulse ignored the dash direction."):
+	if not _expect(
+		rescued_direction.x > 0.9 and absf(rescued_direction.y) < 0.3,
+		"Rescue launch did not follow the horizontal dash direction."
+	):
 		return
 	for _frame in range(2):
 		await physics_frame

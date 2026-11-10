@@ -1,0 +1,74 @@
+class_name PlayerMovementConstants
+extends RefCounted
+
+const MAX_RUN := 90.0
+const RUN_ACCEL := 1000.0
+const RUN_REDUCE := 400.0
+const AIR_MULT := 0.65
+
+const GRAVITY := 900.0
+const MAX_FALL := 160.0
+const FAST_MAX_FALL := 240.0
+const FAST_MAX_ACCEL := 300.0
+const HALF_GRAV_THRESHOLD := 40.0
+
+const JUMP_SPEED := -105.0
+const JUMP_H_BOOST := 40.0
+const VAR_JUMP_TIME := 0.2
+const COYOTE_TIME := 0.1
+const JUMP_BUFFER := 0.08
+const CEILING_CORNER_CORRECTION := 4.0
+const CEILING_JUMP_GRACE := 0.05
+
+const DASH_SPEED := 240.0
+const DASH_TIME := 0.15
+const DASH_FREEZE := 0.05
+const DASH_COOLDOWN := 0.2
+const DASH_REFILL_COOLDOWN := 0.1
+const END_DASH_SPEED := 160.0
+const END_DASH_UP_MULT := 0.75
+const DASH_CORNER_CORRECTION := 4.0
+
+const SUPER_JUMP_H := 260.0
+const DUCK_SUPER_X_MULT := 1.25
+const DUCK_SUPER_Y_MULT := 0.5
+const ULTRA_MULT := 1.2
+const DUCK_COLLISION_HEIGHT_REDUCTION := 6.0
+
+const WALL_CHECK_DIST := 3.0
+const WALL_JUMP_H := 130.0
+const WALL_JUMP_FORCE_TIME := 0.16
+const SUPER_WALL_JUMP_SPEED := -160.0
+const SUPER_WALL_JUMP_H := 170.0
+const SUPER_WALL_JUMP_VAR_TIME := 0.25
+const SUPER_WALL_JUMP_FORCE_TIME := 0.2
+const WALL_SLIDE_START := 20.0
+const WALL_SLIDE_TIME := 1.2
+
+const CLIMB_CHECK_DIST := 2.0
+const CLIMB_MAX_STAMINA := 110.0
+const CLIMB_UP_COST := 45.5
+const CLIMB_STILL_COST := 10.0
+const CLIMB_JUMP_COST := 27.5
+const CLIMB_UP_SPEED := -45.0
+const CLIMB_DOWN_SPEED := 80.0
+const CLIMB_TIRED_THRESHOLD := 20.0
+const CLIMB_TIRED_BLINK_TIME := 0.2
+const CLIMB_TIRED_ALPHA := 0.35
+
+const CAPE_ROWS := 6
+const CAPE_SEGMENT := 2.5
+const CAPE_TAPER := 0.6
+const CAPE_GRAVITY := 250.0
+const CAPE_DAMPING := 0.90
+const CAPE_WIND_GAIN := 3.0
+const CAPE_ITERATIONS := 4
+const CAPE_RESET_DISTANCE := 48.0
+const CAPE_DULL_SATURATION_MULT := 0.35
+const CAPE_DULL_VALUE_MULT := 0.6
+const CAPE_VIVID_SATURATION_MIN := 0.9
+const CAPE_VIVID_VALUE_MIN := 1.0
+const CAPE_ANCHOR_A := Vector2(0.0, -8.0)
+const CAPE_ANCHOR_B := Vector2(-3.0, -6.0)
+const CAPE_DUCK_OFFSET := 3.0
+const CAPE_OUTLINE_DARKEN := 0.4

@@ -24,6 +24,10 @@ func _run_test() -> void:
 		return
 	if not _expect(_has_key("player_1_left", KEY_A), "Missing settings did not restore P1 defaults."):
 		return
+	if not _expect(_has_key("player_1_grab", KEY_R), "Missing settings did not restore P1 Grab."):
+		return
+	if not _expect(_has_key("player_2_grab", KEY_4), "Missing settings did not restore P2 Grab."):
+		return
 
 	var custom_key := _key_event(KEY_Z)
 	var set_result: Dictionary = manager.try_set_binding("player_1_left", custom_key)
@@ -46,6 +50,10 @@ func _run_test() -> void:
 	if not _expect(_has_key("player_1_left", KEY_A), "Incomplete settings did not restore defaults."):
 		return
 	if not _expect(_has_key("player_2_accelerate", KEY_3), "Recovery did not restore all player defaults."):
+		return
+	if not _expect(_has_key("player_1_grab", KEY_R), "Recovery did not restore P1 Grab."):
+		return
+	if not _expect(_has_key("player_2_grab", KEY_4), "Recovery did not restore P2 Grab."):
 		return
 
 	config = ConfigFile.new()

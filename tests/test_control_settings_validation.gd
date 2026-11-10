@@ -36,9 +36,21 @@ func _initialize() -> void:
 
 	var free_event := _key_event(KEY_Z)
 	assert(manager.validate_binding("player_1_right", free_event).valid, "An unused key was rejected.")
+	assert(
+		manager.validate_binding("player_1_grab", free_event).valid,
+		"Player 1 Grab could not be remapped."
+	)
+	assert(
+		manager.validate_binding("player_1_grab", _key_event(KEY_4)).conflicting_action == "player_2_grab",
+		"Player 1 Grab did not detect Player 2's binding conflict."
+	)
+	assert(
+		manager.validate_binding("player_2_grab", _key_event(KEY_R)).conflicting_action == "player_1_grab",
+		"Player 2 Grab did not detect Player 1's binding conflict."
+	)
 	assert(not manager.validate_binding("missing_action", free_event).valid, "An unknown action was accepted.")
 	manager.free()
-	print("Reserved, modified, duplicate, and available key validation verified.")
+	print("Reserved, modified, duplicate, Grab remapping, and available key validation verified.")
 	quit()
 
 

@@ -21,6 +21,11 @@ func _run_test() -> void:
 	match_manager.round_intermission = 0.15
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
+	await process_frame
 
 	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var player_2: CharacterBody2D = arena.get_node("Player2")
@@ -35,47 +40,55 @@ func _run_test() -> void:
 		return
 
 	match_manager.last_valid_toucher = player_1
+	match_manager.round_has_valid_contact = true
 	balloon.ground_touched.emit()
 	await process_frame
 	if not _expect(
-		match_manager.player_2_score == 1
-		and scoreboard.get_node("HUD/ScoreRow/Player2Score").text == "1",
-		"Last-touch fault did not award exactly one point to the opponent."
+		match_manager.player_1_score == 1
+		and scoreboard.get_node("HUD/ScoreRow/Player1Score").text == "1",
+		"Ground contact did not award exactly one point to the last valid toucher: state=%s scores=%s-%s valid=%s toucher=%s." % [
+			match_manager.match_state, match_manager.player_1_score, match_manager.player_2_score,
+			match_manager.round_has_valid_contact, match_manager.last_valid_toucher
+		]
 	):
 		return
 	balloon.ground_touched.emit()
 	await create_timer(0.01).timeout
 	if not _expect(
-		match_manager.player_2_score == 1,
+		match_manager.player_1_score == 1,
 		"Duplicate ground events scored another point during the resolving point."
 	):
 		return
 	await create_timer(0.25).timeout
 	if not _expect(
-		match_manager.round_server == player_2 and match_manager.priority_player == player_2
-		and match_manager.last_valid_toucher == player_2,
+		match_manager.round_server == player_1 and match_manager.priority_player == player_1
+		and match_manager.last_valid_toucher == player_1,
 		"Point winner did not serve and receive opening priority."
 	):
 		return
 
-	# With no later contact, the server remains last toucher and is faulted.
+	# A valid second contact lets the other player claim the point.
+	match_manager.last_valid_toucher = player_2
+	match_manager.round_has_valid_contact = true
 	balloon.ground_touched.emit()
 	await create_timer(0.25).timeout
 	if not _expect(
 		match_manager.player_1_score == 1 and match_manager.player_2_score == 1,
-		"Serve-as-first-contact attribution did not award the opponent of the server."
+		"Ground contact did not award the second point to the last valid toucher."
 	):
 		return
 
 	match_manager.player_1_score = 4
 	match_manager.player_2_score = 4
 	match_manager.match_state = match_manager.MatchState.ACTIVE
-	match_manager.last_valid_toucher = player_1
+	match_manager.last_valid_toucher = player_2
+	match_manager.round_has_valid_contact = true
 	balloon.ground_contact_reported = false
 	balloon.ground_touched.emit()
 	await process_frame
 	if not _expect(
 		match_manager.player_2_sets == 1
+		and match_manager.player_1_sets == 0
 		and match_manager.player_1_score == 0 and match_manager.player_2_score == 0,
 		"A 4-4 set did not end on the next point and reset only its point scores."
 	):
@@ -93,9 +106,7 @@ func _run_test() -> void:
 	match_manager.player_2_sets = 1
 	match_manager.player_1_score = 4
 	match_manager.player_2_score = 0
-	match_manager.last_valid_toucher = player_2
-	balloon.ground_contact_reported = false
-	balloon.ground_touched.emit()
+	match_manager._resolve_fault(player_2)
 	await process_frame
 	if not _expect(
 		match_manager.match_state == match_manager.MatchState.COMPLETE

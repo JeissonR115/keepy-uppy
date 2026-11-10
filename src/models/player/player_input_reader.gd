@@ -19,5 +19,9 @@ func is_just_pressed(action_suffix: String) -> bool:
 	return Input.is_action_just_pressed(PlayerActionCatalog.action_name(input_prefix, action_suffix))
 
 
+func is_pressed(action_suffix: String) -> bool:
+	return Input.is_action_pressed(PlayerActionCatalog.action_name(input_prefix, action_suffix))
+
+
 func is_just_released(action_suffix: String) -> bool:
 	return Input.is_action_just_released(PlayerActionCatalog.action_name(input_prefix, action_suffix))

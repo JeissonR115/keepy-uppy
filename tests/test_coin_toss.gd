@@ -34,6 +34,12 @@ func _verify_toss(outcome: int, expected_result: String) -> bool:
 	emitted_first_server = null
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
+	await process_frame
+
 	var player_1: CharacterBody2D = manager.player_1
 	var player_2: CharacterBody2D = manager.player_2
 	var expected_server := player_1 if outcome == 0 else player_2
@@ -46,7 +52,8 @@ func _verify_toss(outcome: int, expected_result: String) -> bool:
 	):
 		return false
 
-	manager.last_valid_toucher = player_2 if expected_server == player_1 else player_1
+	manager.last_valid_toucher = expected_server
+	manager.round_has_valid_contact = true
 	manager.get_node("../Balloon").ground_touched.emit()
 	for _frame in range(20):
 		await process_frame
@@ -58,7 +65,10 @@ func _verify_toss(outcome: int, expected_result: String) -> bool:
 		and manager.round_server == expected_server
 		and manager.coin_toss_result == expected_result
 		and toss_count == 1,
-		"A new set or point performed another toss or changed the initial toss record."
+		"A new set or point performed another toss or changed the initial toss record: state=%s round=%s server=%s toss=%s count=%s." % [
+			manager.match_state, manager.round_number, manager.round_server,
+			manager.coin_toss_result, toss_count
+		]
 	):
 		return false
 	main_scene.queue_free()

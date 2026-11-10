@@ -108,7 +108,7 @@ godot --headless --path . --script res://tests/test_control_settings_ui.gd
 Controls-menu acceptance checks (covered by `test_control_settings_ui.gd`):
 
 - [x] Open the pause menu with Escape, choose **CONTROLS** with W/S and F, and keep play paused.
-- [x] Use W/S to browse all seven actions for each player, plus capture cancel, Restore Defaults, and Back.
+- [x] Use W/S to browse all eight actions for each player, plus capture cancel, Restore Defaults, and Back.
 - [x] Use W/S to focus an action and F to start capture; press a valid key and confirm its displayed binding updates.
 - [x] During capture, press Escape or G and cancel capture without changing the previous key.
 - [x] Reject conflicting key assignments without replacing the existing binding.
@@ -144,9 +144,16 @@ godot --headless --path . --script res://tests/test_accelerate.gd
 ```
 
 The control acceptance suite passed in Godot headless: defaults and simultaneous
-inputs, all 14 capture rows, rejected and duplicate keys, cancel/reset,
+inputs, all 16 capture rows, rejected and duplicate keys, cancel/reset,
 save/load and damaged-file recovery, plus boost duration, cooldown, cap, and
 independent player behavior. Run the commands above to reproduce each check.
+
+Verify cape geometry, dash-availability colors, per-player transitions, reset,
+local freeze, and simulation recovery with:
+
+```sh
+godot --headless --path . --script res://tests/test_player_cape.gd
+```
 
 Manual accelerate checks:
 

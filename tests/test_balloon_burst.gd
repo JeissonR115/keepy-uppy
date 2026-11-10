@@ -15,14 +15,22 @@ func _expect(condition: bool, message: String) -> bool:
 
 func _run_test() -> void:
 	var main_scene: Node = load("res://src/scenes/main/main.tscn").instantiate()
+	root.add_child(main_scene)
+	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
+	await process_frame
+
 	var arena: Node = main_scene.get_node("Arena")
 	var balloon: RigidBody2D = arena.get_node("Balloon")
 	var manager: Node = arena.get_node("MatchManager")
 	manager.round_intermission = 0.5
 	balloon.get_node("PlayerContactArea").monitoring = false
-	root.add_child(main_scene)
-	await process_frame
 	manager.set_next_server(arena.get_node("Player1"))
+	manager.last_valid_toucher = arena.get_node("Player2")
+	manager.round_has_valid_contact = true
 	balloon.reset_round(Vector2(40, 150))
 	for _frame in range(40):
 		if balloon.ground_contact_reported:

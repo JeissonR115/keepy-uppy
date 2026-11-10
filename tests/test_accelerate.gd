@@ -1,5 +1,7 @@
 extends SceneTree
 
+const PlayerMovementConstants = preload("res://src/models/player/player_movement_constants.gd")
+
 
 func _initialize() -> void:
 	call_deferred("_run_test")
@@ -19,6 +21,10 @@ func _run_test() -> void:
 	settings_manager.settings_path = "/tmp/keepy-accelerate-controls.cfg"
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
 
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
@@ -33,9 +39,6 @@ func _run_test() -> void:
 		return
 
 	for player: CharacterBody2D in [player_1, player_2]:
-		player.max_run_speed = 120.0
-		player.ground_acceleration = 1000.0
-		player.ground_deceleration = 1000.0
 		player.accelerate_speed_multiplier = 1.5
 		player.accelerate_duration = 0.25
 		player.accelerate_cooldown = 0.7
@@ -58,12 +61,12 @@ func _run_test() -> void:
 		return
 	Input.action_release("player_1_accelerate")
 	Input.action_release("player_2_right")
-	for _frame in range(12):
+	for _frame in range(20):
 		await physics_frame
 	if not _expect(
 		is_zero_approx(player_1.accelerate_timer)
 		and player_1.accelerate_cooldown_timer > 0.0
-		and player_1.velocity.x <= player_1.max_run_speed + 0.1,
+		and player_1.velocity.x <= PlayerMovementConstants.MAX_RUN + 0.1,
 		"Boost duration did not expire back to ordinary run speed while cooldown remained active."
 	):
 		return

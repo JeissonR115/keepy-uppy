@@ -23,13 +23,25 @@ func _run_test() -> void:
 	balloon.get_node("PlayerContactArea").monitoring = false
 	root.add_child(main_scene)
 	await process_frame
+	var two_players_button: Button = main_scene.get_node(
+		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
+	)
+	two_players_button.pressed.emit()
+	await process_frame
+
 	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var player_2: CharacterBody2D = arena.get_node("Player2")
 	if not _expect(
 		manager.round_server == player_2
-		and is_equal_approx(balloon.global_position.x, player_2.global_position.x)
-		and absf((player_2.global_position.y - balloon.global_position.y) - manager.balloon_spawn_offset) < 5.0,
-		"The opening balloon did not spawn above the coin-toss winner."
+		and is_equal_approx(balloon.global_position.x, manager.player_2_spawn_position.x)
+		and is_equal_approx(
+			manager.player_2_spawn_position.y - balloon.global_position.y,
+			manager.balloon_spawn_offset
+		),
+		"The opening balloon did not spawn above the coin-toss winner: server=%s P2=%s position=%s expected_offset=%s result=%s." % [
+			manager.round_server, player_2.global_position, balloon.global_position,
+			manager.balloon_spawn_offset, manager.coin_toss_result
+		]
 	):
 		return
 
@@ -38,8 +50,11 @@ func _run_test() -> void:
 	if not _expect(
 		manager.round_server == player_1
 		and manager.next_server == player_1
-		and is_equal_approx(balloon.global_position.x, player_1.global_position.x)
-		and absf((player_1.global_position.y - balloon.global_position.y) - manager.balloon_spawn_offset) < 5.0,
+		and is_equal_approx(balloon.global_position.x, manager.player_1_spawn_position.x)
+		and is_equal_approx(
+			manager.player_1_spawn_position.y - balloon.global_position.y,
+			manager.balloon_spawn_offset
+		),
 		"The next point did not spawn above its winner-server."
 	):
 		return

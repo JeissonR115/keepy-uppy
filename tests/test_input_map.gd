@@ -8,6 +8,7 @@ const EXPECTED_PHYSICAL_KEYS := {
 	"player_1_up": 87,
 	"player_1_down": 83,
 	"player_1_accelerate": 72,
+	"player_1_grab": 82,
 	"player_2_left": 4194311,
 	"player_2_right": 4194313,
 	"player_2_jump": 49,
@@ -15,6 +16,7 @@ const EXPECTED_PHYSICAL_KEYS := {
 	"player_2_up": 4194312,
 	"player_2_down": 4194314,
 	"player_2_accelerate": 51,
+	"player_2_grab": 52,
 }
 
 
@@ -30,5 +32,5 @@ func _initialize() -> void:
 					break
 		assert(has_expected_key, "Unexpected key binding for action: %s" % action)
 
-	print("All 14 player Input Map bindings verified.")
+	print("All 16 player Input Map bindings verified.")
 	quit()
