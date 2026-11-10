@@ -1,0 +1,78 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/scenes/ui/scoreboard.gd" id="1_scoreboard"]
+
+[node name="Scoreboard" type="CanvasLayer"]
+script = ExtResource("1_scoreboard")
+
+[node name="HUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="HUD"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -74.0
+offset_top = 4.0
+offset_right = 74.0
+offset_bottom = 42.0
+grow_horizontal = 2
+color = Color(0.0352941, 0.0470588, 0.0784314, 0.88)
+
+[node name="ScoreRow" type="HBoxContainer" parent="HUD"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -70.0
+offset_top = 5.0
+offset_right = 70.0
+offset_bottom = 25.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Player1Label" type="Label" parent="HUD/ScoreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.764706, 0.843137, 1)
+theme_override_font_sizes/font_size = 14
+text = "P1"
+
+[node name="Player1Score" type="Label" parent="HUD/ScoreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+
+[node name="Separator" type="Label" parent="HUD/ScoreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74902, 0.792157, 0.85098, 1)
+theme_override_font_sizes/font_size = 12
+text = "-"
+
+[node name="Player2Score" type="Label" parent="HUD/ScoreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+
+[node name="Player2Label" type="Label" parent="HUD/ScoreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.584314, 0.517647, 1)
+theme_override_font_sizes/font_size = 14
+text = "P2"
+
+[node name="StatusLabel" type="Label" parent="HUD"]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 26.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.878431, 0.898039, 0.933333, 1)
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
