@@ -10,8 +10,12 @@ When the balloon reaches the scoring ground during an active round, the game SHA
 - **THEN** Player 2 receives exactly one point
 
 #### Scenario: Serve counts as first contact
-- **WHEN** a round begins with Player 1 as server and no subsequent rally contact occurs before the balloon reaches the ground
+- **WHEN** Player 1 serves and no subsequent rally contact occurs before the balloon reaches the ground
 - **THEN** the serve is treated as Player 1's first contact and Player 2 receives exactly one point
+
+#### Scenario: No player touched the balloon
+- **WHEN** the balloon touches the scoring ground before the opening server makes a serve contact
+- **THEN** the opponent of the opening server receives exactly one point
 
 #### Scenario: Duplicate ground notifications
 - **WHEN** additional ground contacts are reported while the same round is resolving
@@ -57,7 +61,7 @@ The game SHALL allow only the player whose turn is active to make a valid balloo
 
 #### Scenario: Server serves
 - **WHEN** a new round begins
-- **THEN** the balloon appears above the server and the server's serve counts as the first contact, making the opponent the next eligible player
+- **THEN** the balloon appears above the server and the server is the first eligible player; the server's accepted serve counts as the first contact and makes the opponent the next eligible player
 
 #### Scenario: Eligible player contacts the balloon
 - **WHEN** the expected player makes an accepted normal or dash-rescue contact
