@@ -9,7 +9,7 @@ Este módulo define las acciones para ambos jugadores, las traduce desde el Inpu
 - `src/models/player/player_action_catalog.gd`: nombres, acciones, colores y teclas predeterminadas.
 - `src/models/player/player_input_reader.gd`: lectura de acciones de un jugador.
 - `src/managers/control_settings_manager.gd`: validación, carga, guardado y restauración.
-- `src/scenes/ui/control_settings.gd` y `.tscn`: menú para reasignar y restaurar controles.
+- `src/scenes/ui/menus/control_settings.gd` y `.tscn`: menú para reasignar y restaurar controles.
 - `src/scenes/ui/menu_keyboard_navigator.gd`: entradas compartidas para los menús.
 - `project.godot`: acciones y asignaciones iniciales del Input Map.
 

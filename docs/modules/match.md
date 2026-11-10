@@ -8,7 +8,7 @@
 
 - `src/managers/match_manager.gd`: controlador competitivo instanciado como nodo `MatchManager` dentro de `Arena`.
 - `src/scenes/levels/arena.tscn`: contiene las referencias hermanas `Player1`, `Player2` y `Balloon` que el gestor usa.
-- `src/scenes/ui/scoreboard.gd`: escucha señales para presentar resultados y estado.
+- `src/scenes/ui/hud/scoreboard.gd`: escucha señales para presentar resultados y estado.
 
 ## Funcionamiento
 

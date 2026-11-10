@@ -15,23 +15,21 @@ extends CanvasLayer
 @onready var winner_overlay: Control = $WinnerOverlay
 @onready var winner_label: Label = $WinnerOverlay/WinnerPanel/Content/WinnerLabel
 @onready var winner_ok_button: Button = $WinnerOverlay/WinnerPanel/Content/OkButton
+@onready var winner_navigator: MenuKeyboardNavigator = $WinnerNavigator
 @onready var player_count_menu: PlayerCountMenu = get_node("../../PlayerCountMenu")
-var winner_navigator: MenuKeyboardNavigator
-var set_result_panel: PanelContainer
-var set_result_label: Label
+@onready var set_result_panel: PanelContainer = $SetResultPanel
+@onready var set_result_label: Label = $SetResultPanel/SetResultLabel
 var set_result_tween: Tween
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	winner_navigator = MenuKeyboardNavigator.new()
-	add_child(winner_navigator)
 	winner_navigator.confirmed.connect(_return_to_player_count_menu)
 	winner_navigator.cancelled.connect(_return_to_player_count_menu)
 	controls_button.pressed.connect(pause_menu.open_pause)
 	winner_ok_button.pressed.connect(_return_to_player_count_menu)
 	pause_menu.controls_requested.connect(_open_control_settings)
-	pause_menu.player_count_requested.connect(_open_player_count_menu)
+	pause_menu.restart_confirmed.connect(_restart_match)
 	control_settings.returned_to_pause.connect(pause_menu.return_from_controls)
 	match_manager.score_changed.connect(_on_score_changed)
 	match_manager.set_score_changed.connect(_on_set_score_changed)
@@ -45,7 +43,6 @@ func _ready() -> void:
 	match_manager.balloon_turn_changed.connect(_on_balloon_turn_changed)
 	match_manager.downward_fault_replayed.connect(_on_downward_fault_replayed)
 	match_manager.balloon.contact_visualized.connect(_on_balloon_contact_visualized)
-	_build_set_result_panel()
 	_on_score_changed(match_manager.player_1_score, match_manager.player_2_score)
 	_on_set_score_changed(match_manager.player_1_sets, match_manager.player_2_sets)
 	_on_round_started(match_manager.round_number, match_manager.round_server)
@@ -54,7 +51,7 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if player_count_menu.visible or winner_overlay.visible:
+	if winner_overlay.visible:
 		return
 	if not event is InputEventKey:
 		return
@@ -77,8 +74,8 @@ func _open_control_settings() -> void:
 	control_settings.open()
 
 
-func _open_player_count_menu() -> void:
-	player_count_menu.open_menu()
+func _restart_match() -> void:
+	match_manager.restart_match()
 
 
 func _on_score_changed(player_1_score: int, player_2_score: int) -> void:
@@ -135,27 +132,6 @@ func _on_set_won(
 	set_result_tween.tween_interval(1.2)
 	set_result_tween.tween_property(set_result_panel, "modulate:a", 0.0, 0.6)
 	set_result_tween.tween_callback(func() -> void: set_result_panel.visible = false)
-
-
-func _build_set_result_panel() -> void:
-	set_result_panel = PanelContainer.new()
-	set_result_panel.name = "SetResultPanel"
-	set_result_panel.visible = false
-	set_result_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_result_panel.anchor_left = 0.5
-	set_result_panel.anchor_top = 0.5
-	set_result_panel.anchor_right = 0.5
-	set_result_panel.anchor_bottom = 0.5
-	set_result_panel.offset_left = -74.0
-	set_result_panel.offset_top = -20.0
-	set_result_panel.offset_right = 74.0
-	set_result_panel.offset_bottom = 20.0
-	set_result_label = Label.new()
-	set_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	set_result_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	set_result_label.add_theme_font_size_override("font_size", 8)
-	set_result_panel.add_child(set_result_label)
-	add_child(set_result_panel)
 
 
 func _on_balloon_contact_visualized(player: CharacterBody2D, balloon_position: Vector2) -> void:

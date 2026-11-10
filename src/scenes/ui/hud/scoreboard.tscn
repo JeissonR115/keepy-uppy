@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://src/scenes/ui/scoreboard.gd" id="1_scoreboard"]
-[ext_resource type="PackedScene" path="res://src/scenes/ui/control_settings.tscn" id="2_control_settings"]
-[ext_resource type="PackedScene" path="res://src/scenes/ui/pause_menu.tscn" id="3_pause_menu"]
+[ext_resource type="Script" path="res://src/scenes/ui/hud/scoreboard.gd" id="1_scoreboard"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/menus/control_settings.tscn" id="2_control_settings"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/menus/pause_menu.tscn" id="3_pause_menu"]
+[ext_resource type="Script" path="res://src/scenes/ui/components/menu_keyboard_navigator.gd" id="4_keyboard_navigator"]
 
 [node name="Scoreboard" type="CanvasLayer"]
 script = ExtResource("1_scoreboard")
@@ -153,6 +154,28 @@ text = "P1: TOUCH BALLOON"
 [node name="ControlSettings" parent="." instance=ExtResource("2_control_settings")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_pause_menu")]
+
+[node name="WinnerNavigator" type="Node" parent="."]
+script = ExtResource("4_keyboard_navigator")
+
+[node name="SetResultPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -74.0
+offset_top = -20.0
+offset_right = 74.0
+offset_bottom = 20.0
+mouse_filter = 2
+
+[node name="SetResultLabel" type="Label" parent="SetResultPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="WinnerOverlay" type="Control" parent="."]
 visible = false

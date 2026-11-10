@@ -46,13 +46,19 @@ development.
 
 - Press **Escape** during play to open or close the pause menu.
 - All menus use Player 1's current **Up/Down** actions (default W/S), **Jump** to confirm (default F), and **Dash** to go back (default G). Remapping those actions updates menu navigation too.
-- Choose **Resume**, **Restart**, or **Controls**. **Restart** opens the player-count menu; selecting 1 or 2 players starts a fresh match and retains saved control bindings.
+- Choose **Resume**, **Restart**, or **Controls**. Confirming **Restart** immediately begins a fresh match and retains saved control bindings.
 - The same navigation applies to the player-count, controls, pause, and winner menus. Escape opens or closes pause during play and cancels an active key capture.
 
 Verify pause navigation, restart cancellation, controls entry, and gameplay isolation with:
 
 ```sh
 godot --headless --path . --script res://tests/test_pause_menu.gd
+```
+
+Verify menu and HUD layouts are authored in their scenes with:
+
+```sh
+godot --headless --path . --script res://tests/test_ui_scene_ownership.gd
 ```
 
 Verify restart cancellation, fresh-match reset, and saved-control retention with:

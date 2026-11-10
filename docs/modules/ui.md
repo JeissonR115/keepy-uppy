@@ -6,27 +6,29 @@ La interfaz presenta el marcador y estado de juego, la navegación de pausa y lo
 
 ## Estructura
 
-- `src/scenes/ui/scoreboard.tscn` y `scoreboard.gd`: HUD, pausa, controles, ganador y aviso temporal de set.
-- `src/scenes/ui/pause_menu.tscn` y `pause_menu.gd`: pausa, continuar, reiniciar mediante selección de modo y acceso a controles.
-- `src/scenes/ui/control_settings.tscn` y `control_settings.gd`: captura de teclas y restauración.
-- `src/scenes/ui/player_count_menu.tscn` y `player_count_menu.gd`: selección de un jugador contra bot o dos jugadores.
-- `src/scenes/ui/menu_keyboard_navigator.gd`: navegación común por teclado.
+- `src/scenes/ui/hud/scoreboard.tscn` y `scoreboard.gd`: HUD, pausa, controles, ganador y aviso temporal de set.
+- `src/scenes/ui/menus/pause_menu.tscn` y `pause_menu.gd`: pausa, continuar, reiniciar mediante selección de modo y acceso a controles.
+- `src/scenes/ui/menus/control_settings.tscn` y `control_settings.gd`: captura de teclas y restauración.
+- `src/scenes/ui/menus/player_count_menu.tscn` y `player_count_menu.gd`: selección de un jugador contra bot o dos jugadores.
+- `src/scenes/ui/components/menu_keyboard_navigator.gd`: navegación común por teclado.
+
+Las escenas definen el layout y los controles fijos. `ControlSettings` crea desde el catálogo solo las filas repetidas por jugador y acción; el resto de los nodos visuales se conserva en sus escenas.
 
 ## Funcionamiento
 
 1. `Scoreboard` conecta señales de `MatchManager` y actualiza puntos, sets, turno, prioridad y mensajes de estado.
 2. Escape alterna la pausa durante juego. La pausa mantiene el árbol detenido; W/S mueve la selección, F confirma y G regresa.
-3. `Restart` abre la selección de modo. Al elegir 1 o 2 jugadores, `PlayerCountMenu` reinicia el MatchManager y configura si `Player2` usa el bot.
+3. `Restart` solicita confirmación y, al aceptar, inicia una partida nueva. La pantalla inicial permite elegir un jugador contra el bot o dos jugadores locales.
 4. Controles conserva el estado de pausa al abrirse. Permite recorrer las catorce acciones, cambiar una tecla, restaurar todas las asignaciones o volver a pausa.
 5. Al ganar un set, Scoreboard muestra brevemente el ganador, tanteo del set y acumulado de sets. Al completar el partido, el overlay de victoria permite regresar a selección de modo.
-6. Los menús de pausa, controles y selección de jugadores incluyen contenedores de scroll vertical que siguen el foco al navegar.
+6. Los menús que pueden exceder el espacio disponible usan contenedores de scroll vertical que siguen el foco al navegar.
 
 ## Componentes principales
 
-- `Scoreboard._input()`: gestiona Escape y evita abrir pausa sobre selección de modo o ganador.
-- `PauseMenu`: emite `controls_requested` y `player_count_requested`; mantiene su estado y opciones.
+- `Scoreboard._input()`: gestiona Escape para pausar/reanudar y cerrar controles; el overlay de ganador conserva su propia navegación.
+- `PauseMenu`: emite `controls_requested` y `restart_confirmed`; mantiene su estado y opciones.
 - `ControlSettings`: administra el foco, captura teclas y emite `returned_to_pause` al cerrar.
-- `PlayerCountMenu`: configura `Player2.bot_enabled`, reinicia si se abrió desde reinicio o victoria y reanuda el árbol.
+- `PlayerCountMenu`: configura `Player2.bot_enabled` y reanuda el árbol; también permite elegir el modo tras la pantalla de victoria.
 - `MenuKeyboardNavigator`: traduce acciones de Player 1 a señales comunes de movimiento, confirmación y cancelar.
 - `Scoreboard._on_set_won()` y `_on_match_ended()`: despliegan el aviso de set y el overlay final.
 

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" path="res://src/models/player/player_placeholder.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://src/models/balloon/balloon_placeholder.tscn" id="2_balloon"]
 [ext_resource type="Script" path="res://src/managers/match_manager.gd" id="4_match_manager"]
-[ext_resource type="PackedScene" path="res://src/scenes/ui/scoreboard.tscn" id="5_scoreboard"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/hud/scoreboard.tscn" id="5_scoreboard"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(320, 16)
