@@ -1,30 +1,9 @@
+class_name ControlSettings
 extends Control
 
 signal returned_to_pause
 
-const PLAYER_ACTIONS: Array[Dictionary] = [
-	{
-		"heading": "PLAYER 1",
-		"prefix": "player_1",
-		"color": Color(0.290196, 0.764706, 0.843137),
-	},
-	{
-		"heading": "PLAYER 2",
-		"prefix": "player_2",
-		"color": Color(1.0, 0.584314, 0.427451),
-	},
-]
-const ACTION_LABELS: Dictionary = {
-	"left": "LEFT",
-	"right": "RIGHT",
-	"up": "UP",
-	"down": "DOWN",
-	"jump": "JUMP",
-	"dash": "DASH",
-	"accelerate": "BOOST",
-}
-
-var settings_manager: Node
+@onready var settings_manager: ControlSettingsManager = get_node("../../../ControlSettingsManager")
 var action_buttons: Dictionary = {}
 var captured_action: String = ""
 var was_paused_before_open: bool = false
@@ -37,7 +16,6 @@ var focused_index: int = 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	settings_manager = get_node("/root/Main/ControlSettingsManager")
 	_build_screen()
 	visible = false
 
@@ -46,16 +24,36 @@ func _process(_delta: float) -> void:
 	if not visible:
 		return
 	if not captured_action.is_empty():
-		if Input.is_action_just_pressed("player_1_dash"):
+		if Input.is_action_just_pressed(
+			PlayerActionCatalog.action_name(
+				PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DASH
+			)
+		):
 			_cancel_capture()
 		return
-	if Input.is_action_just_pressed("player_1_up"):
+	if Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_UP
+		)
+	):
 		_move_focus(-1)
-	elif Input.is_action_just_pressed("player_1_down"):
+	elif Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DOWN
+		)
+	):
 		_move_focus(1)
-	if Input.is_action_just_pressed("player_1_jump"):
+	if Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_JUMP
+		)
+	):
 		_activate_focused_control()
-	elif Input.is_action_just_pressed("player_1_dash"):
+	elif Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DASH
+		)
+	):
 		close()
 
 
@@ -131,7 +129,7 @@ func _build_screen() -> void:
 	columns.add_theme_constant_override("separation", 8)
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(columns)
-	for player_data: Dictionary in PLAYER_ACTIONS:
+	for player_data: Dictionary in PlayerActionCatalog.PLAYERS:
 		columns.add_child(_build_player_column(player_data))
 
 	status_label = Label.new()
@@ -178,14 +176,14 @@ func _build_player_column(player_data: Dictionary) -> VBoxContainer:
 	heading.add_theme_font_size_override("font_size", 9)
 	column.add_child(heading)
 
-	for action_suffix: String in ACTION_LABELS:
-		var action_name: String = "%s_%s" % [player_data.prefix, action_suffix]
+	for action_data: Dictionary in player_data.actions:
+		var action_name: String = PlayerActionCatalog.action_name(player_data.prefix, action_data.suffix)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 2)
 		column.add_child(row)
 
 		var action_label := Label.new()
-		action_label.text = ACTION_LABELS[action_suffix]
+		action_label.text = action_data.label
 		action_label.add_theme_font_size_override("font_size", 8)
 		action_label.custom_minimum_size = Vector2(42, 12)
 		row.add_child(action_label)
@@ -232,11 +230,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	var result: Dictionary = settings_manager.call(
-		"try_set_binding",
-		captured_action,
-		key_event
-	)
+	var result: Dictionary = settings_manager.try_set_binding(captured_action, key_event)
 	if not result.valid:
 		status_label.text = result.reason
 		get_viewport().set_input_as_handled()
@@ -283,7 +277,7 @@ func _on_control_focus_entered(button: Button) -> void:
 
 
 func _restore_defaults() -> void:
-	var result: Dictionary = settings_manager.call("restore_default_bindings")
+	var result: Dictionary = settings_manager.restore_default_bindings()
 	if result.valid:
 		_refresh_action_buttons()
 		status_label.text = "Default controls restored."
@@ -303,5 +297,5 @@ func _refresh_action_button(action_name: String) -> void:
 
 
 func _binding_text(action_name: String) -> String:
-	var event: InputEventKey = settings_manager.call("get_binding_event", action_name)
+	var event: InputEventKey = settings_manager.get_binding_event(action_name)
 	return "UNBOUND" if event == null else event.as_text()

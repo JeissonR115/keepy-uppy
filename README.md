@@ -8,6 +8,12 @@ Open this folder in Godot 4.x and run the project. The main scene is
 `src/scenes/main/main.tscn`. The current arena uses built-in geometric
 placeholders and does not require external art or audio.
 
+At startup, choose **1 PLAYER** to play against a simple bot or **2 PLAYERS**
+for local multiplayer. Use Player 1's Up/Down controls (W/S by default) and
+Jump (F) to select. In one-player mode, the bot controls Player 2 and moves
+to intercept the balloon on its turn. If Player 1 is close to the balloon on
+the bot's turn, it tries to challenge and push Player 1 away first.
+
 ## Display
 
 The logical viewport is 320x180, displayed at 960x540 (integer 3x scale).
@@ -156,11 +162,12 @@ godot --headless --path . --script res://tests/test_dash_rescue.gd
 
 ## Balloon, serve, and fault rules
 
-- The balloon spawns 30 px above the opening server selected by the coin toss and above each subsequent point winner.
+- The balloon spawns `balloon_spawn_offset` pixels above the opening server selected by the coin toss and above each subsequent point winner (100 px by default). It stays still until its first player touch, then resumes its reduced gravity (scale 0.14).
+- The balloon collides physically with both players, and the HUD's `TURN` label shows who must touch it next.
 - The server is the first eligible player. Their serve counts as the first contact; after each accepted normal or dash-rescue touch, the other player becomes eligible.
-- Touching out of turn or sending the balloon downward is an immediate fault and awards the point to the opponent. A floor contact awards the point against the last valid toucher and shows a short burst.
+- Touching out of turn remains an immediate fault that awards the point to the opponent. A downward hit faults the player and replays the point without scoring; a second consecutive downward fault by the same player deducts one point before replaying. A floor contact awards the point against the last valid toucher and shows a short burst.
 - Player priority for player-to-player pushes remains separate from the expected balloon toucher.
-- The arena keeps the scoring floor and side walls; the three elevated platforms are removed.
+- The arena keeps the scoring floor, side walls, and a ceiling. The balloon bounces from the ceiling without bursting or ending the point; the three elevated platforms are removed.
 
 Verify player-velocity impact direction, speed limits, and downward-hit faults with:
 
@@ -217,18 +224,22 @@ godot --headless --path . --script res://tests/test_full_match.gd
 ```
 
 Balloon tuning defaults are exposed on the balloon controller and collision
-shapes: gravity scale 0.35, air resistance 0.035, horizontal damping 0.08,
-rebound 0.12, horizontal speed cap 360 px/s, vertical speed cap 420 px/s,
+shapes: gravity scale 0.14, air resistance 0.055, horizontal damping 0.08,
+rebound 0.28, horizontal speed cap 220 px/s, maximum fall speed 90 px/s,
+maximum speed after a hit 220 px/s,
 normal hit impulse 120-240, dash rescue impulse 300-360, same-player contact interval 0.10 s, body radius
 9 px, player contact radius 16 px, and dash rescue zone 44x20 px.
 
 Manual balloon checks:
 
 - [ ] Hit the balloon from both sides and confirm each contact produces one clear impulse.
+- [ ] At the opening serve and after a point, confirm the balloon waits above the server, the HUD identifies the player who must touch it, and the balloon begins moving only after a touch.
+- [ ] Move or jump into the balloon and confirm its body collides with the player instead of passing through.
 - [ ] Compare slow and fast player approaches and confirm normal-hit impulse scales within the configured minimum and maximum.
 - [ ] Confirm dash rescue produces a distinct, direction-aware impulse and the rescue zone is larger than the balloon's body collider.
 - [ ] Re-enter the balloon rapidly with the same player and confirm the contact interval prevents repeat hits while the other player can still contact it.
 - [ ] Give the balloon large horizontal and vertical velocity and confirm each axis stays within its own configured cap.
+- [ ] Hit the balloon upward into the ceiling and confirm it bounces back into the arena without bursting or ending the point.
 - [ ] Confirm the balloon's arena-boundary rebound follows configured bounce and damping; floor contact ends the point once and shows the burst.
 - [ ] Leave the balloon on the ground through several physics frames and confirm one ground event is reported for the round.
 - [ ] Compare slow and fast normal contacts, then a dash rescue, and confirm the normal impulse scales within 120-240 while dash rescue remains distinct.
@@ -237,7 +248,8 @@ Manual player interaction checks:
 
 - [ ] Confirm the balloon spawns above the server, the server serves first, and each valid normal or dash-rescue contact alternates the eligible player.
 - [ ] Confirm an out-of-turn contact faults the touching player, including when both players contact in the same physics tick regardless of callback order.
-- [ ] Confirm a downward-directed hit faults its player immediately, while accepted contacts update last-touch attribution and player priority independently.
+- [ ] Confirm a downward-directed hit replays the point without scoring, and the same player's second consecutive downward fault deducts one point before the replay.
+- [ ] Confirm accepted contacts update last-touch attribution and player priority independently from the repeated-fault penalty.
 - [ ] Push both players toward either side wall, confirm neither leaves the arena, then move them back toward the center and confirm both remain controllable.
 - [ ] Compare priority and non-priority normal/dash pushes and confirm each resulting push velocity stays within the configured cap.
 

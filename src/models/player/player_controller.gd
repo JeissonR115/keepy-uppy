@@ -1,8 +1,16 @@
+class_name PlayerController
 extends CharacterBody2D
 
 signal player_bumped(player: CharacterBody2D, opponent: CharacterBody2D, while_dashing: bool)
 
+const BOT_HORIZONTAL_DEADZONE := 10.0
+const BOT_JUMP_ALIGNMENT_DISTANCE := 26.0
+const BOT_JUMP_TRIGGER_HEIGHT := 20.0
+const BOT_DASH_RANGE := 56.0
+const BOT_OPPONENT_THREAT_DISTANCE := 56.0
+
 @export_enum("player_1", "player_2") var input_prefix: String = "player_1"
+@export var bot_enabled: bool = false
 @export var max_run_speed: float = 140.0
 @export var ground_acceleration: float = 1000.0
 @export var ground_deceleration: float = 1200.0
@@ -40,21 +48,23 @@ var dash_rescue_hit: bool = false
 
 @onready var visual: Polygon2D = $Visual
 @onready var priority_indicator: Polygon2D = $PriorityIndicator
-@onready var input_reader: Node = $InputReader
+@onready var input_reader: PlayerInputReader = $InputReader
+@onready var match_manager: MatchManager = get_parent().get_node("MatchManager")
+@onready var balloon: BalloonController = get_parent().get_node("Balloon")
 @onready var dash_rescue_area: Area2D = $DashRescueArea
 @onready var dash_rescue_shape: CollisionShape2D = $DashRescueArea/CollisionShape2D
 @onready var dash_trail: Line2D = $DashTrail
 
 
 func _ready() -> void:
-	input_reader.call("configure", input_prefix)
-	if input_prefix == "player_1":
-		idle_color = Color(0.290196, 0.764706, 0.843137)
+	input_reader.configure(input_prefix)
+	if input_prefix == PlayerActionCatalog.PLAYER_ONE_PREFIX:
+		idle_color = PlayerActionCatalog.player_color(input_prefix)
 		run_color = Color(0.470588, 0.890196, 0.945098)
 		rise_color = Color(0.772549, 0.960784, 0.980392)
 		fall_color = Color(0.172549, 0.537255, 0.607843)
 	else:
-		idle_color = Color(1.0, 0.584314, 0.427451)
+		idle_color = PlayerActionCatalog.player_color(input_prefix)
 		run_color = Color(1.0, 0.780392, 0.466667)
 		rise_color = Color(1.0, 0.898039, 0.729412)
 		fall_color = Color(0.690196, 0.286275, 0.270588)
@@ -86,25 +96,35 @@ func _physics_process(delta: float) -> void:
 	dash_cooldown_timer = maxf(dash_cooldown_timer - delta, 0.0)
 	accelerate_timer = maxf(accelerate_timer - delta, 0.0)
 	accelerate_cooldown_timer = maxf(accelerate_cooldown_timer - delta, 0.0)
-	var horizontal_input: float = float(input_reader.call("get_axis", "left", "right"))
+	var grounded := is_on_floor()
+	var bot_turn_active := (
+		bot_enabled
+		and match_manager.match_state == MatchManager.MatchState.ACTIVE
+		and match_manager.expected_balloon_player == self
+	)
+	var horizontal_input := _horizontal_input(bot_turn_active)
 
 	if not is_zero_approx(horizontal_input):
 		facing_direction = Vector2.RIGHT if horizontal_input > 0.0 else Vector2.LEFT
 
-	var grounded := is_on_floor()
 	is_dashing = dash_timer > 0.0
 	var finish_dash_after_move := false
-	if not is_dashing and dash_cooldown_timer <= 0.0 and bool(input_reader.call("is_just_pressed", "dash")):
+	if not is_dashing and dash_cooldown_timer <= 0.0 and _dash_requested(bot_turn_active):
+		var dash_vertical_input := -1.0
+		if bot_enabled and _bot_should_challenge_opponent() and not is_zero_approx(horizontal_input):
+			dash_vertical_input = 0.0
 		var dash_input := Vector2(
 			horizontal_input,
-			float(input_reader.call("get_axis", "up", "down"))
+			input_reader.get_axis(PlayerActionCatalog.ACTION_UP, PlayerActionCatalog.ACTION_DOWN)
+			if not bot_enabled
+			else dash_vertical_input
 		)
 		dash_direction = dash_input.normalized() if not dash_input.is_zero_approx() else facing_direction
 		dash_timer = dash_duration
 		dash_cooldown_timer = dash_cooldown
 		is_dashing = true
 		_begin_dash()
-	if bool(input_reader.call("is_just_pressed", "accelerate")):
+	if not bot_enabled and input_reader.is_just_pressed(PlayerActionCatalog.ACTION_ACCELERATE):
 		try_activate_accelerate()
 
 	if is_dashing:
@@ -130,7 +150,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
 
-	if bool(input_reader.call("is_just_pressed", "jump")):
+	if _jump_requested(bot_turn_active, grounded):
 		jump_buffer_timer = jump_buffer_time
 	else:
 		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
@@ -140,7 +160,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 		jump_buffer_timer = 0.0
 		coyote_timer = 0.0
-	elif bool(input_reader.call("is_just_released", "jump")) and velocity.y < 0.0:
+	elif not bot_enabled and input_reader.is_just_released(PlayerActionCatalog.ACTION_JUMP) and velocity.y < 0.0:
 		velocity.y *= jump_cut_multiplier
 
 	if not is_dashing:
@@ -154,6 +174,58 @@ func _physics_process(delta: float) -> void:
 	_update_visual_state(horizontal_input, is_on_floor(), delta)
 	if finish_dash_after_move:
 		_end_dash()
+
+
+func _horizontal_input(bot_turn_active: bool) -> float:
+	if not bot_enabled:
+		return input_reader.get_axis(
+			PlayerActionCatalog.ACTION_LEFT, PlayerActionCatalog.ACTION_RIGHT
+		)
+	if not bot_turn_active:
+		return 0.0
+	var target_x := balloon.global_position.x
+	if _bot_should_challenge_opponent():
+		target_x = match_manager.player_1.global_position.x
+	var horizontal_distance := target_x - global_position.x
+	if absf(horizontal_distance) <= BOT_HORIZONTAL_DEADZONE:
+		return 0.0
+	return signf(horizontal_distance)
+
+
+func _dash_requested(bot_turn_active: bool) -> bool:
+	if not bot_enabled:
+		return input_reader.is_just_pressed(PlayerActionCatalog.ACTION_DASH)
+	if not bot_turn_active:
+		return false
+	if _bot_should_challenge_opponent():
+		return (
+			absf(match_manager.player_1.global_position.x - global_position.x) <= BOT_DASH_RANGE
+			and absf(match_manager.player_1.global_position.y - global_position.y) <= BOT_DASH_RANGE
+		)
+	return (
+		absf(balloon.global_position.x - global_position.x) <= BOT_DASH_RANGE
+		and balloon.global_position.y < global_position.y - BOT_JUMP_TRIGGER_HEIGHT
+	)
+
+
+func _jump_requested(bot_turn_active: bool, grounded: bool) -> bool:
+	if not bot_enabled:
+		return input_reader.is_just_pressed(PlayerActionCatalog.ACTION_JUMP)
+	return (
+		bot_turn_active
+		and grounded
+		and not _bot_should_challenge_opponent()
+		and absf(balloon.global_position.x - global_position.x) <= BOT_JUMP_ALIGNMENT_DISTANCE
+		and balloon.global_position.y < global_position.y - BOT_JUMP_TRIGGER_HEIGHT
+	)
+
+
+func _bot_should_challenge_opponent() -> bool:
+	return (
+		bot_enabled
+		and match_manager.player_1.global_position.distance_to(balloon.global_position)
+		<= BOT_OPPONENT_THREAT_DISTANCE
+	)
 
 
 func set_priority_indicator(active: bool) -> void:

@@ -1,15 +1,17 @@
+class_name Scoreboard
 extends CanvasLayer
 
-@onready var match_manager: Node = get_parent().get_node("MatchManager")
+@onready var match_manager: MatchManager = get_parent().get_node("MatchManager")
 @onready var player_1_score_label: Label = $HUD/ScoreRow/Player1Score
 @onready var player_2_score_label: Label = $HUD/ScoreRow/Player2Score
 @onready var player_1_sets_label: Label = $HUD/SetScoreRow/Player1Sets
 @onready var player_2_sets_label: Label = $HUD/SetScoreRow/Player2Sets
 @onready var competitive_label: Label = $HUD/CompetitiveLabel
 @onready var status_label: Label = $HUD/StatusLabel
+@onready var turn_label: Label = $HUD/TurnLabel
 @onready var controls_button: Button = $HUD/ControlsButton
-@onready var control_settings: Control = $ControlSettings
-@onready var pause_menu: Control = $PauseMenu
+@onready var control_settings: ControlSettings = $ControlSettings
+@onready var pause_menu: PauseMenu = $PauseMenu
 
 
 func _ready() -> void:
@@ -26,9 +28,12 @@ func _ready() -> void:
 	match_manager.match_ended.connect(_on_match_ended)
 	match_manager.priority_changed.connect(_on_priority_changed)
 	match_manager.coin_toss_completed.connect(_on_coin_toss_completed)
+	match_manager.balloon_turn_changed.connect(_on_balloon_turn_changed)
+	match_manager.downward_fault_replayed.connect(_on_downward_fault_replayed)
 	_on_score_changed(match_manager.player_1_score, match_manager.player_2_score)
 	_on_set_score_changed(match_manager.player_1_sets, match_manager.player_2_sets)
 	_on_round_started(match_manager.round_number, match_manager.round_server)
+	_on_balloon_turn_changed(match_manager.expected_balloon_player)
 	_refresh_competitive_state()
 
 
@@ -40,10 +45,10 @@ func _input(event: InputEvent) -> void:
 		return
 	if key_event.keycode != KEY_ESCAPE and key_event.physical_keycode != KEY_ESCAPE:
 		return
-	if control_settings.visible and not String(control_settings.get("captured_action")).is_empty():
-		control_settings.call("cancel_capture")
+	if control_settings.visible and not control_settings.captured_action.is_empty():
+		control_settings.cancel_capture()
 	elif control_settings.visible:
-		control_settings.call("hide_for_pause_exit")
+		control_settings.hide_for_pause_exit()
 		pause_menu.close_pause()
 	else:
 		pause_menu.toggle_pause()
@@ -51,7 +56,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _open_control_settings() -> void:
-	control_settings.call("open")
+	control_settings.open()
 
 
 func _restart_match() -> void:
@@ -95,6 +100,23 @@ func _on_round_started(round_number: int, server: CharacterBody2D) -> void:
 
 func _on_priority_changed(_player: CharacterBody2D) -> void:
 	_refresh_competitive_state()
+
+
+func _on_balloon_turn_changed(player: CharacterBody2D) -> void:
+	turn_label.text = "%s: TOUCH BALLOON" % _player_name(player)
+	var player_prefix := (
+		PlayerActionCatalog.PLAYER_ONE_PREFIX
+		if player == match_manager.player_1
+		else PlayerActionCatalog.PLAYER_TWO_PREFIX
+	)
+	turn_label.add_theme_color_override("font_color", PlayerActionCatalog.player_color(player_prefix))
+
+
+func _on_downward_fault_replayed(player: CharacterBody2D, point_deducted: bool) -> void:
+	if point_deducted:
+		status_label.text = "%s DOWN FAULT AGAIN: -1" % _player_name(player)
+	else:
+		status_label.text = "%s DOWN HIT: REPLAY" % _player_name(player)
 
 
 func _on_coin_toss_completed(_result: String, _first_server: CharacterBody2D) -> void:

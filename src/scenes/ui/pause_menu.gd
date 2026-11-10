@@ -1,3 +1,4 @@
+class_name PauseMenu
 extends Control
 
 signal controls_requested
@@ -25,13 +26,29 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if current_screen != MenuScreen.PAUSE and current_screen != MenuScreen.RESTART_CONFIRMATION:
 		return
-	if Input.is_action_just_pressed("player_1_up"):
+	if Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_UP
+		)
+	):
 		_move_selection(-1)
-	elif Input.is_action_just_pressed("player_1_down"):
+	elif Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DOWN
+		)
+	):
 		_move_selection(1)
-	if Input.is_action_just_pressed("player_1_jump"):
+	if Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_JUMP
+		)
+	):
 		_activate_selection()
-	elif Input.is_action_just_pressed("player_1_dash"):
+	elif Input.is_action_just_pressed(
+		PlayerActionCatalog.action_name(
+			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DASH
+		)
+	):
 		_go_back()
 
 

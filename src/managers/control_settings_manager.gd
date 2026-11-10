@@ -1,3 +1,4 @@
+class_name ControlSettingsManager
 extends Node
 
 signal settings_recovered(reason: String)
@@ -6,40 +7,6 @@ const SETTINGS_VERSION := 1
 const SETTINGS_PATH := "user://controls.cfg"
 const SETTINGS_SECTION := "settings"
 const BINDINGS_SECTION := "bindings"
-
-const CONFIGURABLE_ACTIONS: Array[String] = [
-	"player_1_left",
-	"player_1_right",
-	"player_1_up",
-	"player_1_down",
-	"player_1_jump",
-	"player_1_dash",
-	"player_1_accelerate",
-	"player_2_left",
-	"player_2_right",
-	"player_2_up",
-	"player_2_down",
-	"player_2_jump",
-	"player_2_dash",
-	"player_2_accelerate",
-]
-
-const DEFAULT_PHYSICAL_KEYS: Dictionary = {
-	"player_1_left": KEY_A,
-	"player_1_right": KEY_D,
-	"player_1_up": KEY_W,
-	"player_1_down": KEY_S,
-	"player_1_jump": KEY_F,
-	"player_1_dash": KEY_G,
-	"player_1_accelerate": KEY_H,
-	"player_2_left": KEY_LEFT,
-	"player_2_right": KEY_RIGHT,
-	"player_2_up": KEY_UP,
-	"player_2_down": KEY_DOWN,
-	"player_2_jump": KEY_1,
-	"player_2_dash": KEY_2,
-	"player_2_accelerate": KEY_3,
-}
 
 const RESERVED_KEYS: Array[int] = [
 	KEY_ESCAPE,
@@ -62,7 +29,6 @@ const RESERVED_KEYS: Array[int] = [
 ]
 
 var settings_path: String = SETTINGS_PATH
-var current_bindings: Dictionary = {}
 
 
 func _enter_tree() -> void:
@@ -74,7 +40,8 @@ func validate_binding(
 	event: InputEvent,
 	candidate_bindings: Dictionary = {}
 ) -> Dictionary:
-	if not CONFIGURABLE_ACTIONS.has(action_name) or not InputMap.has_action(action_name):
+	var configurable_actions := PlayerActionCatalog.action_names()
+	if not configurable_actions.has(action_name) or not InputMap.has_action(action_name):
 		return _invalid("Unknown control action.")
 	if not event is InputEventKey:
 		return _invalid("Only keyboard keys can be assigned.")
@@ -88,7 +55,7 @@ func validate_binding(
 	if key_event.shift_pressed or key_event.ctrl_pressed or key_event.alt_pressed or key_event.meta_pressed:
 		return _invalid("Modified shortcuts cannot be assigned.")
 
-	for other_action: String in CONFIGURABLE_ACTIONS:
+	for other_action: String in configurable_actions:
 		if other_action == action_name or not InputMap.has_action(other_action):
 			continue
 		var current_key := _get_physical_key(other_action)
@@ -114,7 +81,6 @@ func try_set_binding(action_name: String, event: InputEvent) -> Dictionary:
 	var previous_event := _get_binding_event(action_name)
 	InputMap.action_erase_events(action_name)
 	InputMap.action_add_event(action_name, event.duplicate())
-	current_bindings[action_name] = event.duplicate()
 	var save_error := _save_bindings()
 	if save_error != OK:
 		_restore_binding(action_name, previous_event)
@@ -136,7 +102,7 @@ func load_or_restore_settings() -> bool:
 		return false
 
 	var candidate_bindings: Dictionary = {}
-	for action_name: String in CONFIGURABLE_ACTIONS:
+	for action_name: String in PlayerActionCatalog.action_names():
 		if not config.has_section_key(BINDINGS_SECTION, action_name):
 			_restore_default_bindings("Settings were incomplete; defaults were restored.")
 			return false
@@ -146,7 +112,7 @@ func load_or_restore_settings() -> bool:
 			return false
 		candidate_bindings[action_name] = _event_for_physical_key(int(stored_key))
 
-	for action_name: String in CONFIGURABLE_ACTIONS:
+	for action_name: String in PlayerActionCatalog.action_names():
 		var result := validate_binding(
 			action_name,
 			candidate_bindings[action_name],
@@ -187,31 +153,31 @@ func _restore_default_bindings(reason: String) -> void:
 
 func _build_default_bindings() -> Dictionary:
 	var defaults: Dictionary = {}
-	for action_name: String in CONFIGURABLE_ACTIONS:
-		defaults[action_name] = _event_for_physical_key(DEFAULT_PHYSICAL_KEYS[action_name])
+	var default_keys := PlayerActionCatalog.default_physical_keys()
+	for action_name: String in PlayerActionCatalog.action_names():
+		defaults[action_name] = _event_for_physical_key(default_keys[action_name])
 	return defaults
 
 
 func _read_current_bindings() -> Dictionary:
 	var bindings: Dictionary = {}
-	for action_name: String in CONFIGURABLE_ACTIONS:
+	for action_name: String in PlayerActionCatalog.action_names():
 		bindings[action_name] = _get_binding_event(action_name)
 	return bindings
 
 
 func _apply_bindings(bindings: Dictionary) -> void:
-	for action_name: String in CONFIGURABLE_ACTIONS:
+	for action_name: String in PlayerActionCatalog.action_names():
 		if not bindings.has(action_name) or not InputMap.has_action(action_name):
 			continue
 		InputMap.action_erase_events(action_name)
 		InputMap.action_add_event(action_name, bindings[action_name].duplicate())
-	current_bindings = bindings.duplicate(true)
 
 
 func _save_bindings() -> Error:
 	var config := ConfigFile.new()
 	config.set_value(SETTINGS_SECTION, "version", SETTINGS_VERSION)
-	for action_name: String in CONFIGURABLE_ACTIONS:
+	for action_name: String in PlayerActionCatalog.action_names():
 		var event := _get_binding_event(action_name)
 		if event == null:
 			return ERR_INVALID_DATA
@@ -238,7 +204,6 @@ func _restore_binding(action_name: String, event: InputEvent) -> void:
 	InputMap.action_erase_events(action_name)
 	if event != null:
 		InputMap.action_add_event(action_name, event)
-	current_bindings[action_name] = event
 
 
 func _get_physical_key(action_name: String) -> int:

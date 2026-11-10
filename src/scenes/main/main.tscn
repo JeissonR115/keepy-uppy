@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="PackedScene" path="res://src/scenes/levels/arena.tscn" id="1_arena"]
 [ext_resource type="Script" path="res://src/managers/control_settings_manager.gd" id="2_control_settings"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/player_count_menu.tscn" id="3_player_count_menu"]
 
 [node name="Main" type="Node2D"]
 
@@ -9,3 +10,5 @@
 script = ExtResource("2_control_settings")
 
 [node name="Arena" parent="." instance=ExtResource("1_arena")]
+
+[node name="PlayerCountMenu" parent="." instance=ExtResource("3_player_count_menu")]

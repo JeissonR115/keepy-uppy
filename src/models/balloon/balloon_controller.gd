@@ -1,3 +1,4 @@
+class_name BalloonController
 extends RigidBody2D
 
 signal player_hit(player: CharacterBody2D)
@@ -13,21 +14,26 @@ signal ground_touched
 @export var movement_direction_factor: float = 0.45
 @export var dash_movement_direction_factor: float = 0.4
 @export var movement_impulse_factor: float = 0.12
-@export var max_horizontal_speed: float = 360.0
-@export var max_vertical_speed: float = 420.0
+@export var max_horizontal_speed: float = 220.0
+@export_range(1.0, 600.0, 1.0) var max_fall_speed: float = 90.0
+@export_range(1.0, 900.0, 1.0) var max_hit_speed: float = 220.0
 @export var contact_interval: float = 0.1
 @export var balloon_collision_radius: float = 9.0
 @export var player_contact_radius: float = 16.0
-@export var gravity_strength: float = 0.35
-@export var air_resistance: float = 0.035
+@export var gravity_strength: float = 0.14
+@export var air_resistance: float = 0.055
 @export var horizontal_damping: float = 0.08
-@export_range(0.0, 1.0) var rebound_strength: float = 0.12
+@export_range(0.0, 1.0) var rebound_strength: float = 0.28
 
 @onready var player_contact_area: Area2D = $PlayerContactArea
 @onready var visual: Polygon2D = $Visual
 @onready var ground_burst: Polygon2D = $GroundBurst
+@onready var balloon_collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var player_contact_shape: CollisionShape2D = $PlayerContactArea/CollisionShape2D
 
 var ground_contact_reported: bool = false
+var waiting_for_first_touch: bool = false
+var waiting_spawn_position: Vector2 = Vector2.ZERO
 var default_visual_color: Color
 var impact_tween: Tween
 var burst_tween: Tween
@@ -44,9 +50,9 @@ func _ready() -> void:
 	var physics_material := physics_material_override as PhysicsMaterial
 	if physics_material != null:
 		physics_material.bounce = rebound_strength
-	var balloon_shape := $CollisionShape2D.shape as CircleShape2D
+	var balloon_shape := balloon_collision_shape.shape as CircleShape2D
 	balloon_shape.radius = balloon_collision_radius
-	var contact_shape := player_contact_area.get_node("CollisionShape2D").shape as CircleShape2D
+	var contact_shape := player_contact_shape.shape as CircleShape2D
 	contact_shape.radius = player_contact_radius
 	body_entered.connect(_on_body_entered)
 	player_contact_area.body_entered.connect(_on_player_contact_area_body_entered)
@@ -61,6 +67,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	if waiting_for_first_touch:
+		state.linear_velocity = Vector2.ZERO
+		state.angular_velocity = 0.0
+		var stopped_transform := state.transform
+		stopped_transform.origin = waiting_spawn_position
+		state.transform = stopped_transform
+		return
+
 	var air_retention := 1.0 + maxf(air_resistance, 0.0) * state.step
 	state.linear_velocity /= air_retention
 	state.linear_velocity.x /= 1.0 + maxf(horizontal_damping, 0.0) * state.step
@@ -71,16 +85,19 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	)
 	state.linear_velocity.y = clampf(
 		state.linear_velocity.y,
-		-max_vertical_speed,
-		max_vertical_speed
+		-max_hit_speed,
+		max_fall_speed
 	)
 
 
-func reset_round(spawn_position: Vector2) -> void:
+func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) -> void:
 	global_position = spawn_position
 	linear_velocity = Vector2.ZERO
 	angular_velocity = 0.0
 	sleeping = false
+	self.waiting_for_first_touch = wait_for_first_touch
+	waiting_spawn_position = position
+	gravity_scale = 0.0 if wait_for_first_touch else gravity_strength
 	ground_contact_reported = false
 	player_contact_cooldowns.clear()
 	pending_contact_impulses.clear()
@@ -94,6 +111,7 @@ func reset_round(spawn_position: Vector2) -> void:
 func apply_dash_rescue(player: CharacterBody2D, dash_direction: Vector2) -> bool:
 	if not _accept_player_contact(player):
 		return false
+	_activate_after_first_touch()
 	var rescue_direction := dash_direction.normalized()
 	if rescue_direction.is_zero_approx():
 		rescue_direction = Vector2.UP
@@ -150,6 +168,7 @@ func _on_player_contact_area_body_entered(body: Node2D) -> void:
 		var player := body as CharacterBody2D
 		if not _accept_player_contact(player):
 			return
+		_activate_after_first_touch()
 		var impulse_direction := global_position - player.global_position
 		if impulse_direction.is_zero_approx():
 			impulse_direction = Vector2.UP
@@ -178,6 +197,15 @@ func _on_player_contact_area_body_entered(body: Node2D) -> void:
 		)
 
 
+func _activate_after_first_touch() -> void:
+	if not waiting_for_first_touch:
+		return
+	waiting_for_first_touch = false
+	gravity_scale = gravity_strength
+	linear_velocity = Vector2.ZERO
+	sleeping = false
+
+
 func _queue_player_contact(
 	player: CharacterBody2D,
 	contact_type: ContactType,
@@ -204,8 +232,10 @@ func apply_pending_contact(player: CharacterBody2D, contact_type: ContactType) -
 	pending_contact_impulses.erase(player_id)
 	var impulse: Vector2 = contact["impulse"]
 	var resulting_velocity := linear_velocity + impulse / maxf(mass, 0.001)
+	resulting_velocity = resulting_velocity.limit_length(max_hit_speed)
 	resulting_velocity.x = clampf(resulting_velocity.x, -max_horizontal_speed, max_horizontal_speed)
-	resulting_velocity.y = clampf(resulting_velocity.y, -max_vertical_speed, max_vertical_speed)
+	resulting_velocity.y = clampf(resulting_velocity.y, -max_hit_speed, max_fall_speed)
+	impulse = (resulting_velocity - linear_velocity) * mass
 	sleeping = false
 	apply_central_impulse(impulse)
 	_flash_impact()
