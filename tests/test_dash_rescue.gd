@@ -56,6 +56,11 @@ func _run_test() -> void:
 		await physics_frame
 	if not _expect(balloon.linear_velocity.x > 0.0, "Dash rescue did not apply an impulse to the balloon."):
 		return
+	if not _expect(
+		balloon.linear_velocity.length() > balloon.max_player_hit_impulse / balloon.mass,
+		"Dash rescue did not create a stronger, distinct impulse than a normal hit."
+	):
+		return
 
 	balloon.reset_round(Vector2(280, 80))
 	for _frame in range(2):

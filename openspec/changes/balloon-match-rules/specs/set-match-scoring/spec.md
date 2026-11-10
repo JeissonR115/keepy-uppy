@@ -17,12 +17,12 @@ The game SHALL resolve one point when the balloon first contacts the scoring gro
 - **WHEN** another ground-contact notification arrives while that point is resolving
 - **THEN** neither player receives an additional point
 
-### Requirement: Proposed point attribution
-After the owner approves the proposed attribution rule, the game SHALL award the point to the opponent of the last valid toucher; the serve SHALL count as the server's first valid touch of that point.
+### Requirement: Last-touch point attribution
+The game SHALL award the point to the opponent of the last valid toucher; the serve SHALL count as the server's first valid touch of that point. The owner confirmed that a serve is a contact, so a point never falls without an attributed touch.
 
-#### Scenario: Owner approves the proposed rule
-- **WHEN** the owner approves last-touch attribution before implementation
-- **THEN** the opponent of the last valid toucher receives the point when the balloon touches the scoring ground
+#### Scenario: Last valid toucher is faulted
+- **WHEN** the balloon touches the scoring ground after an accepted player contact
+- **THEN** the opponent of the last valid toucher receives the point
 
 #### Scenario: Serve is the last touch
 - **WHEN** the balloon reaches the ground before either player makes another valid contact after the serve

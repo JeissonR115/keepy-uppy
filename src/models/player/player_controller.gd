@@ -16,6 +16,10 @@ signal player_bumped(player: CharacterBody2D, opponent: CharacterBody2D, while_d
 @export var dash_duration: float = 0.16
 @export var dash_cooldown: float = 0.45
 @export var dash_rescue_half_extents: Vector2 = Vector2(22.0, 10.0)
+@export var accelerate_speed_multiplier: float = 1.35
+@export var accelerate_duration: float = 0.8
+@export var accelerate_cooldown: float = 4.0
+@export var accelerate_max_speed: float = 210.0
 
 var idle_color: Color
 var run_color: Color
@@ -26,6 +30,8 @@ var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_cooldown_timer: float = 0.0
+var accelerate_timer: float = 0.0
+var accelerate_cooldown_timer: float = 0.0
 var run_animation_time: float = 0.0
 var dash_direction: Vector2 = Vector2.RIGHT
 var facing_direction: Vector2 = Vector2.RIGHT
@@ -34,12 +40,14 @@ var dash_rescue_hit: bool = false
 
 @onready var visual: Polygon2D = $Visual
 @onready var priority_indicator: Polygon2D = $PriorityIndicator
+@onready var input_reader: Node = $InputReader
 @onready var dash_rescue_area: Area2D = $DashRescueArea
 @onready var dash_rescue_shape: CollisionShape2D = $DashRescueArea/CollisionShape2D
 @onready var dash_trail: Line2D = $DashTrail
 
 
 func _ready() -> void:
+	input_reader.call("configure", input_prefix)
 	if input_prefix == "player_1":
 		idle_color = Color(0.290196, 0.764706, 0.843137)
 		run_color = Color(0.470588, 0.890196, 0.945098)
@@ -66,6 +74,8 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	jump_buffer_timer = 0.0
 	dash_timer = 0.0
 	dash_cooldown_timer = 0.0
+	accelerate_timer = 0.0
+	accelerate_cooldown_timer = 0.0
 	is_dashing = false
 	dash_rescue_hit = false
 	dash_rescue_area.monitoring = false
@@ -74,10 +84,9 @@ func reset_for_round(spawn_position: Vector2) -> void:
 
 func _physics_process(delta: float) -> void:
 	dash_cooldown_timer = maxf(dash_cooldown_timer - delta, 0.0)
-	var horizontal_input := Input.get_axis(
-		"%s_left" % input_prefix,
-		"%s_right" % input_prefix
-	)
+	accelerate_timer = maxf(accelerate_timer - delta, 0.0)
+	accelerate_cooldown_timer = maxf(accelerate_cooldown_timer - delta, 0.0)
+	var horizontal_input: float = float(input_reader.call("get_axis", "left", "right"))
 
 	if not is_zero_approx(horizontal_input):
 		facing_direction = Vector2.RIGHT if horizontal_input > 0.0 else Vector2.LEFT
@@ -85,17 +94,18 @@ func _physics_process(delta: float) -> void:
 	var grounded := is_on_floor()
 	is_dashing = dash_timer > 0.0
 	var finish_dash_after_move := false
-	var dash_action := "%s_dash" % input_prefix
-	if not is_dashing and dash_cooldown_timer <= 0.0 and Input.is_action_just_pressed(dash_action):
+	if not is_dashing and dash_cooldown_timer <= 0.0 and bool(input_reader.call("is_just_pressed", "dash")):
 		var dash_input := Vector2(
 			horizontal_input,
-			Input.get_axis("%s_up" % input_prefix, "%s_down" % input_prefix)
+			float(input_reader.call("get_axis", "up", "down"))
 		)
 		dash_direction = dash_input.normalized() if not dash_input.is_zero_approx() else facing_direction
 		dash_timer = dash_duration
 		dash_cooldown_timer = dash_cooldown
 		is_dashing = true
 		_begin_dash()
+	if bool(input_reader.call("is_just_pressed", "accelerate")):
+		try_activate_accelerate()
 
 	if is_dashing:
 		velocity = dash_direction * dash_speed
@@ -104,19 +114,23 @@ func _physics_process(delta: float) -> void:
 	else:
 		var movement_control := 1.0 if grounded else air_control
 		var horizontal_rate := ground_acceleration if not is_zero_approx(horizontal_input) else ground_deceleration
+		var target_run_speed := max_run_speed
+		if accelerate_timer > 0.0:
+			target_run_speed = minf(max_run_speed * accelerate_speed_multiplier, accelerate_max_speed)
 		velocity.x = move_toward(
 			velocity.x,
-			horizontal_input * max_run_speed,
+			horizontal_input * target_run_speed,
 			horizontal_rate * movement_control * delta
 		)
+		if accelerate_timer > 0.0:
+			velocity.x = clampf(velocity.x, -accelerate_max_speed, accelerate_max_speed)
 
 	if grounded:
 		coyote_timer = coyote_time
 	else:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
 
-	var jump_action := "%s_jump" % input_prefix
-	if Input.is_action_just_pressed(jump_action):
+	if bool(input_reader.call("is_just_pressed", "jump")):
 		jump_buffer_timer = jump_buffer_time
 	else:
 		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
@@ -126,7 +140,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 		jump_buffer_timer = 0.0
 		coyote_timer = 0.0
-	elif Input.is_action_just_released(jump_action) and velocity.y < 0.0:
+	elif bool(input_reader.call("is_just_released", "jump")) and velocity.y < 0.0:
 		velocity.y *= jump_cut_multiplier
 
 	if not is_dashing:
@@ -144,6 +158,14 @@ func _physics_process(delta: float) -> void:
 
 func set_priority_indicator(active: bool) -> void:
 	priority_indicator.visible = active
+
+
+func try_activate_accelerate() -> bool:
+	if accelerate_cooldown_timer > 0.0:
+		return false
+	accelerate_timer = accelerate_duration
+	accelerate_cooldown_timer = accelerate_cooldown
+	return true
 
 
 func _update_visual_state(horizontal_input: float, grounded: bool, delta: float) -> void:
@@ -190,8 +212,7 @@ func _on_dash_rescue_area_body_entered(body: Node2D) -> void:
 	if dash_rescue_hit or not is_dashing:
 		return
 	if body is RigidBody2D and body.has_method("apply_dash_rescue"):
-		dash_rescue_hit = true
-		body.apply_dash_rescue(self, dash_direction)
+		dash_rescue_hit = body.apply_dash_rescue(self, dash_direction)
 
 
 func _report_player_collisions() -> void:

@@ -3,9 +3,12 @@ extends Node
 signal priority_changed(player: CharacterBody2D)
 signal opening_server_selected(player: CharacterBody2D)
 signal score_changed(player_1_score: int, player_2_score: int)
+signal set_score_changed(player_1_sets: int, player_2_sets: int)
 signal round_ended(point_winner: CharacterBody2D, player_1_score: int, player_2_score: int)
+signal set_ended(set_winner: CharacterBody2D, player_1_sets: int, player_2_sets: int)
 signal round_started(round_number: int, server: CharacterBody2D)
 signal match_ended(winner: CharacterBody2D)
+signal coin_toss_completed(result: String, first_server: CharacterBody2D)
 
 @export var normal_push_strength: float = 30.0
 @export var priority_push_strength: float = 90.0
@@ -13,6 +16,8 @@ signal match_ended(winner: CharacterBody2D)
 @export var priority_dash_push_strength: float = 180.0
 @export var max_push_speed: float = 320.0
 @export_range(1, 99) var target_score: int = 5
+@export_range(1, 99) var sets_to_win: int = 3
+@export_range(-1, 1, 1) var coin_toss_override: int = -1
 @export_range(0.0, 10.0, 0.1) var round_intermission: float = 1.5
 @export var player_1_spawn_position: Vector2 = Vector2(72, 144)
 @export var player_2_spawn_position: Vector2 = Vector2(248, 144)
@@ -27,7 +32,10 @@ enum MatchState { ACTIVE, ROUND_OVER, COMPLETE }
 var match_state: MatchState = MatchState.ACTIVE
 var player_1_score: int = 0
 var player_2_score: int = 0
+var player_1_sets: int = 0
+var player_2_sets: int = 0
 var round_number: int = 1
+var coin_toss_result: String = ""
 var round_server: CharacterBody2D
 var next_server: CharacterBody2D
 var priority_player: CharacterBody2D
@@ -43,8 +51,11 @@ func _ready() -> void:
 	balloon.ground_touched.connect(_on_ground_touched)
 	player_1.player_bumped.connect(_on_player_bumped)
 	player_2.player_bumped.connect(_on_player_bumped)
-	var opening_player := player_1 if randi_range(0, 1) == 0 else player_2
+	var toss_value := randi_range(0, 1) if coin_toss_override < 0 else coin_toss_override
+	coin_toss_result = "HEADS" if toss_value == 0 else "TAILS"
+	var opening_player := player_1 if toss_value == 0 else player_2
 	set_next_server(opening_player)
+	coin_toss_completed.emit(coin_toss_result, opening_player)
 	round_started.emit(round_number, round_server)
 
 
@@ -59,17 +70,18 @@ func set_next_server(player: CharacterBody2D) -> void:
 		return
 	next_server = player
 	round_server = player
+	last_valid_toucher = player
 	opening_server_selected.emit(player)
 	_set_priority(player)
 
 
 func register_normal_hit(player: CharacterBody2D) -> void:
-	if match_state != MatchState.COMPLETE and not pending_normal_hits.has(player):
+	if match_state == MatchState.ACTIVE and not pending_normal_hits.has(player):
 		pending_normal_hits.append(player)
 
 
 func register_dash_rescue(player: CharacterBody2D, _direction: Vector2) -> void:
-	if match_state != MatchState.COMPLETE and not pending_dash_rescues.has(player):
+	if match_state == MatchState.ACTIVE and not pending_dash_rescues.has(player):
 		pending_dash_rescues.append(player)
 
 
@@ -122,10 +134,20 @@ func _finish_round() -> void:
 	round_ended.emit(point_winner, player_1_score, player_2_score)
 
 	if player_1_score >= target_score or player_2_score >= target_score:
-		match_state = MatchState.COMPLETE
-		match_winner = point_winner
-		match_ended.emit(match_winner)
-		return
+		if point_winner == player_1:
+			player_1_sets += 1
+		else:
+			player_2_sets += 1
+		player_1_score = 0
+		player_2_score = 0
+		score_changed.emit(player_1_score, player_2_score)
+		set_score_changed.emit(player_1_sets, player_2_sets)
+		set_ended.emit(point_winner, player_1_sets, player_2_sets)
+		if player_1_sets >= sets_to_win or player_2_sets >= sets_to_win:
+			match_state = MatchState.COMPLETE
+			match_winner = point_winner
+			match_ended.emit(match_winner)
+			return
 
 	await get_tree().create_timer(round_intermission).timeout
 	if match_state == MatchState.ROUND_OVER:

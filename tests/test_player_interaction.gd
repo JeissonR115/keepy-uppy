@@ -26,8 +26,9 @@ func _run_test() -> void:
 
 	if not _expect(
 		(match_manager.next_server == player_1 or match_manager.next_server == player_2)
-		and match_manager.priority_player == match_manager.next_server,
-		"Opening coin toss did not select a valid server and priority player."
+		and match_manager.priority_player == match_manager.next_server
+		and match_manager.last_valid_toucher == match_manager.next_server,
+		"Opening coin toss did not select a valid server, priority, and serve contact."
 	):
 		return
 
@@ -47,7 +48,10 @@ func _run_test() -> void:
 		"Priority indicator did not identify the selected player."
 	):
 		return
-	if not _expect(match_manager.priority_player == player_1, "Opening server did not receive priority."):
+	if not _expect(
+		match_manager.priority_player == player_1 and match_manager.last_valid_toucher == player_1,
+		"Opening server did not receive priority and serve attribution."
+	):
 		return
 	match_manager.register_normal_hit(player_1)
 	match_manager.register_normal_hit(player_2)
@@ -81,6 +85,13 @@ func _run_test() -> void:
 		"Priority did not strengthen normal player displacement."
 	):
 		return
+	player_2.velocity.x = 500.0
+	player_1.player_bumped.emit(player_1, player_2, false)
+	if not _expect(
+		absf(player_2.velocity.x) <= match_manager.max_push_speed,
+		"Player collision push exceeded its configured speed cap."
+	):
+		return
 
 	player_2.velocity.x = 0.0
 	match_manager.set_next_server(player_1)
@@ -96,5 +107,34 @@ func _run_test() -> void:
 	):
 		return
 
-	print("Priority policy, contact tie-breaks, and push strengths verified.")
+	player_1.global_position = Vector2(15, 152)
+	player_2.global_position = Vector2(305, 152)
+	player_1.velocity = Vector2.ZERO
+	player_2.velocity = Vector2.ZERO
+	Input.action_press("player_1_left")
+	Input.action_press("player_2_right")
+	for _frame in range(20):
+		await physics_frame
+	if not _expect(
+		player_1.global_position.x >= 14.0 and player_2.global_position.x <= 306.0,
+		"Arena side bounds did not keep pushed players inside the play area."
+	):
+		return
+	Input.action_release("player_1_left")
+	Input.action_release("player_2_right")
+	Input.action_press("player_1_right")
+	Input.action_press("player_2_left")
+	var p1_before := player_1.global_position.x
+	var p2_before := player_2.global_position.x
+	for _frame in range(8):
+		await physics_frame
+	Input.action_release("player_1_right")
+	Input.action_release("player_2_left")
+	if not _expect(
+		player_1.global_position.x > p1_before and player_2.global_position.x < p2_before,
+		"Side bounds prevented players from moving back into the arena."
+	):
+		return
+
+	print("Serve attribution, priority policy, tie-breaks, bounded pushes, and arena walls verified.")
 	quit()

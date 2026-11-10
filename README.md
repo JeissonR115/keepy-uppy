@@ -29,17 +29,84 @@ results are communicated visually.
 
 ## Player movement
 
-Each player has separate Input Map actions for left, right, jump, and dash.
-Player 1 uses A/D, Space, and Shift, with W/S for vertical dash direction.
-Player 2 uses Left/Right, Enter, and Right Ctrl, with Up/Down for vertical
-dash direction. Actions can be rebound in Project Settings without changing
-the movement script.
+Each player has separate Input Map actions for left, right, up, down, jump,
+dash, and accelerate. Player 1 uses A/D/W/S, F, G, and H. Player 2 uses the
+arrow keys and the physical top-row 1/2/3 keys. Actions can be rebound without
+changing movement logic. Use the in-game **KEYS** menu to rebind them and save
+the complete map locally; Project Settings > Input Map remains available for
+development.
+
+Verify all 14 default bindings with:
+
+```sh
+godot --headless --path . --script res://tests/test_input_map.gd
+```
+
+Verify prohibited keys, modifier shortcuts, duplicate bindings, and available
+keys with:
+
+```sh
+godot --headless --path . --script res://tests/test_control_settings_validation.gd
+```
+
+The in-game settings validator reserves Escape, F1-F12, and individual
+modifier keys. It also rejects all modified key combinations and any physical
+key already used by one of the other thirteen player actions. Rejected input
+does not change the active Input Map binding.
+
+Valid bindings are saved as a versioned, complete map in
+`user://controls.cfg`. Missing, incomplete, malformed, unsupported, duplicate,
+or prohibited settings restore all defaults so one bad entry cannot leave the
+two players with a partial configuration.
+
+Verify settings persistence and damaged-file recovery with:
+
+```sh
+godot --headless --path . --script res://tests/test_control_settings_persistence.gd
+```
+
+Verify the controls overlay, capture cancellation, reset, and pause/resume
+behavior with:
+
+```sh
+godot --headless --path . --script res://tests/test_control_settings_ui.gd
+```
+
+Manual controls-menu checks:
+
+- [ ] Select **KEYS** in the HUD and confirm gameplay pauses while the two player-colored control columns appear.
+- [ ] Select an action and confirm the waiting-for-key message appears; press Escape or **CANCEL CAPTURE** and confirm the previous key stays assigned.
+- [ ] Rebind one action for each player, then try assigning that key to another action and confirm the menu explains the conflict without replacing the existing binding.
+- [ ] Confirm all seven actions are shown for each player and every displayed key updates after a successful reassignment.
+- [ ] Select **RESTORE DEFAULTS** and confirm both players' bindings return to the documented defaults.
+- [ ] Close the menu and confirm gameplay resumes without a stuck input or lost player movement.
 
 Run the automated independent-movement and remapping check with:
 
 ```sh
 godot --headless --path . --script res://tests/test_player_controller.gd
 ```
+
+Player accelerate uses a separate temporary speed boost: 0.8 seconds at 1.35x
+normal run speed, a 4-second cooldown, and a 210 px/s cap. Ordinary horizontal
+acceleration remains the rate used to reach the current run-speed target.
+Verify boost duration, cooldown, cap, normal-speed return, and player
+independence with:
+
+```sh
+godot --headless --path . --script res://tests/test_accelerate.gd
+```
+
+The control acceptance suite passed in Godot headless: defaults and simultaneous
+inputs, all 14 capture rows, rejected and duplicate keys, cancel/reset,
+save/load and damaged-file recovery, plus boost duration, cooldown, cap, and
+independent player behavior. Run the commands above to reproduce each check.
+
+Manual accelerate checks:
+
+- [ ] Hold a direction and press the player's **ACCELERATE** key; confirm the boost raises top speed without changing ordinary run acceleration.
+- [ ] Keep moving after 0.8 seconds and confirm normal run speed returns; press accelerate again before 4 seconds and confirm no second boost starts.
+- [ ] Confirm speed stays at or below 210 px/s during boost and the other player's accelerate action remains independent.
 
 Verify balloon contact and physics with:
 
@@ -71,18 +138,57 @@ Verify point assignment and the round/match lifecycle with:
 godot --headless --path . --script res://tests/test_round_scoring.gd
 ```
 
+Verify both coin-toss outcomes and that the toss occurs only once per match:
+
+```sh
+godot --headless --path . --script res://tests/test_coin_toss.gd
+```
+
+Verify scoreboard updates and viewport placement with:
+
+```sh
+godot --headless --path . --script res://tests/test_scoreboard.gd
+```
+
+Simulate the complete first-to-three-sets match acceptance flow with:
+
+```sh
+godot --headless --path . --script res://tests/test_full_match.gd
+```
+
+Balloon tuning defaults are exposed on the balloon controller and collision
+shapes: gravity scale 0.7, horizontal damping 0.25, rebound 0.55, horizontal
+speed cap 360 px/s, vertical speed cap 420 px/s, normal hit impulse 120-240,
+dash rescue impulse 300, same-player contact interval 0.10 s, body radius
+9 px, player contact radius 16 px, and dash rescue zone 44x20 px.
+
 Manual balloon checks:
 
 - [ ] Hit the balloon from both sides and confirm each contact produces one clear impulse.
-- [ ] Confirm the balloon rebounds from the scoring ground and does not exceed its configured speed.
+- [ ] Compare slow and fast player approaches and confirm normal-hit impulse scales within the configured minimum and maximum.
+- [ ] Confirm dash rescue produces a distinct, direction-aware impulse and the rescue zone is larger than the balloon's body collider.
+- [ ] Re-enter the balloon rapidly with the same player and confirm the contact interval prevents repeat hits while the other player can still contact it.
+- [ ] Give the balloon large horizontal and vertical velocity and confirm each axis stays within its own configured cap.
+- [ ] Confirm the balloon rebounds from the scoring ground and arena boundaries according to the configured bounce strength and horizontal damping.
 - [ ] Leave the balloon on the ground through several physics frames and confirm one ground event is reported for the round.
+- [ ] Compare slow and fast normal contacts, then a dash rescue, and confirm the normal impulse scales within 120-240 while dash rescue remains distinct.
 
-Manual round and score checks:
+Manual player interaction checks:
 
-- [ ] Confirm the scoreboard shows both player labels and starts at 0 - 0.
-- [ ] Let the balloon touch the scoring ground and confirm the point and round result appear on the scoreboard.
-- [ ] Confirm the score remains visible after the next round starts.
-- [ ] Reach the configured target and confirm the winner is displayed without another round starting.
+- [ ] Confirm the server starts each point with priority and is recorded as the balloon's opening contact; accepted normal and dash-rescue contacts update both last-touch attribution and priority.
+- [ ] Confirm the same-tick dash-rescue tie-break and non-priority same-type tie-break are stable across repeated attempts.
+- [ ] Push both players toward either side wall, confirm neither leaves the arena, then move them back toward the center and confirm both remain controllable.
+- [ ] Compare priority and non-priority normal/dash pushes and confirm each resulting push velocity stays within the configured cap.
+
+Manual match and score checks:
+
+- [ ] Confirm the opening coin toss shows HEADS/P1 or TAILS/P2, with the selected player starting as server and priority.
+- [ ] Let a serve fall without another valid touch and confirm the receiver scores; then make another valid touch and confirm the point goes to that toucher's opponent.
+- [ ] Confirm each point winner serves next, including the first point after a set.
+- [ ] Confirm the HUD shows points and sets; the first player to five points wins a set, 4-4 needs only one more point, and point scores reset while set scores remain.
+- [ ] Win three sets and confirm the match winner is displayed with no extra point or set starting and no second coin toss between sets.
+- [ ] Confirm duplicate ground notifications during a resolving point cannot award an extra point.
+- [ ] Confirm the compact HUD stays within the viewport and its backdrop does not cover the balloon or players.
 
 Manual movement checks:
 

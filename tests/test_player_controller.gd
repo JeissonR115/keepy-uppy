@@ -108,7 +108,7 @@ func _run_test() -> void:
 	for _frame in range(2):
 		await physics_frame
 	var jump_key := InputEventKey.new()
-	jump_key.physical_keycode = 32
+	jump_key.physical_keycode = 70
 	jump_key.pressed = true
 	Input.parse_input_event(jump_key)
 	await physics_frame

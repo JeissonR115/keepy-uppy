@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/models/player/player_controller.gd" id="1_player_controller"]
+[ext_resource type="Script" path="res://src/models/player/player_input_reader.gd" id="2_input_reader"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player"]
 radius = 6.0
@@ -23,6 +24,9 @@ color = Color(1, 0.839216, 0.317647, 0.8)
 [node name="Visual" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-6, -12, 6, -12, 6, 12, -6, 12)
 color = Color(0.290196, 0.764706, 0.843137, 1)
+
+[node name="InputReader" type="Node" parent="."]
+script = ExtResource("2_input_reader")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CapsuleShape2D_player")

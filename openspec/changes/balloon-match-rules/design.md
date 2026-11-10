@@ -59,9 +59,9 @@ Keep one match coordinator as the authority for coin toss, point/set/match state
 
 Perform one random toss at match start only, display heads/tails, and map heads to P1 and tails to P2 as previously approved. At point setup, initialize priority and last valid toucher to the server: the user's clarification says the service is itself a balloon contact. On later points, the previous point winner serves; that same rule applies after a set. New sets reset only point scores and retain set wins.
 
-### Gate score attribution on approval; use deterministic approved tie rules
+### Use confirmed last-touch scoring and deterministic tie rules
 
-Propose awarding each point to the opponent of the last valid toucher. Because service counts as the opening touch, every point has a valid last toucher even if neither player contacts the balloon again. Keep this rule visibly marked as awaiting owner approval and make its approval the first scoring implementation task; do not silently treat the prior prototype policy as final for this new set format.
+Award each point to the opponent of the last valid toucher. The owner clarified that the serve itself is a valid contact, so the server is the opening last toucher and an untouched serve that falls awards the point to the receiver. This decision resolves the approval gate before scoring implementation.
 
 For accepted same-tick contacts, gather events before resolution. A dash rescue takes priority over a normal hit; for same-type simultaneous contacts, the player who did not hold priority before the tick wins the tie-break. The selected player becomes current priority and last-touch attribution. Player displacement strengths remain configurable and capped; add left/right arena colliders so pushes cannot launch players off the stage.
 
@@ -80,14 +80,14 @@ Use exported set-point and match-set targets, initially 5 points per set and 3 s
 - [Rigid-body simulation may vary slightly with frame/contact order] → Bound both velocity axes, keep accepted-contact resolution deterministic, and retain automated tests for thresholds and duplicate ground events.
 - [Velocity-based hits may feel too weak or too strong] → Expose the impact range and tune from complete-match playtests.
 - [Set HUD may crowd the 320x180 logical viewport] → Use compact labels and check the full display at the configured integer scale.
-- [Proposed scoring attribution is not yet approved] → Keep an explicit approval task ahead of scoring implementation; revise the scoring spec if the owner chooses another rule.
+- [Contact events can be missed during simultaneous transitions] → Record the serve as the opening touch and resolve accepted contacts before scoring each ground event.
 - [Added arena side bounds can change movement feel] → Place them at the existing playable edges and verify both normal movement and push collisions.
 
 ## Migration Plan
 
 1. Extend balloon tuning/contact reporting and preserve the existing scene resources; add targeted physics tests and manual checks.
 2. Extend priority and serve initialization, including the serve contact record and side bounds; verify normal, dash, tie, and reset cases.
-3. Obtain owner approval for the proposed point-attribution rule and update the spec/design if needed before implementing it.
+3. Implement confirmed last-touch attribution, recording the serve as the opening contact for each point.
 4. Add point/set/match state and set counters, then extend the HUD and scoring tests.
 5. Run the full acceptance list and update README steps. No save-data migration is needed because match state is not persisted.
 
