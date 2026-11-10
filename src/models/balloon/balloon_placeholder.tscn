@@ -9,14 +9,14 @@ radius = 9.0
 radius = 16.0
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_balloon"]
-bounce = 0.55
+bounce = 0.12
 friction = 0.3
 
 [node name="Balloon" type="RigidBody2D"]
 collision_layer = 4
 collision_mask = 1
-gravity_scale = 0.7
-linear_damp = 0.25
+gravity_scale = 0.35
+linear_damp = 0.0
 angular_damp = 1.0
 lock_rotation = true
 contact_monitor = true
@@ -27,6 +27,12 @@ script = ExtResource("1_balloon_controller")
 [node name="Visual" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(0, -9, 6, -6, 9, 0, 6, 6, 0, 9, -6, 6, -9, 0, -6, -6)
 color = Color(0.972549, 0.443137, 0.482353, 1)
+
+[node name="GroundBurst" type="Polygon2D" parent="."]
+visible = false
+z_index = 2
+polygon = PackedVector2Array(0, -14, 3, -6, 10, -10, 7, -3, 14, 0, 7, 3, 10, 10, 3, 6, 0, 14, -3, 6, -10, 10, -7, 3, -14, 0, -7, -3, -10, -10, -3, -7)
+color = Color(1, 0.843137, 0.372549, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_balloon")

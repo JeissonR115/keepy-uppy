@@ -1,8 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://src/models/player/player_placeholder.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://src/models/balloon/balloon_placeholder.tscn" id="2_balloon"]
-[ext_resource type="PackedScene" path="res://src/models/environment/platform.tscn" id="3_platform"]
 [ext_resource type="Script" path="res://src/managers/match_manager.gd" id="4_match_manager"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/scoreboard.tscn" id="5_scoreboard"]
 
@@ -21,15 +20,6 @@ color = Color(0.090196, 0.117647, 0.188235, 1)
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(160, 90)
 enabled = true
-
-[node name="PlatformLeft" parent="." instance=ExtResource("3_platform")]
-position = Vector2(80, 120)
-
-[node name="PlatformRight" parent="." instance=ExtResource("3_platform")]
-position = Vector2(240, 104)
-
-[node name="PlatformCenter" parent="." instance=ExtResource("3_platform")]
-position = Vector2(160, 72)
 
 [node name="Player1" parent="." instance=ExtResource("1_player")]
 position = Vector2(72, 144)

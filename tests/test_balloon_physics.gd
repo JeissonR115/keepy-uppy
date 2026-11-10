@@ -43,8 +43,29 @@ func _run_test() -> void:
 		is_equal_approx(body_shape.radius, balloon.balloon_collision_radius)
 		and is_equal_approx(contact_shape.radius, balloon.player_contact_radius)
 		and is_equal_approx(balloon.gravity_scale, balloon.gravity_strength)
-		and is_equal_approx(balloon.physics_material_override.bounce, balloon.rebound_strength),
+		and is_equal_approx(balloon.physics_material_override.bounce, balloon.rebound_strength)
+		and balloon.gravity_strength <= 0.4
+		and balloon.air_resistance > 0.0
+		and balloon.rebound_strength <= 0.15,
 		"Exported balloon settings were not applied to their physics resources."
+	):
+		return
+
+	balloon.reset_round(Vector2(40, 48))
+	for _frame in range(12):
+		await physics_frame
+	var floaty_fall_speed := balloon.linear_velocity.y
+	balloon.reset_round(Vector2(40, 48))
+	balloon.gravity_scale = 1.0
+	balloon.air_resistance = 0.0
+	for _frame in range(12):
+		await physics_frame
+	var baseline_fall_speed := balloon.linear_velocity.y
+	balloon.gravity_scale = balloon.gravity_strength
+	balloon.air_resistance = 0.035
+	if not _expect(
+		floaty_fall_speed > 0.0 and floaty_fall_speed < baseline_fall_speed,
+		"Floaty settings did not produce a slower fall than baseline gravity."
 	):
 		return
 
@@ -71,9 +92,10 @@ func _run_test() -> void:
 	):
 		return
 
-	balloon.reset_round(Vector2(160, 90))
-	player_1.global_position = Vector2(160, 106)
+	balloon.reset_round(Vector2(40, 90))
+	player_1.global_position = Vector2(40, 106)
 	player_1.velocity = Vector2.ZERO
+	match_manager.set_next_server(player_1)
 	for _frame in range(5):
 		await physics_frame
 	if not _expect(player_hit_count == 1, "Player contact did not produce exactly one valid hit."):
@@ -93,12 +115,14 @@ func _run_test() -> void:
 		return
 	for _frame in range(8):
 		await physics_frame
+	match_manager.set_next_server(player_1)
 	balloon._on_player_contact_area_body_entered(player_1)
 	if not _expect(player_hit_count == 2, "A valid contact was still rejected after the interval elapsed."):
 		return
-	balloon.reset_round(Vector2(160, 90))
-	player_1.global_position = Vector2(160, 106)
+	balloon.reset_round(Vector2(40, 90))
+	player_1.global_position = Vector2(40, 106)
 	player_1.velocity = Vector2(0, -200)
+	match_manager.set_next_server(player_1)
 	balloon._on_player_contact_area_body_entered(player_1)
 	await physics_frame
 	var fast_impact_speed := absf(balloon.linear_velocity.y)

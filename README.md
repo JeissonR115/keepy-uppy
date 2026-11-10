@@ -23,7 +23,7 @@ results are communicated visually.
 ## Manual launch and render checklist
 
 - [ ] Open the project in Godot 4.x and confirm there are no import or missing-resource errors.
-- [ ] Run the project and confirm the two players, balloon, platforms, and ground are visible.
+- [ ] Run the project and confirm the two players, balloon, floor, and side boundaries are visible without floating platforms.
 - [ ] Confirm the 960x540 window shows crisp, unblurred placeholder edges.
 - [ ] Resize the window and confirm the game retains its 16:9 aspect ratio and integer pixel scaling.
 
@@ -103,9 +103,17 @@ Controls-menu acceptance checks (covered by `test_control_settings_ui.gd`):
 - [x] Use W/S to reach **RESTORE DEFAULTS**, press F, and restore both players' documented defaults.
 - [x] Use G to return to pause and choose **RESUME** with F.
 
-Integration verification (Godot 4.7.2): all 17 `tests/test_*.gd` scripts passed
+Integration verification (Godot 4.7.2): all 22 `tests/test_*.gd` scripts passed
 in headless mode, and the main scene started successfully with
-`godot --headless --path . --quit-after 5`.
+`godot --headless --path . --quit-after 5`. Reproduce the complete automated
+suite and scene launch with:
+
+```sh
+for test in tests/test_*.gd; do
+  godot --headless --path . --script "res://$test" || exit 1
+done
+godot --headless --path . --quit-after 5
+```
 
 Run the automated independent-movement and remapping check with:
 
@@ -146,6 +154,32 @@ Verify dash rescue with:
 godot --headless --path . --script res://tests/test_dash_rescue.gd
 ```
 
+## Balloon, serve, and fault rules
+
+- The balloon spawns 30 px above the opening server selected by the coin toss and above each subsequent point winner.
+- The server is the first eligible player. Their serve counts as the first contact; after each accepted normal or dash-rescue touch, the other player becomes eligible.
+- Touching out of turn or sending the balloon downward is an immediate fault and awards the point to the opponent. A floor contact awards the point against the last valid toucher and shows a short burst.
+- Player priority for player-to-player pushes remains separate from the expected balloon toucher.
+- The arena keeps the scoring floor and side walls; the three elevated platforms are removed.
+
+Verify player-velocity impact direction, speed limits, and downward-hit faults with:
+
+```sh
+godot --headless --path . --script res://tests/test_balloon_contact_impulse.gd
+```
+
+Verify alternating turns, simultaneous callback-order faults, and single point awards with:
+
+```sh
+godot --headless --path . --script res://tests/test_balloon_turns.gd
+```
+
+Verify opening and next-point balloon spawn locations with:
+
+```sh
+godot --headless --path . --script res://tests/test_balloon_spawn.gd
+```
+
 Verify contact priority and player push strengths with:
 
 ```sh
@@ -183,9 +217,9 @@ godot --headless --path . --script res://tests/test_full_match.gd
 ```
 
 Balloon tuning defaults are exposed on the balloon controller and collision
-shapes: gravity scale 0.7, horizontal damping 0.25, rebound 0.55, horizontal
-speed cap 360 px/s, vertical speed cap 420 px/s, normal hit impulse 120-240,
-dash rescue impulse 300, same-player contact interval 0.10 s, body radius
+shapes: gravity scale 0.35, air resistance 0.035, horizontal damping 0.08,
+rebound 0.12, horizontal speed cap 360 px/s, vertical speed cap 420 px/s,
+normal hit impulse 120-240, dash rescue impulse 300-360, same-player contact interval 0.10 s, body radius
 9 px, player contact radius 16 px, and dash rescue zone 44x20 px.
 
 Manual balloon checks:
@@ -195,14 +229,15 @@ Manual balloon checks:
 - [ ] Confirm dash rescue produces a distinct, direction-aware impulse and the rescue zone is larger than the balloon's body collider.
 - [ ] Re-enter the balloon rapidly with the same player and confirm the contact interval prevents repeat hits while the other player can still contact it.
 - [ ] Give the balloon large horizontal and vertical velocity and confirm each axis stays within its own configured cap.
-- [ ] Confirm the balloon rebounds from the scoring ground and arena boundaries according to the configured bounce strength and horizontal damping.
+- [ ] Confirm the balloon's arena-boundary rebound follows configured bounce and damping; floor contact ends the point once and shows the burst.
 - [ ] Leave the balloon on the ground through several physics frames and confirm one ground event is reported for the round.
 - [ ] Compare slow and fast normal contacts, then a dash rescue, and confirm the normal impulse scales within 120-240 while dash rescue remains distinct.
 
 Manual player interaction checks:
 
-- [ ] Confirm the server starts each point with priority and is recorded as the balloon's opening contact; accepted normal and dash-rescue contacts update both last-touch attribution and priority.
-- [ ] Confirm the same-tick dash-rescue tie-break and non-priority same-type tie-break are stable across repeated attempts.
+- [ ] Confirm the balloon spawns above the server, the server serves first, and each valid normal or dash-rescue contact alternates the eligible player.
+- [ ] Confirm an out-of-turn contact faults the touching player, including when both players contact in the same physics tick regardless of callback order.
+- [ ] Confirm a downward-directed hit faults its player immediately, while accepted contacts update last-touch attribution and player priority independently.
 - [ ] Push both players toward either side wall, confirm neither leaves the arena, then move them back toward the center and confirm both remain controllable.
 - [ ] Compare priority and non-priority normal/dash pushes and confirm each resulting push velocity stays within the configured cap.
 
@@ -221,9 +256,9 @@ Manual movement checks:
 - [ ] Move both players in opposite directions simultaneously and confirm they remain independent.
 - [ ] Confirm idle, running, rising, falling, and dashing use distinct player visual treatments.
 - [ ] Change a player's horizontal action in Project Settings > Input Map and confirm that player follows the new binding without code changes.
-- [ ] Confirm players stop at the ground, platforms, and each other.
+- [ ] Confirm players stop at the floor, arena side boundaries, and each other; no elevated platforms remain.
 - [ ] Compare a tap jump with a held jump and confirm the held jump rises higher.
-- [ ] Walk off a platform, press jump within the Coyote Time window, and confirm the jump still triggers.
+- [ ] Press jump within the Coyote Time window after leaving the floor, and confirm the jump still triggers.
 - [ ] Press jump just before landing and confirm Jump Buffer triggers immediately on landing.
 - [ ] Dash in each of the eight directions and confirm an un-directed dash follows the player's facing.
 - [ ] Attempt to dash again during cooldown and confirm no second dash begins.

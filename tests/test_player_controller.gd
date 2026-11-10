@@ -18,7 +18,8 @@ func _run_test() -> void:
 	root.add_child(main_scene)
 	await process_frame
 
-	var player_1: CharacterBody2D = main_scene.get_node("Arena/Player1")
+	var arena: Node = main_scene.get_node("Arena")
+	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var player_2: CharacterBody2D = main_scene.get_node("Arena/Player2")
 	var player_1_start := player_1.global_position
 	var player_2_start := player_2.global_position
@@ -46,6 +47,7 @@ func _run_test() -> void:
 
 	var remapped_right := InputEventKey.new()
 	remapped_right.physical_keycode = KEY_F
+	var previous_right_events := InputMap.action_get_events("player_1_right")
 	InputMap.action_erase_events("player_1_right")
 	InputMap.action_add_event("player_1_right", remapped_right)
 
@@ -63,6 +65,9 @@ func _run_test() -> void:
 		return
 	simulated_key.pressed = false
 	Input.parse_input_event(simulated_key)
+	InputMap.action_erase_events("player_1_right")
+	for event: InputEvent in previous_right_events:
+		InputMap.action_add_event("player_1_right", event)
 
 	Input.action_press("player_1_right")
 	Input.action_press("player_2_left")
@@ -73,6 +78,8 @@ func _run_test() -> void:
 	if not _expect(player_1.global_position.x < player_2.global_position.x, "Players passed through each other."):
 		return
 
+	Input.action_release("player_1_right")
+	Input.action_release("player_2_left")
 	player_1.global_position = Vector2(72, 152)
 	player_2.global_position = Vector2(248, 152)
 	player_1.velocity = Vector2.ZERO
@@ -84,21 +91,30 @@ func _run_test() -> void:
 	await physics_frame
 	await physics_frame
 	Input.action_release("player_1_jump")
-	for _frame in range(14):
-		await physics_frame
-	Input.action_release("player_2_jump")
-	for _frame in range(20):
+	for _frame in range(6):
 		await physics_frame
 	if not _expect(player_2.global_position.y < player_1.global_position.y, "Holding jump did not increase jump height."):
 		return
+	Input.action_release("player_2_jump")
+	for _frame in range(20):
+		await physics_frame
 
 	for _frame in range(60):
 		await physics_frame
+	var coyote_test_ledge := StaticBody2D.new()
+	coyote_test_ledge.position = Vector2(80, 120)
+	coyote_test_ledge.collision_layer = 1
+	var coyote_test_shape := CollisionShape2D.new()
+	var coyote_test_rectangle := RectangleShape2D.new()
+	coyote_test_rectangle.size = Vector2(64, 8)
+	coyote_test_shape.shape = coyote_test_rectangle
+	coyote_test_ledge.add_child(coyote_test_shape)
+	arena.add_child(coyote_test_ledge)
 	player_1.global_position = Vector2(108, 104)
 	player_1.velocity = Vector2.ZERO
 	for _frame in range(3):
 		await physics_frame
-	if not _expect(player_1.is_on_floor(), "Player 1 did not land on the test platform."):
+	if not _expect(player_1.is_on_floor(), "Player 1 did not land on the temporary Coyote Time test ledge."):
 		return
 	Input.action_press("player_1_right")
 	for _frame in range(20):
@@ -113,7 +129,7 @@ func _run_test() -> void:
 	Input.parse_input_event(jump_key)
 	await physics_frame
 	await physics_frame
-	if not _expect(player_1.velocity.y < 0.0, "Coyote Time did not allow a jump after leaving the platform."):
+	if not _expect(player_1.velocity.y < 0.0, "Coyote Time did not allow a jump after leaving the temporary test ledge."):
 		return
 	jump_key.pressed = false
 	Input.parse_input_event(jump_key)

@@ -28,6 +28,7 @@ func _run_test() -> void:
 
 	var player: CharacterBody2D = main_scene.get_node("Arena/Player1")
 	var balloon: RigidBody2D = main_scene.get_node("Arena/Balloon")
+	var match_manager: Node = main_scene.get_node("Arena/MatchManager")
 	var trail: Line2D = player.get_node("DashTrail")
 	var rescue_area: Area2D = player.get_node("DashRescueArea")
 	balloon.dash_rescued.connect(_on_dash_rescued)
@@ -37,6 +38,7 @@ func _run_test() -> void:
 	player.global_position = Vector2(120, 90)
 	player.velocity = Vector2.ZERO
 	balloon.reset_round(Vector2(160, 90))
+	match_manager.set_next_server(player)
 
 	if not _expect(not rescue_area.monitoring and not trail.visible, "Dash effects should start inactive."):
 		return

@@ -10,6 +10,9 @@ signal round_started(round_number: int, server: CharacterBody2D)
 signal match_ended(winner: CharacterBody2D)
 signal coin_toss_completed(result: String, first_server: CharacterBody2D)
 
+const NORMAL_CONTACT_TYPE: int = 0
+const DASH_CONTACT_TYPE: int = 1
+
 @export var normal_push_strength: float = 30.0
 @export var priority_push_strength: float = 90.0
 @export var non_priority_dash_push_strength: float = 60.0
@@ -21,7 +24,7 @@ signal coin_toss_completed(result: String, first_server: CharacterBody2D)
 @export_range(0.0, 10.0, 0.1) var round_intermission: float = 1.5
 @export var player_1_spawn_position: Vector2 = Vector2(72, 144)
 @export var player_2_spawn_position: Vector2 = Vector2(248, 144)
-@export var balloon_spawn_position: Vector2 = Vector2(160, 48)
+@export var balloon_spawn_offset: float = 30.0
 
 @onready var player_1: CharacterBody2D = $"../Player1"
 @onready var player_2: CharacterBody2D = $"../Player2"
@@ -38,9 +41,12 @@ var round_number: int = 1
 var coin_toss_result: String = ""
 var round_server: CharacterBody2D
 var next_server: CharacterBody2D
+var expected_balloon_player: CharacterBody2D
 var priority_player: CharacterBody2D
 var last_valid_toucher: CharacterBody2D
 var match_winner: CharacterBody2D
+var round_faulting_player: CharacterBody2D
+var pending_expected_player: CharacterBody2D
 var pending_normal_hits: Array[CharacterBody2D] = []
 var pending_dash_rescues: Array[CharacterBody2D] = []
 
@@ -66,15 +72,17 @@ func _start_new_match() -> void:
 	player_2_sets = 0
 	round_number = 1
 	match_winner = null
+	round_faulting_player = null
 	pending_normal_hits.clear()
 	pending_dash_rescues.clear()
+	pending_expected_player = null
 	player_1.reset_for_round(player_1_spawn_position)
 	player_2.reset_for_round(player_2_spawn_position)
-	balloon.reset_round(balloon_spawn_position)
 	var toss_value := randi_range(0, 1) if coin_toss_override < 0 else coin_toss_override
 	coin_toss_result = "HEADS" if toss_value == 0 else "TAILS"
 	var opening_player := player_1 if toss_value == 0 else player_2
 	set_next_server(opening_player)
+	balloon.reset_round(_balloon_spawn_for(opening_player))
 	score_changed.emit(player_1_score, player_2_score)
 	set_score_changed.emit(player_1_sets, player_2_sets)
 	coin_toss_completed.emit(coin_toss_result, opening_player)
@@ -93,36 +101,75 @@ func set_next_server(player: CharacterBody2D) -> void:
 	next_server = player
 	round_server = player
 	last_valid_toucher = player
+	expected_balloon_player = player
 	opening_server_selected.emit(player)
 	_set_priority(player)
 
 
 func register_normal_hit(player: CharacterBody2D) -> void:
 	if match_state == MatchState.ACTIVE and not pending_normal_hits.has(player):
+		if pending_expected_player == null:
+			pending_expected_player = expected_balloon_player
 		pending_normal_hits.append(player)
 
 
 func register_dash_rescue(player: CharacterBody2D, _direction: Vector2) -> void:
 	if match_state == MatchState.ACTIVE and not pending_dash_rescues.has(player):
+		if pending_expected_player == null:
+			pending_expected_player = expected_balloon_player
 		pending_dash_rescues.append(player)
 
 
 func resolve_pending_contacts() -> void:
-	var candidates := pending_dash_rescues if not pending_dash_rescues.is_empty() else pending_normal_hits
-	var selected_player: CharacterBody2D
-	if candidates.size() == 1:
-		selected_player = candidates[0]
-	elif candidates.size() > 1:
-		for candidate: CharacterBody2D in candidates:
-			if candidate != priority_player:
-				selected_player = candidate
-				break
-	if selected_player != null:
-		_set_priority(selected_player)
-		last_valid_toucher = selected_player
+	if pending_expected_player == null:
+		return
+	var all_candidates: Array[CharacterBody2D] = []
+	all_candidates.append_array(pending_normal_hits)
+	all_candidates.append_array(pending_dash_rescues)
+	var offending_player: CharacterBody2D
+	for candidate: CharacterBody2D in all_candidates:
+		if candidate != pending_expected_player:
+			offending_player = candidate
+			break
+	if offending_player != null and match_state == MatchState.ACTIVE:
+		_resolve_fault(offending_player)
+		return
 
+	var selected_player := pending_expected_player
+	var selected_contact_type := DASH_CONTACT_TYPE \
+		if pending_dash_rescues.has(selected_player) else NORMAL_CONTACT_TYPE
+	var contact_result: Dictionary = balloon.call(
+		"apply_pending_contact", selected_player, selected_contact_type
+	)
+	if not contact_result.is_empty():
+		var resulting_velocity: Vector2 = contact_result["resulting_velocity"]
+		if resulting_velocity.y > 0.0 and match_state == MatchState.ACTIVE:
+			_resolve_fault(selected_player)
+			return
+	_set_priority(selected_player)
+	last_valid_toucher = selected_player
+	expected_balloon_player = _opponent_of(selected_player)
+	_clear_pending_contacts()
+
+
+func _clear_pending_contacts() -> void:
 	pending_dash_rescues.clear()
 	pending_normal_hits.clear()
+	pending_expected_player = null
+	balloon.call("clear_pending_contacts")
+
+
+func _resolve_fault(faulting_player: CharacterBody2D) -> void:
+	if match_state != MatchState.ACTIVE:
+		return
+	match_state = MatchState.ROUND_OVER
+	round_faulting_player = faulting_player
+	_clear_pending_contacts()
+	call_deferred("_finish_round")
+
+
+func _balloon_spawn_for(player: CharacterBody2D) -> Vector2:
+	return player.global_position + Vector2.UP * balloon_spawn_offset
 
 
 func _set_priority(player: CharacterBody2D) -> void:
@@ -138,14 +185,18 @@ func _set_priority(player: CharacterBody2D) -> void:
 func _on_ground_touched() -> void:
 	if match_state != MatchState.ACTIVE:
 		return
+	resolve_pending_contacts()
+	if match_state != MatchState.ACTIVE:
+		return
 	match_state = MatchState.ROUND_OVER
 	call_deferred("_finish_round")
 
 
 func _finish_round() -> void:
-	resolve_pending_contacts()
 	var point_winner := _opponent_of(
-		last_valid_toucher if last_valid_toucher != null else round_server
+		round_faulting_player
+		if is_instance_valid(round_faulting_player)
+		else last_valid_toucher if last_valid_toucher != null else round_server
 	)
 	if point_winner == player_1:
 		player_1_score += 1
@@ -178,14 +229,15 @@ func _finish_round() -> void:
 
 func _start_next_round() -> void:
 	round_number += 1
-	last_valid_toucher = null
+	round_faulting_player = null
+	_clear_pending_contacts()
 	pending_normal_hits.clear()
 	pending_dash_rescues.clear()
 	player_1.reset_for_round(player_1_spawn_position)
 	player_2.reset_for_round(player_2_spawn_position)
-	balloon.reset_round(balloon_spawn_position)
 	match_state = MatchState.ACTIVE
 	set_next_server(next_server)
+	balloon.reset_round(_balloon_spawn_for(round_server))
 	round_started.emit(round_number, round_server)
 
 

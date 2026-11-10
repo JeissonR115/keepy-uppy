@@ -50,7 +50,7 @@ func _run_test() -> void:
 		"Duplicate ground events scored another point during the resolving point."
 	):
 		return
-	await create_timer(0.18).timeout
+	await create_timer(0.25).timeout
 	if not _expect(
 		match_manager.round_server == player_2 and match_manager.priority_player == player_2
 		and match_manager.last_valid_toucher == player_2,
@@ -60,7 +60,7 @@ func _run_test() -> void:
 
 	# With no later contact, the server remains last toucher and is faulted.
 	balloon.ground_touched.emit()
-	await create_timer(0.18).timeout
+	await create_timer(0.25).timeout
 	if not _expect(
 		match_manager.player_1_score == 1 and match_manager.player_2_score == 1,
 		"Serve-as-first-contact attribution did not award the opponent of the server."
@@ -80,7 +80,7 @@ func _run_test() -> void:
 		"A 4-4 set did not end on the next point and reset only its point scores."
 	):
 		return
-	await create_timer(0.18).timeout
+	await create_timer(0.25).timeout
 	if not _expect(
 		match_manager.match_state == match_manager.MatchState.ACTIVE
 		and match_manager.player_2_sets == 1

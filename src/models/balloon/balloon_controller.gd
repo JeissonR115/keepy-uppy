@@ -9,22 +9,32 @@ signal ground_touched
 @export var max_player_hit_impulse: float = 240.0
 @export var impact_speed_factor: float = 0.2
 @export var dash_rescue_impulse: float = 300.0
+@export var max_dash_rescue_impulse: float = 360.0
+@export var movement_direction_factor: float = 0.45
+@export var dash_movement_direction_factor: float = 0.4
+@export var movement_impulse_factor: float = 0.12
 @export var max_horizontal_speed: float = 360.0
 @export var max_vertical_speed: float = 420.0
 @export var contact_interval: float = 0.1
 @export var balloon_collision_radius: float = 9.0
 @export var player_contact_radius: float = 16.0
-@export var gravity_strength: float = 0.7
-@export var horizontal_damping: float = 0.25
-@export_range(0.0, 1.0) var rebound_strength: float = 0.55
+@export var gravity_strength: float = 0.35
+@export var air_resistance: float = 0.035
+@export var horizontal_damping: float = 0.08
+@export_range(0.0, 1.0) var rebound_strength: float = 0.12
 
 @onready var player_contact_area: Area2D = $PlayerContactArea
 @onready var visual: Polygon2D = $Visual
+@onready var ground_burst: Polygon2D = $GroundBurst
 
 var ground_contact_reported: bool = false
 var default_visual_color: Color
 var impact_tween: Tween
+var burst_tween: Tween
 var player_contact_cooldowns: Dictionary = {}
+var pending_contact_impulses: Dictionary = {}
+
+enum ContactType { NORMAL, DASH_RESCUE }
 
 
 func _ready() -> void:
@@ -51,6 +61,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	var air_retention := 1.0 + maxf(air_resistance, 0.0) * state.step
+	state.linear_velocity /= air_retention
 	state.linear_velocity.x /= 1.0 + maxf(horizontal_damping, 0.0) * state.step
 	state.linear_velocity.x = clampf(
 		state.linear_velocity.x,
@@ -71,6 +83,12 @@ func reset_round(spawn_position: Vector2) -> void:
 	sleeping = false
 	ground_contact_reported = false
 	player_contact_cooldowns.clear()
+	pending_contact_impulses.clear()
+	if burst_tween != null and burst_tween.is_running():
+		burst_tween.kill()
+	ground_burst.visible = false
+	ground_burst.scale = Vector2.ONE
+	ground_burst.modulate = Color.WHITE
 
 
 func apply_dash_rescue(player: CharacterBody2D, dash_direction: Vector2) -> bool:
@@ -79,12 +97,22 @@ func apply_dash_rescue(player: CharacterBody2D, dash_direction: Vector2) -> bool
 	var rescue_direction := dash_direction.normalized()
 	if rescue_direction.is_zero_approx():
 		rescue_direction = Vector2.UP
-	rescue_direction.y = minf(rescue_direction.y, -0.35)
-	rescue_direction = rescue_direction.normalized()
-	sleeping = false
-	apply_central_impulse(rescue_direction * dash_rescue_impulse)
-	_flash_impact()
-	dash_rescued.emit(player, rescue_direction)
+	var launch_direction := (
+		rescue_direction
+		+ player.velocity.normalized() * dash_movement_direction_factor
+		+ Vector2.UP * 0.35
+	).normalized()
+	var impulse_strength := clampf(
+		dash_rescue_impulse + player.velocity.length() * movement_impulse_factor,
+		dash_rescue_impulse,
+		max_dash_rescue_impulse
+	)
+	_queue_player_contact(
+		player,
+		ContactType.DASH_RESCUE,
+		launch_direction * impulse_strength,
+		launch_direction
+	)
 	return true
 
 
@@ -99,7 +127,22 @@ func _flash_impact() -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("scoring_ground") and not ground_contact_reported:
 		ground_contact_reported = true
+		_play_ground_burst()
 		ground_touched.emit()
+
+
+func _play_ground_burst() -> void:
+	if burst_tween != null and burst_tween.is_running():
+		burst_tween.kill()
+	ground_burst.visible = true
+	ground_burst.scale = Vector2(0.25, 0.25)
+	ground_burst.modulate = Color.WHITE
+	burst_tween = create_tween()
+	burst_tween.set_parallel(true)
+	burst_tween.tween_property(ground_burst, "scale", Vector2(1.5, 1.5), 0.24)
+	burst_tween.tween_property(ground_burst, "modulate:a", 0.0, 0.24)
+	burst_tween.set_parallel(false)
+	burst_tween.tween_callback(func() -> void: ground_burst.visible = false)
 
 
 func _on_player_contact_area_body_entered(body: Node2D) -> void:
@@ -116,15 +159,64 @@ func _on_player_contact_area_body_entered(body: Node2D) -> void:
 			- linear_velocity.dot(impulse_direction),
 			0.0
 		)
+		var launch_direction := (
+			impulse_direction
+			+ player.velocity.normalized() * movement_direction_factor
+		).normalized()
 		var impulse_strength := clampf(
-			player_hit_impulse + approach_speed * impact_speed_factor,
+			player_hit_impulse
+			+ approach_speed * impact_speed_factor
+			+ player.velocity.length() * movement_impulse_factor,
 			min_player_hit_impulse,
 			max_player_hit_impulse
 		)
-		sleeping = false
-		apply_central_impulse(impulse_direction * impulse_strength)
-		_flash_impact()
+		_queue_player_contact(
+			player,
+			ContactType.NORMAL,
+			launch_direction * impulse_strength,
+			launch_direction
+		)
+
+
+func _queue_player_contact(
+	player: CharacterBody2D,
+	contact_type: ContactType,
+	impulse: Vector2,
+	launch_direction: Vector2
+) -> void:
+	pending_contact_impulses[player.get_instance_id()] = {
+		"player": player,
+		"type": contact_type,
+		"impulse": impulse,
+		"direction": launch_direction,
+	}
+	if contact_type == ContactType.DASH_RESCUE:
+		dash_rescued.emit(player, launch_direction)
+	else:
 		player_hit.emit(player)
+
+
+func apply_pending_contact(player: CharacterBody2D, contact_type: ContactType) -> Dictionary:
+	var player_id := player.get_instance_id()
+	var contact: Dictionary = pending_contact_impulses.get(player_id, {})
+	if contact.is_empty() or int(contact.get("type", -1)) != contact_type:
+		return {}
+	pending_contact_impulses.erase(player_id)
+	var impulse: Vector2 = contact["impulse"]
+	var resulting_velocity := linear_velocity + impulse / maxf(mass, 0.001)
+	resulting_velocity.x = clampf(resulting_velocity.x, -max_horizontal_speed, max_horizontal_speed)
+	resulting_velocity.y = clampf(resulting_velocity.y, -max_vertical_speed, max_vertical_speed)
+	sleeping = false
+	apply_central_impulse(impulse)
+	_flash_impact()
+	return {
+		"direction": contact["direction"],
+		"resulting_velocity": resulting_velocity,
+	}
+
+
+func clear_pending_contacts() -> void:
+	pending_contact_impulses.clear()
 
 
 func _accept_player_contact(player: CharacterBody2D) -> bool:

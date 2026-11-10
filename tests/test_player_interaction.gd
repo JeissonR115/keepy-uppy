@@ -32,13 +32,28 @@ func _run_test() -> void:
 	):
 		return
 
-	balloon.player_hit.emit(player_1)
-	match_manager.resolve_pending_contacts()
-	if not _expect(match_manager.priority_player == player_1, "Normal balloon-hit signal did not update priority."):
+	var server: CharacterBody2D = match_manager.next_server
+	var opponent := player_2 if server == player_1 else player_1
+	if not _expect(
+		match_manager.expected_balloon_player == server,
+		"The server was not selected as the first eligible balloon toucher."
+	):
 		return
-	balloon.dash_rescued.emit(player_2, Vector2.RIGHT)
+	balloon.player_hit.emit(server)
 	match_manager.resolve_pending_contacts()
-	if not _expect(match_manager.priority_player == player_2, "Dash-rescue signal did not update priority."):
+	if not _expect(
+		match_manager.priority_player == server
+		and match_manager.expected_balloon_player == opponent,
+		"The serve did not update priority and alternate the expected toucher."
+	):
+		return
+	balloon.dash_rescued.emit(opponent, Vector2.RIGHT)
+	match_manager.resolve_pending_contacts()
+	if not _expect(
+		match_manager.priority_player == opponent
+		and match_manager.expected_balloon_player == server,
+		"Dash-rescue contact did not update priority and alternate the expected toucher."
+	):
 		return
 
 	match_manager.set_next_server(player_1)
@@ -56,20 +71,23 @@ func _run_test() -> void:
 	match_manager.register_normal_hit(player_1)
 	match_manager.register_normal_hit(player_2)
 	match_manager.resolve_pending_contacts()
-	if not _expect(match_manager.priority_player == player_2, "Same-kind tie did not go to the non-priority player."):
-		return
 	if not _expect(
-		player_2.get_node("PriorityIndicator").visible
-		and not player_1.get_node("PriorityIndicator").visible,
-		"Priority indicator did not move to the tie-break winner."
+		match_manager.round_faulting_player == player_2,
+		"A same-tick out-of-turn contact was not resolved as a fault."
 	):
 		return
 
+	match_manager.match_state = match_manager.MatchState.ACTIVE
+	match_manager.round_faulting_player = null
 	match_manager.set_next_server(player_1)
 	match_manager.register_normal_hit(player_1)
-	match_manager.register_dash_rescue(player_2, Vector2.RIGHT)
+	match_manager.register_dash_rescue(player_1, Vector2.RIGHT)
 	match_manager.resolve_pending_contacts()
-	if not _expect(match_manager.priority_player == player_2, "Dash rescue did not take precedence over a normal hit."):
+	if not _expect(
+		match_manager.priority_player == player_1
+		and match_manager.expected_balloon_player == player_2,
+		"The expected player's coincident normal and dash contacts did not resolve as one turn."
+	):
 		return
 
 	match_manager.set_next_server(player_1)
@@ -136,5 +154,5 @@ func _run_test() -> void:
 	):
 		return
 
-	print("Serve attribution, priority policy, tie-breaks, bounded pushes, and arena walls verified.")
+	print("Serve attribution, alternating turns, fault resolution, bounded pushes, and arena walls verified.")
 	quit()
