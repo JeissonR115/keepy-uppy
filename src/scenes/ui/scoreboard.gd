@@ -9,11 +9,15 @@ extends CanvasLayer
 @onready var status_label: Label = $HUD/StatusLabel
 @onready var controls_button: Button = $HUD/ControlsButton
 @onready var control_settings: Control = $ControlSettings
+@onready var pause_menu: Control = $PauseMenu
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	controls_button.pressed.connect(_open_control_settings)
+	controls_button.pressed.connect(pause_menu.open_pause)
+	pause_menu.controls_requested.connect(_open_control_settings)
+	pause_menu.restart_confirmed.connect(_restart_match)
+	control_settings.returned_to_pause.connect(pause_menu.return_from_controls)
 	match_manager.score_changed.connect(_on_score_changed)
 	match_manager.set_score_changed.connect(_on_set_score_changed)
 	match_manager.round_ended.connect(_on_round_ended)
@@ -28,8 +32,30 @@ func _ready() -> void:
 	_refresh_competitive_state()
 
 
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey:
+		return
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return
+	if key_event.keycode != KEY_ESCAPE and key_event.physical_keycode != KEY_ESCAPE:
+		return
+	if control_settings.visible and not String(control_settings.get("captured_action")).is_empty():
+		control_settings.call("cancel_capture")
+	elif control_settings.visible:
+		control_settings.call("hide_for_pause_exit")
+		pause_menu.close_pause()
+	else:
+		pause_menu.toggle_pause()
+	get_viewport().set_input_as_handled()
+
+
 func _open_control_settings() -> void:
 	control_settings.call("open")
+
+
+func _restart_match() -> void:
+	match_manager.restart_match()
 
 
 func _on_score_changed(player_1_score: int, player_2_score: int) -> void:

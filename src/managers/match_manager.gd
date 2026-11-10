@@ -51,10 +51,32 @@ func _ready() -> void:
 	balloon.ground_touched.connect(_on_ground_touched)
 	player_1.player_bumped.connect(_on_player_bumped)
 	player_2.player_bumped.connect(_on_player_bumped)
+	_start_new_match()
+
+
+func restart_match() -> void:
+	_start_new_match()
+
+
+func _start_new_match() -> void:
+	match_state = MatchState.ACTIVE
+	player_1_score = 0
+	player_2_score = 0
+	player_1_sets = 0
+	player_2_sets = 0
+	round_number = 1
+	match_winner = null
+	pending_normal_hits.clear()
+	pending_dash_rescues.clear()
+	player_1.reset_for_round(player_1_spawn_position)
+	player_2.reset_for_round(player_2_spawn_position)
+	balloon.reset_round(balloon_spawn_position)
 	var toss_value := randi_range(0, 1) if coin_toss_override < 0 else coin_toss_override
 	coin_toss_result = "HEADS" if toss_value == 0 else "TAILS"
 	var opening_player := player_1 if toss_value == 0 else player_2
 	set_next_server(opening_player)
+	score_changed.emit(player_1_score, player_2_score)
+	set_score_changed.emit(player_1_sets, player_2_sets)
 	coin_toss_completed.emit(coin_toss_result, opening_player)
 	round_started.emit(round_number, round_server)
 

@@ -33,7 +33,7 @@ The control settings screen SHALL capture valid keyboard keys for all fourteen a
 - **THEN** the binding remains unchanged and the screen explains the rejection
 
 #### Scenario: Cancel capture
-- **WHEN** Player 1 presses Escape during key capture
+- **WHEN** Player 1 presses Escape or Dash during key capture
 - **THEN** capture ends without assigning Escape or changing the selected action's previous binding
 
 ### Requirement: Restore both players' default bindings

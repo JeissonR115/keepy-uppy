@@ -1,5 +1,7 @@
 extends Control
 
+signal returned_to_pause
+
 const PLAYER_ACTIONS: Array[Dictionary] = [
 	{
 		"heading": "PLAYER 1",
@@ -28,6 +30,8 @@ var captured_action: String = ""
 var was_paused_before_open: bool = false
 var status_label: Label
 var cancel_button: Button
+var focus_order: Array[Button] = []
+var focused_index: int = 0
 
 
 func _ready() -> void:
@@ -38,18 +42,54 @@ func _ready() -> void:
 	visible = false
 
 
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	if not captured_action.is_empty():
+		if Input.is_action_just_pressed("player_1_dash"):
+			_cancel_capture()
+		return
+	if Input.is_action_just_pressed("player_1_up"):
+		_move_focus(-1)
+	elif Input.is_action_just_pressed("player_1_down"):
+		_move_focus(1)
+	if Input.is_action_just_pressed("player_1_jump"):
+		_activate_focused_control()
+	elif Input.is_action_just_pressed("player_1_dash"):
+		close()
+
+
 func open() -> void:
 	was_paused_before_open = get_tree().paused
 	get_tree().paused = true
 	_refresh_action_buttons()
 	status_label.text = "Select an action to change its key."
 	visible = true
+	focused_index = 0
+	_focus_control()
 
 
 func close() -> void:
 	_cancel_capture()
 	visible = false
-	get_tree().paused = was_paused_before_open
+	if was_paused_before_open:
+		get_tree().paused = true
+		call_deferred("_emit_returned_to_pause")
+	else:
+		get_tree().paused = false
+
+
+func _emit_returned_to_pause() -> void:
+	returned_to_pause.emit()
+
+
+func cancel_capture() -> void:
+	_cancel_capture()
+
+
+func hide_for_pause_exit() -> void:
+	_cancel_capture()
+	visible = false
 
 
 func get_action_button(action_name: String) -> Button:
@@ -110,15 +150,21 @@ func _build_screen() -> void:
 
 	cancel_button = _make_button("CANCEL CAPTURE", Vector2(87, 14))
 	cancel_button.pressed.connect(_cancel_capture)
+	cancel_button.focus_entered.connect(_on_control_focus_entered.bind(cancel_button))
 	buttons.add_child(cancel_button)
+	focus_order.append(cancel_button)
 
 	var reset_button := _make_button("RESTORE DEFAULTS", Vector2(91, 14))
 	reset_button.pressed.connect(_restore_defaults)
+	reset_button.focus_entered.connect(_on_control_focus_entered.bind(reset_button))
 	buttons.add_child(reset_button)
+	focus_order.append(reset_button)
 
-	var close_button := _make_button("CLOSE", Vector2(45, 14))
+	var close_button := _make_button("BACK", Vector2(45, 14))
 	close_button.pressed.connect(close)
+	close_button.focus_entered.connect(_on_control_focus_entered.bind(close_button))
 	buttons.add_child(close_button)
+	focus_order.append(close_button)
 
 
 func _build_player_column(player_data: Dictionary) -> VBoxContainer:
@@ -148,8 +194,10 @@ func _build_player_column(player_data: Dictionary) -> VBoxContainer:
 		binding_button.name = "ActionButton_%s" % action_name
 		binding_button.add_theme_color_override("font_color", player_data.color)
 		binding_button.pressed.connect(_begin_capture.bind(action_name))
+		binding_button.focus_entered.connect(_on_control_focus_entered.bind(binding_button))
 		row.add_child(binding_button)
 		action_buttons[action_name] = binding_button
+		focus_order.append(binding_button)
 	return column
 
 
@@ -158,7 +206,12 @@ func _make_button(button_text: String, minimum_size: Vector2) -> Button:
 	button.text = button_text
 	button.custom_minimum_size = minimum_size
 	button.add_theme_font_size_override("font_size", 8)
-	button.focus_mode = Control.FOCUS_NONE
+	button.focus_mode = Control.FOCUS_ALL
+	var focus_style := StyleBoxFlat.new()
+	focus_style.bg_color = Color(0.1, 0.12, 0.18, 1.0)
+	focus_style.border_color = Color(1.0, 0.84, 0.32, 1.0)
+	focus_style.set_border_width_all(1)
+	button.add_theme_stylebox_override("focus", focus_style)
 	return button
 
 
@@ -204,6 +257,29 @@ func _cancel_capture() -> void:
 		return
 	captured_action = ""
 	status_label.text = "Capture cancelled. The previous key is unchanged."
+
+
+func _move_focus(step: int) -> void:
+	focused_index = posmod(focused_index + step, focus_order.size())
+	_focus_control()
+
+
+func _focus_control() -> void:
+	if focus_order.is_empty():
+		return
+	focus_order[focused_index].grab_focus()
+
+
+func _activate_focused_control() -> void:
+	if focus_order.is_empty():
+		return
+	focus_order[focused_index].emit_signal("pressed")
+
+
+func _on_control_focus_entered(button: Button) -> void:
+	var index := focus_order.find(button)
+	if index >= 0:
+		focused_index = index
 
 
 func _restore_defaults() -> void:

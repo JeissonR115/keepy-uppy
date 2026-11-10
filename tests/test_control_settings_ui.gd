@@ -1,21 +1,11 @@
 extends SceneTree
 
-const TEST_SETTINGS_PATH := "/tmp/keepy-controls-ui-test.cfg"
+const TEST_SETTINGS_PATH := "/tmp/keepy-controls-keyboard-ui-test.cfg"
 const ACTIONS: Array[String] = [
-	"player_1_left",
-	"player_1_right",
-	"player_1_up",
-	"player_1_down",
-	"player_1_jump",
-	"player_1_dash",
-	"player_1_accelerate",
-	"player_2_left",
-	"player_2_right",
-	"player_2_up",
-	"player_2_down",
-	"player_2_jump",
-	"player_2_dash",
-	"player_2_accelerate",
+	"player_1_left", "player_1_right", "player_1_up", "player_1_down",
+	"player_1_jump", "player_1_dash", "player_1_accelerate",
+	"player_2_left", "player_2_right", "player_2_up", "player_2_down",
+	"player_2_jump", "player_2_dash", "player_2_accelerate",
 ]
 
 
@@ -39,30 +29,96 @@ func _run_test() -> void:
 	root.add_child(main_scene)
 	await process_frame
 
-	var screen: Control = main_scene.get_node("Arena/Scoreboard/ControlSettings")
-	var controls_button: Button = main_scene.get_node("Arena/Scoreboard/HUD/ControlsButton")
-	controls_button.emit_signal("pressed")
-	await process_frame
-	if not _expect(screen.visible and paused, "Controls button did not open the screen and pause gameplay."):
+	var scoreboard: CanvasLayer = main_scene.get_node("Arena/Scoreboard")
+	var pause_menu: Control = scoreboard.get_node("PauseMenu")
+	var screen: Control = scoreboard.get_node("ControlSettings")
+	scoreboard.call("_input", _escape_event())
+	await _press_action("player_1_down")
+	await _press_action("player_1_down")
+	await _press_action("player_1_jump")
+	if not _expect(
+		screen.visible and paused and pause_menu.current_screen == pause_menu.MenuScreen.CONTROLS
+		and String(screen.get("captured_action")).is_empty(),
+		"Player 1 could not open the controls submenu while keeping gameplay paused."
+	):
 		return
-	for action_name: String in ACTIONS:
+
+	var focus_order: Array = screen.get("focus_order")
+	if not _expect(focus_order.size() == 17, "Not all control rows and settings actions are keyboard reachable."):
+		return
+	for index in range(ACTIONS.size()):
+		var action_name := ACTIONS[index]
 		var action_button := screen.call("get_action_button", action_name) as Button
-		if not _expect(action_button != null, "Action row is missing: %s" % action_name):
-			return
-		if not _expect(not action_button.text.is_empty(), "Current binding is not displayed: %s" % action_name):
-			return
-		screen.call("_begin_capture", action_name)
-		screen.call("_unhandled_key_input", _key_event(KEY_Z))
 		if not _expect(
-			String(screen.get("captured_action")).is_empty() and _has_key(action_name, KEY_Z),
-			"Selected action did not receive its new key: %s" % action_name
+			screen.get("focused_index") == index and action_button.has_focus() and not action_button.text.is_empty(),
+			"Keyboard focus or displayed binding is missing for %s." % action_name
 		):
 			return
-		if not _expect(not action_button.text.is_empty(), "Updated key is not displayed: %s" % action_name):
+		await _press_action("player_1_jump")
+		if not _expect(
+			String(screen.get("captured_action")) == action_name,
+			"Jump did not begin key capture for the focused row: %s." % action_name
+		):
+			return
+		screen.call("_unhandled_key_input", _key_event(KEY_Z))
+		if not _expect(
+			String(screen.get("captured_action")).is_empty()
+			and _has_key(action_name, KEY_Z)
+			and not action_button.text.is_empty(),
+			"Focused action did not rebind and update its label: %s." % action_name
+		):
 			return
 		settings_manager.call("restore_default_bindings")
 		screen.call("_refresh_action_buttons")
+		if index < ACTIONS.size() - 1:
+			await _press_action("player_1_down")
 
+	# The Cancel Capture, Restore Defaults, and Back controls follow all fourteen rows.
+	await _press_action("player_1_down")
+	if not _expect(
+		screen.get("focused_index") == 14 and (focus_order[14] as Button).has_focus(),
+		"Cancel Capture is not reachable through Player 1 navigation."
+	):
+		return
+	await _press_action("player_1_down")
+	if not _expect(
+		screen.get("focused_index") == 15 and (focus_order[15] as Button).has_focus(),
+		"Restore Defaults is not reachable through Player 1 navigation."
+	):
+		return
+	var custom_event := _key_event(KEY_Z)
+	if not _expect(
+		settings_manager.call("try_set_binding", "player_1_left", custom_event).valid,
+		"Could not prepare a custom binding for the restore-defaults check."
+	):
+		return
+	await _press_action("player_1_jump")
+	if not _expect(_has_key("player_1_left", KEY_A), "Keyboard activation did not restore default bindings."):
+		return
+	await _press_action("player_1_down")
+	if not _expect(
+		screen.get("focused_index") == 16 and (focus_order[16] as Button).has_focus(),
+		"Back to Pause is not reachable through Player 1 navigation."
+	):
+		return
+	await _press_action("player_1_dash")
+	if not _expect(
+		pause_menu.visible and pause_menu.current_screen == pause_menu.MenuScreen.PAUSE and paused,
+		"Dash did not return from controls to the still-paused menu."
+	):
+		return
+
+	await _press_action("player_1_up")
+	await _press_action("player_1_up")
+	await _press_action("player_1_jump")
+	if not _expect(not paused, "Player 1 could not resume after leaving control settings."):
+		return
+
+	# Reopen controls to cover conflict feedback and both capture-cancel routes.
+	scoreboard.call("_input", _escape_event())
+	await _press_action("player_1_down")
+	await _press_action("player_1_down")
+	await _press_action("player_1_jump")
 	screen.call("_begin_capture", "player_1_left")
 	screen.call("_unhandled_key_input", _key_event(KEY_D))
 	var status_label := screen.get("status_label") as Label
@@ -70,40 +126,37 @@ func _run_test() -> void:
 		String(screen.get("captured_action")) == "player_1_left"
 		and _has_key("player_1_left", KEY_A)
 		and status_label.text.contains("already assigned"),
-		"Duplicate key changed the binding, ended capture, or failed to explain the conflict."
+		"Duplicate key changed the current binding or failed to explain the conflict."
 	):
 		return
-	screen.call("_unhandled_key_input", _key_event(KEY_ESCAPE))
+	await _press_action("player_1_dash")
 	if not _expect(
-		String(screen.get("captured_action")).is_empty()
-		and _has_key("player_1_left", KEY_A),
-		"Escape did not cancel capture while preserving the previous key."
+		String(screen.get("captured_action")).is_empty() and _has_key("player_1_left", KEY_A),
+		"Player 1 Dash did not cancel capture without changing the existing key."
 	):
 		return
 	screen.call("_begin_capture", "player_1_left")
-	(screen.get("cancel_button") as Button).emit_signal("pressed")
+	scoreboard.call("_input", _escape_event())
 	if not _expect(
 		String(screen.get("captured_action")).is_empty() and _has_key("player_1_left", KEY_A),
-		"Cancel button did not preserve the previous binding."
+		"Escape did not cancel key capture while preserving the current binding."
 	):
 		return
-
-	var custom_event := _key_event(KEY_Z)
-	var set_result: Dictionary = settings_manager.call("try_set_binding", "player_1_left", custom_event)
-	if not _expect(set_result.valid, "Could not prepare a custom key for the reset check."):
-		return
-
-	screen.call("_restore_defaults")
-	if not _expect(_has_key("player_1_left", KEY_A), "Restore defaults did not restore P1's key."):
-		return
-	screen.call("close")
+	scoreboard.call("_input", _escape_event())
 	await process_frame
-	if not _expect(not screen.visible and not paused, "Closing controls did not resume gameplay."):
+	if not _expect(not screen.visible and not paused, "Escape did not close the menu flow and resume gameplay."):
 		return
 
-	print("Fourteen control rows, rebinding, conflict rejection, cancellation, reset, and pause/resume verified.")
+	print("Keyboard navigation across fourteen rows and three actions, rebinding, conflict rejection, capture cancel, reset, pause return, and resume verified.")
 	_remove_test_file()
 	quit()
+
+
+func _press_action(action_name: String) -> void:
+	Input.action_press(action_name)
+	await process_frame
+	Input.action_release(action_name)
+	await process_frame
 
 
 func _has_key(action_name: String, expected_key: Key) -> bool:
@@ -121,7 +174,10 @@ func _key_event(key: Key) -> InputEventKey:
 	return event
 
 
+func _escape_event() -> InputEventKey:
+	return _key_event(KEY_ESCAPE)
+
+
 func _remove_test_file() -> void:
-	var absolute_path := ProjectSettings.globalize_path(TEST_SETTINGS_PATH)
-	if FileAccess.file_exists(absolute_path):
-		DirAccess.remove_absolute(absolute_path)
+	if FileAccess.file_exists(TEST_SETTINGS_PATH):
+		DirAccess.remove_absolute(TEST_SETTINGS_PATH)

@@ -36,6 +36,27 @@ changing movement logic. Use the in-game **KEYS** menu to rebind them and save
 the complete map locally; Project Settings > Input Map remains available for
 development.
 
+## Pause and menu navigation
+
+- Press **Escape** during play to open or close the pause menu.
+- Use Player 1's current **Up/Down** actions (default W/S) to move through menu options.
+- Use Player 1's **Jump** action (default F) to confirm and **Dash** (default G) to go back.
+- Choose **Resume**, **Restart**, or **Controls**. Restart opens a confirmation with **No** selected by default. Controls opens the existing binding screen while the match stays paused.
+- In the restart confirmation, use **W/S** and **F** to choose **No** or **Yes**; **G** returns to pause without changing the match. **Yes** resets points, sets, and the opening toss while retaining saved control bindings.
+- The menu reads the live Player 1 Input Map, so remapping Up, Down, Jump, or Dash changes menu navigation too. Escape remains reserved; during key capture it cancels the capture.
+
+Verify pause navigation, restart cancellation, controls entry, and gameplay isolation with:
+
+```sh
+godot --headless --path . --script res://tests/test_pause_menu.gd
+```
+
+Verify restart cancellation, fresh-match reset, and saved-control retention with:
+
+```sh
+godot --headless --path . --script res://tests/test_restart_confirmation.gd
+```
+
 Verify all 14 default bindings with:
 
 ```sh
@@ -72,14 +93,19 @@ behavior with:
 godot --headless --path . --script res://tests/test_control_settings_ui.gd
 ```
 
-Manual controls-menu checks:
+Controls-menu acceptance checks (covered by `test_control_settings_ui.gd`):
 
-- [ ] Select **KEYS** in the HUD and confirm gameplay pauses while the two player-colored control columns appear.
-- [ ] Select an action and confirm the waiting-for-key message appears; press Escape or **CANCEL CAPTURE** and confirm the previous key stays assigned.
-- [ ] Rebind one action for each player, then try assigning that key to another action and confirm the menu explains the conflict without replacing the existing binding.
-- [ ] Confirm all seven actions are shown for each player and every displayed key updates after a successful reassignment.
-- [ ] Select **RESTORE DEFAULTS** and confirm both players' bindings return to the documented defaults.
-- [ ] Close the menu and confirm gameplay resumes without a stuck input or lost player movement.
+- [x] Open the pause menu with Escape, choose **CONTROLS** with W/S and F, and keep play paused.
+- [x] Use W/S to browse all seven actions for each player, plus capture cancel, Restore Defaults, and Back.
+- [x] Use W/S to focus an action and F to start capture; press a valid key and confirm its displayed binding updates.
+- [x] During capture, press Escape or G and cancel capture without changing the previous key.
+- [x] Reject conflicting key assignments without replacing the existing binding.
+- [x] Use W/S to reach **RESTORE DEFAULTS**, press F, and restore both players' documented defaults.
+- [x] Use G to return to pause and choose **RESUME** with F.
+
+Integration verification (Godot 4.7.2): all 17 `tests/test_*.gd` scripts passed
+in headless mode, and the main scene started successfully with
+`godot --headless --path . --quit-after 5`.
 
 Run the automated independent-movement and remapping check with:
 

@@ -27,15 +27,15 @@ Add pause and restart-confirmation panels to the existing scoreboard CanvasLayer
 
 ### Route menu navigation through the current Player 1 actions
 
-Read `player_1_up` and `player_1_down` to move the selected row, `player_1_jump` to activate it, and `player_1_dash` to go back. These action names resolve through Input Map at runtime, so changes made in control settings also affect menus. Escape remains a fixed pause/cancel key and stays reserved. While a capture is active, action navigation is suspended so keys intended for rebinding do not also activate menu controls; Escape cancels capture.
+Read `player_1_up` and `player_1_down` to move the selected row, `player_1_jump` to activate it, and `player_1_dash` to go back. These action names resolve through Input Map at runtime, so changes made in control settings also affect menus. Escape remains a fixed pause/cancel key and stays reserved. While a capture is active, row navigation is suspended so keys intended for rebinding do not also activate menu controls; Escape or Dash cancels capture.
 
 **Alternative considered:** Hard-code W/S/F/G in menu scripts. That would stop navigation working when Player 1 rebinds those actions, so menus use the existing action map instead.
 
 ### Keep restart confirmation separate and default to No
 
-Selecting Restart replaces the pause options with a compact Yes/No confirmation, with No selected initially. Dash or No returns to pause without changing match state. Yes unpauses and reloads the current main scene; the scene's control settings manager loads the saved controls again before gameplay starts. Scene reload resets match scores, set scores, serve, and toss together through their existing initialization path.
+Selecting Restart replaces the pause options with a compact Yes/No confirmation, with No selected initially. Dash or No returns to pause without changing match state. Yes invokes a fresh-match reset on the existing MatchManager: points, sets, round state, pending contacts, players, and balloon reset, and a new opening toss selects the server. The settings manager remains alive, so its saved bindings remain active without reloading the scene.
 
-**Alternative considered:** Add a second reset method to MatchManager. Scene reload already represents a fresh game and resets all match-owned state consistently while preserving `user://controls.cfg`.
+**Alternative considered:** Reload the main scene. That also resets match state but rebuilds every UI node and rereads local controls while the tree is paused; the coordinator already owns all match state, so resetting it in place is smaller and keeps configuration untouched.
 
 ### Treat control settings as a submenu that preserves pause
 
@@ -46,8 +46,8 @@ Entering controls from pause leaves the tree paused. Dash returns to the pause p
 ## Risks / Trade-offs
 
 - [Player 1's remapped menu actions can conflict with gameplay keys] → Pause the tree before routing navigation and use the current actions so menu input never moves the arena players.
-- [Escape is also used to cancel key capture] → Give active capture first priority; only route Escape to pause after capture has ended.
-- [Scene reload may briefly show the old paused frame] → Unpause immediately before reloading and test that a fresh match starts with saved bindings intact.
+- [Escape is also used to cancel key capture] → Give active capture first priority; only route Escape to pause after capture has ended. Player 1 Dash also cancels capture.
+- [A pending point-resolution timer may finish after restart] → Restart clears the resolving state and the existing continuation only starts a round if that old state is still active.
 - [The controls list and buttons exceed the viewport's visible focus area] → Keep the current compact layout, scroll focused rows into view, and verify every control can be reached at the logical viewport size.
 
 ## Migration Plan
