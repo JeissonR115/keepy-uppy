@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/scenes/ui/components/keyboard_menu.gd" id="1_menu"]
+[ext_resource type="Script" path="res://src/scenes/ui/components/menu_keyboard_navigator.gd" id="2_navigator"]
+
+[node name="KeyboardMenu" type="Node"]
+script = ExtResource("1_menu")
+
+[node name="Navigator" type="Node" parent="."]
+script = ExtResource("2_navigator")

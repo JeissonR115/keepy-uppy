@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/scenes/ui/components/touch_pixel.gd" id="1_pixel"]
+
+[node name="TouchPixel" type="Polygon2D"]
+z_index = 5
+polygon = PackedVector2Array(-2, -2, 2, -2, 2, 2, -2, 2)
+color = Color(1, 1, 1, 1)
+script = ExtResource("1_pixel")
