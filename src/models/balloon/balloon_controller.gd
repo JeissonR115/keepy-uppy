@@ -3,6 +3,7 @@ extends RigidBody2D
 
 signal player_hit(player: CharacterBody2D)
 signal dash_rescued(player: CharacterBody2D, dash_direction: Vector2)
+signal contact_visualized(player: CharacterBody2D, balloon_position: Vector2)
 signal ground_touched
 
 @export var player_hit_impulse: float = 180.0
@@ -91,6 +92,9 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 
 func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) -> void:
+	if impact_tween != null and impact_tween.is_running():
+		impact_tween.kill()
+	visual.color = default_visual_color
 	global_position = spawn_position
 	linear_velocity = Vector2.ZERO
 	angular_velocity = 0.0
@@ -134,12 +138,12 @@ func apply_dash_rescue(player: CharacterBody2D, dash_direction: Vector2) -> bool
 	return true
 
 
-func _flash_impact() -> void:
+func _flash_impact(toucher_color: Color) -> void:
 	if impact_tween != null and impact_tween.is_running():
 		impact_tween.kill()
 	visual.color = Color.WHITE
 	impact_tween = create_tween()
-	impact_tween.tween_property(visual, "color", default_visual_color, 0.18)
+	impact_tween.tween_property(visual, "color", toucher_color, 0.18)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -161,6 +165,22 @@ func _play_ground_burst() -> void:
 	burst_tween.tween_property(ground_burst, "modulate:a", 0.0, 0.24)
 	burst_tween.set_parallel(false)
 	burst_tween.tween_callback(func() -> void: ground_burst.visible = false)
+
+
+func show_contact_pixel(world_position: Vector2) -> void:
+	var pixel := Polygon2D.new()
+	pixel.polygon = PackedVector2Array([
+		Vector2(-2.0, -2.0), Vector2(2.0, -2.0),
+		Vector2(2.0, 2.0), Vector2(-2.0, 2.0),
+	])
+	pixel.color = Color.WHITE
+	pixel.position = to_local(world_position)
+	pixel.z_index = 5
+	add_child(pixel)
+	var tween := create_tween()
+	tween.tween_interval(1.3)
+	tween.tween_property(pixel, "modulate:a", 0.0, 0.7)
+	tween.tween_callback(pixel.queue_free)
 
 
 func _on_player_contact_area_body_entered(body: Node2D) -> void:
@@ -212,6 +232,11 @@ func _queue_player_contact(
 	impulse: Vector2,
 	launch_direction: Vector2
 ) -> void:
+	var controller := player as PlayerController
+	var toucher_color := controller.idle_color if controller != null else Color.WHITE
+	visual.color = toucher_color
+	_flash_impact(toucher_color)
+	contact_visualized.emit(player, global_position)
 	pending_contact_impulses[player.get_instance_id()] = {
 		"player": player,
 		"type": contact_type,
@@ -238,7 +263,6 @@ func apply_pending_contact(player: CharacterBody2D, contact_type: ContactType) -
 	impulse = (resulting_velocity - linear_velocity) * mass
 	sleeping = false
 	apply_central_impulse(impulse)
-	_flash_impact()
 	return {
 		"direction": contact["direction"],
 		"resulting_velocity": resulting_velocity,

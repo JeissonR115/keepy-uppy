@@ -45,11 +45,9 @@ development.
 ## Pause and menu navigation
 
 - Press **Escape** during play to open or close the pause menu.
-- Use Player 1's current **Up/Down** actions (default W/S) to move through menu options.
-- Use Player 1's **Jump** action (default F) to confirm and **Dash** (default G) to go back.
-- Choose **Resume**, **Restart**, or **Controls**. Restart opens a confirmation with **No** selected by default. Controls opens the existing binding screen while the match stays paused.
-- In the restart confirmation, use **W/S** and **F** to choose **No** or **Yes**; **G** returns to pause without changing the match. **Yes** resets points, sets, and the opening toss while retaining saved control bindings.
-- The menu reads the live Player 1 Input Map, so remapping Up, Down, Jump, or Dash changes menu navigation too. Escape remains reserved; during key capture it cancels the capture.
+- All menus use Player 1's current **Up/Down** actions (default W/S), **Jump** to confirm (default F), and **Dash** to go back (default G). Remapping those actions updates menu navigation too.
+- Choose **Resume**, **Restart**, or **Controls**. **Restart** opens the player-count menu; selecting 1 or 2 players starts a fresh match and retains saved control bindings.
+- The same navigation applies to the player-count, controls, pause, and winner menus. Escape opens or closes pause during play and cancels an active key capture.
 
 Verify pause navigation, restart cancellation, controls entry, and gameplay isolation with:
 
@@ -165,9 +163,9 @@ godot --headless --path . --script res://tests/test_dash_rescue.gd
 - The balloon spawns `balloon_spawn_offset` pixels above the opening server selected by the coin toss and above each subsequent point winner (100 px by default). It stays still until its first player touch, then resumes its reduced gravity (scale 0.14).
 - The balloon collides physically with both players, and the HUD's `TURN` label shows who must touch it next.
 - The server is the first eligible player. Their serve counts as the first contact; after each accepted normal or dash-rescue touch, the other player becomes eligible.
-- Touching out of turn remains an immediate fault that awards the point to the opponent. A downward hit faults the player and replays the point without scoring; a second consecutive downward fault by the same player deducts one point before replaying. A floor contact awards the point against the last valid toucher and shows a short burst.
+- Touching out of turn is a fault and awards the point to the opponent. Otherwise, a point is awarded only when the balloon reaches the floor after a contact; the last valid toucher scores. A downward hit replays the serve without scoring; the same player's second consecutive downward fault deducts one point before replaying.
 - Player priority for player-to-player pushes remains separate from the expected balloon toucher.
-- The arena keeps the scoring floor, side walls, and a ceiling. The balloon bounces from the ceiling without bursting or ending the point; the three elevated platforms are removed.
+- The arena keeps the scoring floor, side walls, and a ceiling. The balloon bounces from the walls and ceiling; touching the floor triggers the burst and resolves the point. After each set, a short overlay shows the set winner and score. Each touch briefly marks the player contact zone and balloon, and the balloon takes the last toucher's color.
 
 Verify player-velocity impact direction, speed limits, and downward-hit faults with:
 
@@ -252,6 +250,7 @@ Manual player interaction checks:
 - [ ] Confirm accepted contacts update last-touch attribution and player priority independently from the repeated-fault penalty.
 - [ ] Push both players toward either side wall, confirm neither leaves the arena, then move them back toward the center and confirm both remain controllable.
 - [ ] Compare priority and non-priority normal/dash pushes and confirm each resulting push velocity stays within the configured cap.
+- [ ] Dash into the other player from either side and confirm the dash pushes them away; dash while pinned under the other player and confirm it frees the blocked player.
 
 Manual match and score checks:
 
@@ -259,7 +258,7 @@ Manual match and score checks:
 - [ ] Let a serve fall without another valid touch and confirm the receiver scores; then make another valid touch and confirm the point goes to that toucher's opponent.
 - [ ] Confirm each point winner serves next, including the first point after a set.
 - [ ] Confirm the HUD shows points and sets; the first player to five points wins a set, 4-4 needs only one more point, and point scores reset while set scores remain.
-- [ ] Win three sets and confirm the match winner is displayed with no extra point or set starting and no second coin toss between sets.
+- [ ] Win three sets and confirm the winner screen appears; select **OK** and confirm the player-count menu returns, then selecting a mode starts a fresh match.
 - [ ] Confirm duplicate ground notifications during a resolving point cannot award an extra point.
 - [ ] Confirm the compact HUD stays within the viewport and its backdrop does not cover the balloon or players.
 
@@ -277,6 +276,7 @@ Manual movement checks:
 - [ ] Dash through the balloon, verify the rescue impulse follows dash direction, and confirm the zone and separate trail end with the dash.
 - [ ] Re-enter the balloon with the same dash activation and confirm it is not hit a second time.
 - [ ] Confirm the player with priority can push farther than the other player, including during dash.
+- [ ] Confirm a dash can push the other player and free a player trapped under them.
 - [ ] Confirm same-tick ties go to the non-priority player and a dash rescue takes priority over a normal hit.
 - [ ] Confirm a gold outline identifies the priority player and moves when priority changes.
 - [ ] Confirm balloon hits flash visibly and the dash trail appears only during the dash, without relying on sound.

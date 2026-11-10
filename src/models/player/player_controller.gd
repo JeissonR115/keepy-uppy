@@ -8,6 +8,8 @@ const BOT_JUMP_ALIGNMENT_DISTANCE := 26.0
 const BOT_JUMP_TRIGGER_HEIGHT := 20.0
 const BOT_DASH_RANGE := 56.0
 const BOT_OPPONENT_THREAT_DISTANCE := 56.0
+const TOUCH_PIXEL_LIFETIME := 2.0
+const TOUCH_PIXEL_HALF_SIZE := 2.0
 
 @export_enum("player_1", "player_2") var input_prefix: String = "player_1"
 @export var bot_enabled: bool = false
@@ -230,6 +232,24 @@ func _bot_should_challenge_opponent() -> bool:
 
 func set_priority_indicator(active: bool) -> void:
 	priority_indicator.visible = active
+
+
+func show_touch_pixel(world_position: Vector2) -> void:
+	var pixel := Polygon2D.new()
+	pixel.polygon = PackedVector2Array([
+		Vector2(-TOUCH_PIXEL_HALF_SIZE, -TOUCH_PIXEL_HALF_SIZE),
+		Vector2(TOUCH_PIXEL_HALF_SIZE, -TOUCH_PIXEL_HALF_SIZE),
+		Vector2(TOUCH_PIXEL_HALF_SIZE, TOUCH_PIXEL_HALF_SIZE),
+		Vector2(-TOUCH_PIXEL_HALF_SIZE, TOUCH_PIXEL_HALF_SIZE),
+	])
+	pixel.color = Color.WHITE
+	pixel.position = to_local(world_position)
+	pixel.z_index = 5
+	add_child(pixel)
+	var tween := create_tween()
+	tween.tween_interval(TOUCH_PIXEL_LIFETIME * 0.65)
+	tween.tween_property(pixel, "modulate:a", 0.0, TOUCH_PIXEL_LIFETIME * 0.35)
+	tween.tween_callback(pixel.queue_free)
 
 
 func try_activate_accelerate() -> bool:

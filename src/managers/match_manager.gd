@@ -7,6 +7,13 @@ signal score_changed(player_1_score: int, player_2_score: int)
 signal set_score_changed(player_1_sets: int, player_2_sets: int)
 signal round_ended(point_winner: CharacterBody2D, player_1_score: int, player_2_score: int)
 signal set_ended(set_winner: CharacterBody2D, player_1_sets: int, player_2_sets: int)
+signal set_won(
+	set_winner: CharacterBody2D,
+	player_1_set_score: int,
+	player_2_set_score: int,
+	player_1_sets: int,
+	player_2_sets: int
+)
 signal round_started(round_number: int, server: CharacterBody2D)
 signal match_ended(winner: CharacterBody2D)
 signal coin_toss_completed(result: String, first_server: CharacterBody2D)
@@ -44,6 +51,7 @@ var next_server: CharacterBody2D
 var expected_balloon_player: CharacterBody2D
 var priority_player: CharacterBody2D
 var last_valid_toucher: CharacterBody2D
+var round_has_valid_contact: bool = false
 var match_winner: CharacterBody2D
 var round_faulting_player: CharacterBody2D
 var pending_expected_player: CharacterBody2D
@@ -75,6 +83,7 @@ func _start_new_match() -> void:
 	player_2_sets = 0
 	round_number = 1
 	match_winner = null
+	round_has_valid_contact = false
 	round_faulting_player = null
 	round_replay_requested = false
 	consecutive_downward_fault_player = null
@@ -153,6 +162,7 @@ func resolve_pending_contacts() -> void:
 		if resulting_velocity.y > 0.0 and match_state == MatchState.ACTIVE:
 			_resolve_downward_hit_fault(selected_player)
 			return
+		round_has_valid_contact = true
 	_set_priority(selected_player)
 	last_valid_toucher = selected_player
 	expected_balloon_player = _opponent_of(selected_player)
@@ -228,6 +238,12 @@ func _on_ground_touched() -> void:
 	resolve_pending_contacts()
 	if match_state != MatchState.ACTIVE:
 		return
+	if not round_has_valid_contact:
+		next_server = round_server
+		match_state = MatchState.ROUND_OVER
+		round_replay_requested = true
+		call_deferred("_finish_round")
+		return
 	consecutive_downward_fault_player = null
 	consecutive_downward_fault_count = 0
 	match_state = MatchState.ROUND_OVER
@@ -243,11 +259,13 @@ func _finish_round() -> void:
 		return
 	consecutive_downward_fault_player = null
 	consecutive_downward_fault_count = 0
-	var point_winner := _opponent_of(
-		round_faulting_player
-		if is_instance_valid(round_faulting_player)
-		else last_valid_toucher if last_valid_toucher != null else round_server
-	)
+	var point_winner: CharacterBody2D
+	if is_instance_valid(round_faulting_player):
+		point_winner = _opponent_of(round_faulting_player)
+	elif is_instance_valid(last_valid_toucher):
+		point_winner = last_valid_toucher
+	else:
+		point_winner = round_server
 	if point_winner == player_1:
 		player_1_score += 1
 	else:
@@ -257,10 +275,19 @@ func _finish_round() -> void:
 	round_ended.emit(point_winner, player_1_score, player_2_score)
 
 	if player_1_score >= target_score or player_2_score >= target_score:
+		var completed_set_player_1_score := player_1_score
+		var completed_set_player_2_score := player_2_score
 		if point_winner == player_1:
 			player_1_sets += 1
 		else:
 			player_2_sets += 1
+		set_won.emit(
+			point_winner,
+			completed_set_player_1_score,
+			completed_set_player_2_score,
+			player_1_sets,
+			player_2_sets
+		)
 		player_1_score = 0
 		player_2_score = 0
 		score_changed.emit(player_1_score, player_2_score)
@@ -285,6 +312,7 @@ func _start_next_round() -> void:
 func _restart_point() -> void:
 	round_faulting_player = null
 	round_replay_requested = false
+	round_has_valid_contact = false
 	_clear_pending_contacts()
 	pending_normal_hits.clear()
 	pending_dash_rescues.clear()
@@ -306,13 +334,16 @@ func _on_player_bumped(
 	while_dashing: bool
 ) -> void:
 	var player_2_controller := player_2 as PlayerController
-	var is_bot_player_bump := player == player_2 and player_2_controller.bot_enabled
-	if player == player_1 and player_2_controller.bot_enabled:
+	if player != player_1 and player != player_2:
 		return
-	if player != player_1 and not is_bot_player_bump:
+	if player == player_2 and not while_dashing:
 		return
-	if is_bot_player_bump and (
-		match_state != MatchState.ACTIVE or expected_balloon_player != player
+	if player == player_1 and player_2_controller.bot_enabled and not while_dashing:
+		return
+	if (
+		player == player_2
+		and player_2_controller.bot_enabled
+		and (match_state != MatchState.ACTIVE or expected_balloon_player != player)
 	):
 		return
 

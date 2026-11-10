@@ -58,6 +58,7 @@ shape = SubResource("RectangleShape2D_ground")
 position = Vector2(0, 90)
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_ceiling")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
 shape = SubResource("RectangleShape2D_side_wall")
@@ -66,6 +67,7 @@ shape = SubResource("RectangleShape2D_side_wall")
 position = Vector2(320, 90)
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_ceiling")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
 shape = SubResource("RectangleShape2D_side_wall")
