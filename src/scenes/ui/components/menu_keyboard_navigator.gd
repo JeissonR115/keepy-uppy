@@ -27,6 +27,10 @@ func _input(event: InputEvent) -> void:
 		moved.emit(-1)
 	elif movement_enabled and _matches_action(key_event, prefix, PlayerActionCatalog.ACTION_DOWN, KEY_S):
 		moved.emit(1)
+	elif movement_enabled and _matches_action(key_event, prefix, PlayerActionCatalog.ACTION_LEFT, KEY_A):
+		moved.emit(-1)
+	elif movement_enabled and _matches_action(key_event, prefix, PlayerActionCatalog.ACTION_RIGHT, KEY_D):
+		moved.emit(1)
 	elif confirm_enabled and _matches_action(key_event, prefix, PlayerActionCatalog.ACTION_JUMP, KEY_F):
 		confirmed.emit()
 	elif cancel_enabled and _matches_action(key_event, prefix, PlayerActionCatalog.ACTION_DASH, KEY_G):

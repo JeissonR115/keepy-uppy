@@ -7,7 +7,8 @@ The game has a configurable control screen but no pause menu, and its existing c
 ## What Changes
 
 - Add a pause menu with Resume, Restart, and Controls options, opened and closed with Escape.
-- Make the pause menu, restart confirmation, and controls screen fully navigable with Player 1's current bindings: Up/Down to move selection, Jump to confirm, and Dash to go back. Escape toggles pause outside capture mode.
+- Make the pause menu, restart confirmation, and controls screen fully navigable with Player 1's current bindings: directional actions move through the menu layout, Jump confirms, and Dash goes back. Escape toggles pause outside capture mode.
+- Keep pause options in one vertical column and share repeated menu-navigation and selection helpers through the UI utilities.
 - Require a confirmation step before restarting; default the confirmation selection to No and let the user cancel without changing the current match.
 - Make the existing controls screen a submenu of pause, preserving its binding capture and conflict validation while adding keyboard navigation and a clear restore-defaults option.
 - Keep Escape reserved from binding capture so the pause shortcut remains available.

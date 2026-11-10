@@ -1,29 +1,21 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://boljdsg61fmk4"]
 
-[ext_resource type="Script" path="res://src/scenes/ui/menus/pause_menu.gd" id="1_pause"]
+[ext_resource type="Script" uid="uid://blmn5fypxbl1d" path="res://src/scenes/ui/menus/pause_menu.gd" id="1_pause"]
 
-[node name="PauseMenu" type="Control"]
+[node name="PauseMenu" type="CanvasLayer" unique_id=24749439]
 visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 script = ExtResource("1_pause")
 
-[node name="Backdrop" type="ColorRect" parent="."]
-layout_mode = 1
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1470902590]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0.015, 0.02, 0.04, 0.78)
 
-[node name="PausePanel" type="PanelContainer" parent="."]
-layout_mode = 0
+[node name="PausePanel" type="PanelContainer" parent="." unique_id=1621263663]
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -32,55 +24,48 @@ offset_left = -90.0
 offset_top = -61.0
 offset_right = 90.0
 offset_bottom = 61.0
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 6
 
-[node name="Content" type="VBoxContainer" parent="PausePanel"]
+[node name="Content" type="VBoxContainer" parent="PausePanel" unique_id=1425131962]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="Title" type="Label" parent="PausePanel/Content"]
+[node name="Title" type="Label" parent="PausePanel/Content" unique_id=1379645627]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "PAUSED"
 horizontal_alignment = 1
 
-[node name="Options" type="VBoxContainer" parent="PausePanel/Content"]
+[node name="Options" type="VBoxContainer" parent="PausePanel/Content" unique_id=216863421]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ResumeButton" type="Button" parent="PausePanel/Content/Options"]
+[node name="ResumeButton" type="Button" parent="PausePanel/Content/Options" unique_id=1659296083]
 custom_minimum_size = Vector2(132, 18)
 layout_mode = 2
-focus_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "> RESUME"
 
-[node name="RestartButton" type="Button" parent="PausePanel/Content/Options"]
+[node name="RestartButton" type="Button" parent="PausePanel/Content/Options" unique_id=1448087668]
 custom_minimum_size = Vector2(132, 18)
 layout_mode = 2
-focus_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "  RESTART"
 
-[node name="ControlsButton" type="Button" parent="PausePanel/Content/Options"]
+[node name="ControlsButton" type="Button" parent="PausePanel/Content/Options" unique_id=919319706]
 custom_minimum_size = Vector2(132, 18)
 layout_mode = 2
-focus_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "  CONTROLS"
 
-[node name="Hint" type="Label" parent="PausePanel/Content"]
+[node name="Hint" type="Label" parent="PausePanel/Content" unique_id=2433872]
 layout_mode = 2
 theme_override_font_sizes/font_size = 6
 text = "W/S SELECT   F CONFIRM   G/ESC BACK"
 horizontal_alignment = 1
 
-[node name="ConfirmationPanel" type="PanelContainer" parent="."]
+[node name="ConfirmationPanel" type="PanelContainer" parent="." unique_id=1364601571]
 visible = false
-layout_mode = 0
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -89,41 +74,35 @@ offset_left = -93.0
 offset_top = -42.0
 offset_right = 93.0
 offset_bottom = 42.0
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 6
 
-[node name="Content" type="VBoxContainer" parent="ConfirmationPanel"]
+[node name="Content" type="VBoxContainer" parent="ConfirmationPanel" unique_id=286300674]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="Title" type="Label" parent="ConfirmationPanel/Content"]
+[node name="Title" type="Label" parent="ConfirmationPanel/Content" unique_id=247407846]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "RESTART MATCH?"
 horizontal_alignment = 1
 
-[node name="Options" type="HBoxContainer" parent="ConfirmationPanel/Content"]
+[node name="Options" type="HBoxContainer" parent="ConfirmationPanel/Content" unique_id=1733861888]
 layout_mode = 2
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="ConfirmButton" type="Button" parent="ConfirmationPanel/Content/Options"]
+[node name="ConfirmButton" type="Button" parent="ConfirmationPanel/Content/Options" unique_id=1567218481]
 custom_minimum_size = Vector2(77, 18)
 layout_mode = 2
-focus_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "YES, RESTART"
 
-[node name="CancelButton" type="Button" parent="ConfirmationPanel/Content/Options"]
+[node name="CancelButton" type="Button" parent="ConfirmationPanel/Content/Options" unique_id=39087375]
 custom_minimum_size = Vector2(77, 18)
 layout_mode = 2
-focus_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "> NO, GO BACK"
 
-[node name="Hint" type="Label" parent="ConfirmationPanel/Content"]
+[node name="Hint" type="Label" parent="ConfirmationPanel/Content" unique_id=105748913]
 layout_mode = 2
 theme_override_font_sizes/font_size = 6
 text = "G CANCEL   F CONFIRM"

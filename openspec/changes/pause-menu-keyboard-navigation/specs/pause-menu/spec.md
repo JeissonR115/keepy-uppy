@@ -22,11 +22,17 @@ The game SHALL let Player 1 pause and resume gameplay from the keyboard while ke
 - **THEN** the control settings screen opens while gameplay remains paused
 
 ### Requirement: Navigate menus with Player 1 controls
-Pause, confirmation, and submenu navigation SHALL use Player 1's current mapped Up, Down, Jump, and Dash actions for selection, confirmation, and back navigation.
+Pause, confirmation, and submenu navigation SHALL use Player 1's current mapped directional, Jump, and Dash actions for selection, confirmation, and back navigation. Pause options SHALL be displayed in one vertical column; Up and Down move through that list, while Left and Right do not change its selection. Directional navigation in other menus SHALL follow their visible layout.
 
 #### Scenario: Move the menu selection
 - **WHEN** Player 1 presses Up or Down while a menu is open
 - **THEN** the selection moves and the highlighted option is visible
+
+#### Scenario: Navigate the single-column pause menu
+- **WHEN** Player 1 presses Up or Down in the pause menu
+- **THEN** the selection moves vertically through the options and the highlighted option is visible
+- **WHEN** Player 1 presses Left or Right in the pause menu
+- **THEN** the selection remains unchanged
 
 #### Scenario: Confirm or go back
 - **WHEN** Player 1 presses Jump or Dash while a menu is open

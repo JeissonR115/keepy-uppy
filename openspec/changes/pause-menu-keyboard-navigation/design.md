@@ -27,7 +27,9 @@ Add pause and restart-confirmation panels to the existing scoreboard CanvasLayer
 
 ### Route menu navigation through the current Player 1 actions
 
-Read `player_1_up` and `player_1_down` to move the selected row, `player_1_jump` to activate it, and `player_1_dash` to go back. These action names resolve through Input Map at runtime, so changes made in control settings also affect menus. Escape remains a fixed pause/cancel key and stays reserved. While a capture is active, row navigation is suspended so keys intended for rebinding do not also activate menu controls; Escape or Dash cancels capture.
+Read Player 1's current directional actions, `player_1_jump`, and `player_1_dash` through shared helpers in `MenuNavigationUtils`. These action names resolve through Input Map at runtime, so changes made in control settings also affect menus. Escape remains a fixed pause/cancel key and stays reserved. While a capture is active, row navigation is suspended so keys intended for rebinding do not also activate menu controls; Escape or Dash cancels capture.
+
+Pause options are displayed in one vertical column. Up/Down changes the selected option; Left/Right has no effect in this menu. The restart confirmation remains a horizontal pair, so Left/Right changes the selected response there.
 
 **Alternative considered:** Hard-code W/S/F/G in menu scripts. That would stop navigation working when Player 1 rebinds those actions, so menus use the existing action map instead.
 

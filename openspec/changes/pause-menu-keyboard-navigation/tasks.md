@@ -3,6 +3,8 @@
 ## 1. Pause menu and keyboard navigation
 
 - [x] 1.1 Add a pause menu with Resume, Restart, and Controls options; open it with Escape, pause gameplay, and route selection/confirmation/back through Player 1's live Up/Down/Jump/Dash actions. Add automated pause, navigation, and gameplay-input isolation coverage, and document the keyboard map in README.
+- [x] 1.2 Arrange pause options in one vertical column; Up/Down navigates the options and Left/Right leaves the selection unchanged.
+- [x] 1.3 Share repeated menu action, wrapped-selection, button-label, and focus helpers in `ui/utils`, then use them across the pause, control-settings, and player-count menus.
 
 ## 2. Safe restart
 

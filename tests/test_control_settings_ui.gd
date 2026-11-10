@@ -30,14 +30,50 @@ func _run_test() -> void:
 	await process_frame
 
 	var scoreboard: CanvasLayer = main_scene.get_node("Arena/Scoreboard")
-	var pause_menu: Control = scoreboard.get_node("PauseMenu")
+	var pause_menu: PauseMenu = scoreboard.get_node("PauseMenu")
 	var screen: Control = scoreboard.get_node("ControlSettings")
+	var player_count_menu: PlayerCountMenu = main_scene.get_node("PlayerCountMenu")
+	if not _expect(
+		player_count_menu.visible and not pause_menu.visible and not screen.visible and paused,
+		"Player selection was not the only menu shown at startup."
+	):
+		return
+	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_S)
+	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_S)
+	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_F)
+	if not _expect(
+		screen.visible and not player_count_menu.visible and not pause_menu.visible and paused,
+		"Keyboard Controls did not replace player selection as the only open menu."
+	):
+		return
+	await _press_action("player_1_dash")
+	if not _expect(
+		player_count_menu.visible and not screen.visible and not pause_menu.visible and paused,
+		"Closing Keyboard Controls did not return to the player-selection menu."
+	):
+		return
+	scoreboard.call("_input", _escape_event())
+	if not _expect(
+		pause_menu.visible and not player_count_menu.visible and not screen.visible and paused,
+		"Opening pause did not replace player selection as the only open menu."
+	):
+		return
+	scoreboard.call("_input", _escape_event())
+	if not _expect(
+		player_count_menu.visible and not pause_menu.visible and not screen.visible and paused,
+		"Closing pause did not restore the player-selection menu exclusively."
+	):
+		return
+	player_count_menu._select_player_count(2)
+	if not _expect(not paused and not player_count_menu.visible, "Selecting a mode did not start gameplay."):
+		return
 	scoreboard.call("_input", _escape_event())
 	await _press_action("player_1_down")
 	await _press_action("player_1_down")
 	await _press_action("player_1_jump")
 	if not _expect(
-		screen.visible and paused and pause_menu.current_screen == pause_menu.MenuScreen.CONTROLS
+		screen.visible and not player_count_menu.visible and not pause_menu.visible
+		and paused and pause_menu.current_screen == pause_menu.MenuScreen.CONTROLS
 		and String(screen.get("captured_action")).is_empty(),
 		"Player 1 could not open the controls submenu while keeping gameplay paused."
 	):
@@ -45,6 +81,35 @@ func _run_test() -> void:
 
 	var focus_order: Array = screen.get("focus_order")
 	if not _expect(focus_order.size() == 17, "Not all control rows and settings actions are keyboard reachable."):
+		return
+	await _press_action("player_1_right")
+	var player_2_left_button := screen.call("get_action_button", "player_2_left") as Button
+	if not _expect(
+		screen.get("focused_index") == 7 and player_2_left_button.has_focus(),
+		"Right did not move from Player 1 Left to Player 2 Left in the same row."
+	):
+		return
+	await _press_action("player_1_left")
+	var player_1_left_button := screen.call("get_action_button", "player_1_left") as Button
+	if not _expect(
+		screen.get("focused_index") == 0 and player_1_left_button.has_focus(),
+		"Left did not return to Player 1 Left in the same row."
+	):
+		return
+	await _press_action("player_1_down")
+	await _press_action("player_1_right")
+	var player_2_right_button := screen.call("get_action_button", "player_2_right") as Button
+	if not _expect(
+		screen.get("focused_index") == 8 and player_2_right_button.has_focus(),
+		"Horizontal navigation did not switch to Player 2's matching action row."
+	):
+		return
+	await _press_action("player_1_left")
+	await _press_action("player_1_up")
+	if not _expect(
+		screen.get("focused_index") == 0 and player_1_left_button.has_focus(),
+		"Could not return to the first Player 1 action row after horizontal navigation."
+	):
 		return
 	for index in range(ACTIONS.size()):
 		var action_name := ACTIONS[index]
@@ -144,6 +209,8 @@ func _run_test() -> void:
 		return
 	scoreboard.call("_input", _escape_event())
 	await process_frame
+	scoreboard.call("_input", _escape_event())
+	await process_frame
 	if not _expect(not screen.visible and not paused, "Escape did not close the menu flow and resume gameplay."):
 		return
 
@@ -156,6 +223,12 @@ func _press_action(action_name: String) -> void:
 	Input.action_press(action_name)
 	await process_frame
 	Input.action_release(action_name)
+	await process_frame
+
+
+func _press_menu_key(navigator: MenuKeyboardNavigator, key: Key) -> void:
+	var event := _key_event(key)
+	navigator._input(event)
 	await process_frame
 
 

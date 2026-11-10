@@ -1,7 +1,7 @@
 class_name ControlSettings
 extends Control
 
-signal returned_to_pause
+signal returned_to_menu
 
 @onready var settings_manager: ControlSettingsManager = get_node("../../../ControlSettingsManager")
 @onready var player_columns: HBoxContainer = $SettingsPanel/Content/ActionScroll/ActionMargins/Columns
@@ -27,36 +27,19 @@ func _process(_delta: float) -> void:
 	if not visible:
 		return
 	if not captured_action.is_empty():
-		if Input.is_action_just_pressed(
-			PlayerActionCatalog.action_name(
-				PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DASH
-			)
+		if MenuNavigationUtils.is_player_one_action_just_pressed(
+			PlayerActionCatalog.ACTION_DASH
 		):
 			_cancel_capture()
 		return
-	if Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_UP
-		)
-	):
-		_move_focus(-1)
-	elif Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DOWN
-		)
-	):
-		_move_focus(1)
-	if Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_JUMP
-		)
-	):
+	var direction := MenuNavigationUtils.just_pressed_direction()
+	if direction.x != 0:
+		_move_focus_horizontally(direction.x)
+	elif direction.y != 0:
+		_move_focus(MenuNavigationUtils.linear_step(direction))
+	if MenuNavigationUtils.is_player_one_action_just_pressed(PlayerActionCatalog.ACTION_JUMP):
 		_activate_focused_control()
-	elif Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DASH
-		)
-	):
+	elif MenuNavigationUtils.is_player_one_action_just_pressed(PlayerActionCatalog.ACTION_DASH):
 		close()
 
 
@@ -81,7 +64,7 @@ func close() -> void:
 
 
 func _emit_returned_to_pause() -> void:
-	returned_to_pause.emit()
+	returned_to_menu.emit()
 
 
 func cancel_capture() -> void:
@@ -201,14 +184,41 @@ func _cancel_capture() -> void:
 
 
 func _move_focus(step: int) -> void:
-	focused_index = posmod(focused_index + step, focus_order.size())
+	focused_index = MenuNavigationUtils.wrap_index(
+		focused_index + step, focus_order.size()
+	)
 	_focus_control()
+
+
+func _move_focus_horizontally(step: int) -> void:
+	if focus_order.is_empty():
+		return
+	var focused_button := focus_order[focused_index]
+	for action_name: String in action_buttons:
+		if action_buttons[action_name] != focused_button:
+			continue
+		var current_player := PlayerActionCatalog.PLAYER_ONE_PREFIX
+		var other_player := PlayerActionCatalog.PLAYER_TWO_PREFIX
+		if action_name.begins_with("%s_" % PlayerActionCatalog.PLAYER_TWO_PREFIX):
+			current_player = PlayerActionCatalog.PLAYER_TWO_PREFIX
+			other_player = PlayerActionCatalog.PLAYER_ONE_PREFIX
+		var action_suffix := action_name.trim_prefix("%s_" % current_player)
+		var other_button := action_buttons.get(
+			PlayerActionCatalog.action_name(other_player, action_suffix)
+		) as Button
+		if other_button == null:
+			return
+		focused_index = focus_order.find(other_button)
+		_focus_control()
+		return
+
+	_move_focus(step)
 
 
 func _focus_control() -> void:
 	if focus_order.is_empty():
 		return
-	focus_order[focused_index].grab_focus()
+	MenuNavigationUtils.focus_control(focus_order[focused_index])
 
 
 func _activate_focused_control() -> void:

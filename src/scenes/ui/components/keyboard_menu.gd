@@ -41,8 +41,8 @@ func deactivate() -> void:
 func select(index: int) -> void:
 	if items.is_empty():
 		return
-	selected_index = posmod(index, items.size())
-	items[selected_index].grab_focus()
+	selected_index = MenuNavigationUtils.wrap_index(index, items.size())
+	MenuNavigationUtils.focus_control(items[selected_index])
 	selection_changed.emit(selected_index)
 
 

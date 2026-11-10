@@ -40,7 +40,21 @@ func _run_test() -> void:
 	manager.match_winner = manager.player_1
 
 	var scoreboard: CanvasLayer = arena.get_node("Scoreboard")
-	var pause_menu: Control = scoreboard.get_node("PauseMenu")
+	var pause_menu: PauseMenu = scoreboard.get_node("PauseMenu")
+	var player_count_menu: PlayerCountMenu = main_scene.get_node("PlayerCountMenu")
+	if not _expect(
+		player_count_menu.visible and paused,
+		"Player-count selection did not open automatically when the game started."
+	):
+		return
+	player_count_menu._select_player_count(2)
+	manager.player_1_score = 3
+	manager.player_2_score = 1
+	manager.player_1_sets = 2
+	manager.player_2_sets = 1
+	manager.round_number = 27
+	manager.match_state = manager.MatchState.COMPLETE
+	manager.match_winner = manager.player_1
 	scoreboard.call("_input", _escape_event())
 	Input.action_press("player_1_down")
 	await process_frame
@@ -54,18 +68,45 @@ func _run_test() -> void:
 		"Restart confirmation did not default to No."
 	):
 		return
-	Input.action_press("player_1_up")
+	Input.action_press("player_1_left")
 	await process_frame
-	Input.action_release("player_1_up")
+	Input.action_release("player_1_left")
 	Input.action_press("player_1_jump")
 	await process_frame
 	Input.action_release("player_1_jump")
 	if not _expect(
-		manager.match_state == manager.MatchState.ACTIVE
+		player_count_menu.visible and paused
+		and manager.match_state == manager.MatchState.COMPLETE
+		and manager.player_1_score == 3 and manager.player_2_score == 1
+		and manager.player_1_sets == 2 and manager.player_2_sets == 1
+		and manager.round_number == 27,
+		"Confirmed restart did not open player selection before resetting the match."
+	):
+		return
+	_press_key(player_count_menu.keyboard_navigator, KEY_D)
+	if not _expect(
+		player_count_menu.selected_index == 1,
+		"Horizontal navigation did not select the two-player option (visible=%s, enabled=%s, index=%d)." % [
+			player_count_menu.visible,
+			player_count_menu.keyboard_navigator.enabled,
+			player_count_menu.selected_index,
+		]
+	):
+		return
+	_press_key(player_count_menu.keyboard_navigator, KEY_A)
+	if not _expect(
+		player_count_menu.selected_index == 0,
+		"Horizontal navigation did not return to the one-player option."
+	):
+		return
+	_press_key(player_count_menu.keyboard_navigator, KEY_F)
+	if not _expect(
+		not player_count_menu.visible
+		and manager.match_state == manager.MatchState.ACTIVE
 		and manager.player_1_score == 0 and manager.player_2_score == 0
 		and manager.player_1_sets == 0 and manager.player_2_sets == 0
 		and manager.round_number == 1 and manager.match_winner == null,
-		"Confirmed restart did not reset the match to a fresh opening state."
+		"Selecting a game mode did not reset the match to a fresh opening state."
 	):
 		return
 	var saved_binding: InputEventKey = settings_manager.get_binding_event("player_1_left")
@@ -80,7 +121,7 @@ func _run_test() -> void:
 	if not _expect(not paused and not pause_menu.visible, "Confirmed restart left the menu or game paused."):
 		return
 
-	print("Restart confirmation, full match reset, and saved-control retention verified.")
+	print("Restart confirmation, player-count selection, horizontal navigation, full match reset, and saved-control retention verified.")
 	_remove_test_file()
 	quit()
 
@@ -91,6 +132,15 @@ func _escape_event() -> InputEventKey:
 	event.physical_keycode = KEY_ESCAPE
 	event.pressed = true
 	return event
+
+
+func _press_key(navigator: MenuKeyboardNavigator, key: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = key
+	event.physical_keycode = key
+	event.pressed = true
+	navigator._input(event)
+	await process_frame
 
 
 func _remove_test_file() -> void:

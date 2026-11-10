@@ -25,8 +25,19 @@ func _run_test() -> void:
 	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var settings_manager: Node = main_scene.get_node("ControlSettingsManager")
 	var scoreboard: CanvasLayer = arena.get_node("Scoreboard")
-	var pause_menu: Control = scoreboard.get_node("PauseMenu")
+	var pause_menu: PauseMenu = scoreboard.get_node("PauseMenu")
 	var controls: Control = scoreboard.get_node("ControlSettings")
+	var player_count_menu: PlayerCountMenu = main_scene.get_node("PlayerCountMenu")
+	if not _expect(
+		player_count_menu.visible and paused,
+		"Player-count selection was not the only menu open when the game started."
+	):
+		return
+	if not _expect(
+		pause_menu.get_node("PausePanel/Content/Options") is VBoxContainer,
+		"Pause options are not laid out in a single vertical column."
+	):
+		return
 	manager.player_1_score = 2
 	var match_round_before: int = int(manager.round_number)
 	var remapped_down := _key_event(KEY_K)
@@ -42,14 +53,82 @@ func _run_test() -> void:
 		"Escape did not open the pause menu and pause gameplay."
 	):
 		return
+	if not _expect(
+		pause_menu.layer > scoreboard.layer,
+		"Pause menu is not rendered above the HUD."
+	):
+		return
+	if not _expect(
+		not player_count_menu.visible and not player_count_menu.keyboard_navigator.enabled,
+		"Pause did not replace and suspend the player-count menu."
+	):
+		return
+	scoreboard.call("_input", _escape_event())
+	if not _expect(
+		player_count_menu.visible and not pause_menu.visible and paused,
+		"Closing pause did not restore the startup player-count menu."
+	):
+		return
+	player_count_menu._select_player_count(2)
+	if not _expect(not paused, "Selecting a mode did not resume gameplay."):
+		return
+	scoreboard.call("_input", _escape_event())
+	if not _expect(
+		pause_menu.visible and not player_count_menu.visible and paused,
+		"Pause did not open exclusively during gameplay."
+	):
+		return
 	remapped_down.pressed = true
 	Input.parse_input_event(remapped_down)
 	await process_frame
 	remapped_down.pressed = false
 	Input.parse_input_event(remapped_down)
 	await process_frame
+	if not _expect(
+		pause_menu.selected_index == 1,
+		"The remapped Player 1 Down action did not select Restart."
+	):
+		return
 	settings_manager.restore_default_bindings()
-	if not _expect(pause_menu.selected_index == 1, "The remapped Player 1 Down action did not select Restart."):
+	Input.action_press("player_1_left")
+	await process_frame
+	Input.action_release("player_1_left")
+	Input.action_press("player_1_right")
+	await process_frame
+	Input.action_release("player_1_right")
+	if not _expect(
+		pause_menu.selected_index == 1,
+		"Left or Right changed the selection in the single-column pause menu."
+	):
+		return
+	Input.action_press("player_1_up")
+	await process_frame
+	Input.action_release("player_1_up")
+	if not _expect(pause_menu.selected_index == 0, "Up did not select Resume in the single-column menu."):
+		return
+	Input.action_press("player_1_down")
+	await process_frame
+	Input.action_release("player_1_down")
+	Input.action_press("player_1_down")
+	await process_frame
+	Input.action_release("player_1_down")
+	if not _expect(
+		pause_menu.selected_index == 2,
+		"Down did not navigate through the single-column pause options."
+	):
+		return
+	Input.action_press("player_1_left")
+	await process_frame
+	Input.action_release("player_1_left")
+	if not _expect(
+		pause_menu.selected_index == 2,
+		"Left changed the selection in the single-column pause menu."
+	):
+		return
+	Input.action_press("player_1_up")
+	await process_frame
+	Input.action_release("player_1_up")
+	if not _expect(pause_menu.selected_index == 1, "Up did not select Restart."):
 		return
 	Input.action_press("player_1_jump")
 	await process_frame
@@ -71,6 +150,9 @@ func _run_test() -> void:
 	):
 		return
 
+	Input.action_press("player_1_left")
+	await process_frame
+	Input.action_release("player_1_left")
 	Input.action_press("player_1_down")
 	await process_frame
 	Input.action_release("player_1_down")

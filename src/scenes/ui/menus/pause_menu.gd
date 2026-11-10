@@ -1,11 +1,14 @@
 class_name PauseMenu
-extends Control
+extends CanvasLayer
 
+signal opened
+signal closed
 signal controls_requested
-signal restart_confirmed
+signal player_count_requested
 
 enum MenuScreen { HIDDEN, PAUSE, RESTART_CONFIRMATION, CONTROLS }
 
+const PAUSE_LAYER := 127
 const PAUSE_OPTIONS: Array[String] = ["RESUME", "RESTART", "CONTROLS"]
 const CONFIRMATION_OPTIONS: Array[String] = ["YES, RESTART", "NO, GO BACK"]
 
@@ -27,6 +30,7 @@ var selected_index: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	layer = PAUSE_LAYER
 	for index in range(pause_buttons.size()):
 		pause_buttons[index].pressed.connect(_on_pause_option_pressed.bind(index))
 	for index in range(confirmation_buttons.size()):
@@ -38,40 +42,27 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if current_screen != MenuScreen.PAUSE and current_screen != MenuScreen.RESTART_CONFIRMATION:
 		return
-	if Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_UP
-		)
-	):
-		_move_selection(-1)
-	elif Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DOWN
-		)
-	):
-		_move_selection(1)
-	if Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_JUMP
-		)
-	):
+	var direction := MenuNavigationUtils.just_pressed_direction()
+	if current_screen == MenuScreen.PAUSE and direction.y != 0:
+		_move_selection(direction.y)
+	elif current_screen == MenuScreen.RESTART_CONFIRMATION and direction.x != 0:
+		_move_selection(direction.x)
+	if MenuNavigationUtils.is_player_one_action_just_pressed(PlayerActionCatalog.ACTION_JUMP):
 		_activate_selection()
-	elif Input.is_action_just_pressed(
-		PlayerActionCatalog.action_name(
-			PlayerActionCatalog.PLAYER_ONE_PREFIX, PlayerActionCatalog.ACTION_DASH
-		)
-	):
+	elif MenuNavigationUtils.is_player_one_action_just_pressed(PlayerActionCatalog.ACTION_DASH):
 		_go_back()
 
 
 func open_pause() -> void:
 	if current_screen != MenuScreen.HIDDEN:
 		return
+	layer = PAUSE_LAYER
 	get_tree().paused = true
 	current_screen = MenuScreen.PAUSE
 	selected_index = 0
 	_show_panel(pause_panel)
 	_set_pause_selection()
+	opened.emit()
 
 
 func toggle_pause() -> void:
@@ -82,9 +73,12 @@ func toggle_pause() -> void:
 
 
 func close_pause() -> void:
+	if current_screen == MenuScreen.HIDDEN:
+		return
 	current_screen = MenuScreen.HIDDEN
 	visible = false
 	get_tree().paused = false
+	closed.emit()
 
 
 func open_controls() -> void:
@@ -124,17 +118,21 @@ func _show_panel(panel: Control) -> void:
 
 
 func _move_selection(step: int) -> void:
-	var count := pause_buttons.size() if current_screen == MenuScreen.PAUSE else confirmation_buttons.size()
-	selected_index = posmod(selected_index + step, count)
+	var buttons := pause_buttons if current_screen == MenuScreen.PAUSE else confirmation_buttons
+	selected_index = MenuNavigationUtils.wrap_index(
+		selected_index + step, buttons.size()
+	)
 	_set_active_selection()
 
 
 func _set_pause_selection() -> void:
-	_set_button_selection(pause_buttons, selected_index, PAUSE_OPTIONS)
+	MenuNavigationUtils.update_button_selection(pause_buttons, PAUSE_OPTIONS, selected_index)
 
 
 func _set_confirmation_selection() -> void:
-	_set_button_selection(confirmation_buttons, selected_index, CONFIRMATION_OPTIONS)
+	MenuNavigationUtils.update_button_selection(
+		confirmation_buttons, CONFIRMATION_OPTIONS, selected_index
+	)
 
 
 func _set_active_selection() -> void:
@@ -142,14 +140,6 @@ func _set_active_selection() -> void:
 		_set_pause_selection()
 	else:
 		_set_confirmation_selection()
-
-
-func _set_button_selection(buttons: Array[Button], index: int, option_names: Array[String]) -> void:
-	for button_index in range(buttons.size()):
-		var selected := button_index == index
-		buttons[button_index].text = ("> " if selected else "  ") + option_names[button_index]
-		if selected:
-			buttons[button_index].grab_focus()
 
 
 func _activate_selection() -> void:
@@ -183,8 +173,7 @@ func _on_confirmation_pressed(index: int) -> void:
 	if index == 0:
 		current_screen = MenuScreen.HIDDEN
 		visible = false
-		get_tree().paused = false
-		restart_confirmed.emit()
+		player_count_requested.emit()
 	else:
 		_cancel_restart_confirmation()
 

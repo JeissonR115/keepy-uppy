@@ -45,9 +45,11 @@ development.
 ## Pause and menu navigation
 
 - Press **Escape** during play to open or close the pause menu.
-- All menus use Player 1's current **Up/Down** actions (default W/S), **Jump** to confirm (default F), and **Dash** to go back (default G). Remapping those actions updates menu navigation too.
-- Choose **Resume**, **Restart**, or **Controls**. Confirming **Restart** immediately begins a fresh match and retains saved control bindings.
-- The same navigation applies to the player-count, controls, pause, and winner menus. Escape opens or closes pause during play and cancels an active key capture.
+- At startup, the player-count menu is the only menu open. Select **Keyboard Controls** to edit bindings before choosing a game mode; returning from controls restores player selection.
+- Only one menu is shown at a time: opening pause hides player selection, and opening controls replaces the menu that launched it.
+- The pause menu is a single vertical column: Player 1's **Up/Down** actions (default W/S) move between options; **Left/Right** do not change its selection. The restart confirmation uses **Left/Right** (default A/D) to choose Yes or No. Other menus also use Player 1's current directional actions; **Jump** confirms (default F) and **Dash** goes back (default G). Remapping those actions updates menu navigation too.
+- Choose **Resume**, **Restart**, or **Controls**. Confirming **Restart** opens the 1- or 2-player selection; choosing a mode starts a fresh match and retains saved control bindings.
+- Player-count, controls, and winner menus remain keyboard navigable. Escape opens or closes pause during play and cancels an active key capture.
 
 Verify pause navigation, restart cancellation, controls entry, and gameplay isolation with:
 

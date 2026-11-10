@@ -20,6 +20,8 @@ extends CanvasLayer
 @onready var set_result_panel: PanelContainer = $SetResultPanel
 @onready var set_result_label: Label = $SetResultPanel/SetResultLabel
 var set_result_tween: Tween
+var controls_return_to_player_count: bool = false
+var player_count_suspended_by_pause: bool = false
 
 
 func _ready() -> void:
@@ -29,8 +31,11 @@ func _ready() -> void:
 	controls_button.pressed.connect(pause_menu.open_pause)
 	winner_ok_button.pressed.connect(_return_to_player_count_menu)
 	pause_menu.controls_requested.connect(_open_control_settings)
-	pause_menu.restart_confirmed.connect(_restart_match)
-	control_settings.returned_to_pause.connect(pause_menu.return_from_controls)
+	pause_menu.player_count_requested.connect(_open_player_count_menu)
+	pause_menu.opened.connect(_on_pause_menu_opened)
+	pause_menu.closed.connect(_on_pause_menu_closed)
+	control_settings.returned_to_menu.connect(_on_control_settings_returned)
+	player_count_menu.controls_requested.connect(_open_player_count_controls)
 	match_manager.score_changed.connect(_on_score_changed)
 	match_manager.set_score_changed.connect(_on_set_score_changed)
 	match_manager.round_ended.connect(_on_round_ended)
@@ -63,19 +68,45 @@ func _input(event: InputEvent) -> void:
 	if control_settings.visible and not control_settings.captured_action.is_empty():
 		control_settings.cancel_capture()
 	elif control_settings.visible:
-		control_settings.hide_for_pause_exit()
-		pause_menu.close_pause()
+		control_settings.close()
 	else:
 		pause_menu.toggle_pause()
 	get_viewport().set_input_as_handled()
 
 
 func _open_control_settings() -> void:
+	controls_return_to_player_count = false
 	control_settings.open()
 
 
-func _restart_match() -> void:
-	match_manager.restart_match()
+func _open_player_count_controls() -> void:
+	controls_return_to_player_count = true
+	control_settings.open()
+
+
+func _on_control_settings_returned() -> void:
+	if controls_return_to_player_count:
+		controls_return_to_player_count = false
+		player_count_menu.resume_menu()
+	else:
+		pause_menu.return_from_controls()
+
+
+func _open_player_count_menu() -> void:
+	player_count_suspended_by_pause = false
+	player_count_menu.open_menu()
+
+
+func _on_pause_menu_opened() -> void:
+	if player_count_menu.visible:
+		player_count_menu.suspend_menu()
+		player_count_suspended_by_pause = true
+
+
+func _on_pause_menu_closed() -> void:
+	if player_count_suspended_by_pause:
+		player_count_suspended_by_pause = false
+		player_count_menu.resume_menu()
 
 
 func _on_score_changed(player_1_score: int, player_2_score: int) -> void:

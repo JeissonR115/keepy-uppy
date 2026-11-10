@@ -20,12 +20,18 @@ func _run_test() -> void:
 	var scoreboard: Node = arena.get_node("Scoreboard")
 	var pause_menu: Node = scoreboard.get_node("PauseMenu")
 	var control_settings: Node = scoreboard.get_node("ControlSettings")
+	if not _expect(
+		player_count_menu.has_node("Panel/MenuScroll/Margins/Content/ControlsButton"),
+		"Player-count scene is missing the Keyboard Controls button."
+	):
+		return
 
 	for node_path: NodePath in [
 		"Backdrop",
 		"Panel/MenuScroll/Margins/Content/Title",
 		"Panel/MenuScroll/Margins/Content/OnePlayerButton",
 		"Panel/MenuScroll/Margins/Content/TwoPlayersButton",
+		"Panel/MenuScroll/Margins/Content/ControlsButton",
 	]:
 		if not _expect(
 			player_count_menu.has_node(node_path),

@@ -17,19 +17,20 @@ Las escenas definen el layout y los controles fijos. `ControlSettings` crea desd
 ## Funcionamiento
 
 1. `Scoreboard` conecta señales de `MatchManager` y actualiza puntos, sets, turno, prioridad y mensajes de estado.
-2. Escape alterna la pausa durante juego. La pausa mantiene el árbol detenido; W/S mueve la selección, F confirma y G regresa.
-3. `Restart` solicita confirmación y, al aceptar, inicia una partida nueva. La pantalla inicial permite elegir un jugador contra el bot o dos jugadores locales.
-4. Controles conserva el estado de pausa al abrirse. Permite recorrer las catorce acciones, cambiar una tecla, restaurar todas las asignaciones o volver a pausa.
+2. Escape alterna la pausa durante juego. La pausa mantiene el árbol detenido y presenta Resume, Restart y Controls en una sola columna; W/S cambian la selección vertical y A/D no la alteran. En la confirmación de reinicio, A/D seleccionan Sí o No. F confirma y G regresa.
+3. Al iniciar, el selector de jugadores es el único menú abierto. Incluye un botón para abrir la configuración de teclas; al volver, restaura el selector. `Restart` solicita confirmación y, al aceptar, abre el menú para elegir uno o dos jugadores. La partida nueva comienza al confirmar el modo.
+4. Controles conserva el estado de pausa al abrirse. Permite recorrer las catorce acciones, cambiar una tecla, restaurar todas las asignaciones o volver al menú que la abrió. Izquierda/Derecha cambia al otro jugador manteniendo la misma acción seleccionada.
 5. Al ganar un set, Scoreboard muestra brevemente el ganador, tanteo del set y acumulado de sets. Al completar el partido, el overlay de victoria permite regresar a selección de modo.
 6. Los menús que pueden exceder el espacio disponible usan contenedores de scroll vertical que siguen el foco al navegar.
 
 ## Componentes principales
 
 - `Scoreboard._input()`: gestiona Escape para pausar/reanudar y cerrar controles; el overlay de ganador conserva su propia navegación.
-- `PauseMenu`: emite `controls_requested` y `restart_confirmed`; mantiene su estado y opciones.
-- `ControlSettings`: administra el foco, captura teclas y emite `returned_to_pause` al cerrar.
-- `PlayerCountMenu`: configura `Player2.bot_enabled` y reanuda el árbol; también permite elegir el modo tras la pantalla de victoria.
+- `PauseMenu`: emite `controls_requested` y `player_count_requested`; mantiene su estado y opciones en una columna.
+- `ControlSettings`: administra el foco, captura teclas y devuelve el control al menú que la abrió.
+- `PlayerCountMenu`: aparece al inicio y tras reinicio/victoria, configura `Player2.bot_enabled` y permite abrir controles sin superponer menús.
 - `MenuKeyboardNavigator`: traduce acciones de Player 1 a señales comunes de movimiento, confirmación y cancelar.
+- `MenuNavigationUtils`: comparte la lectura de acciones de menú, el avance cíclico de selección y las actualizaciones de foco/etiquetas.
 - `Scoreboard._on_set_won()` y `_on_match_ended()`: despliegan el aviso de set y el overlay final.
 
 ## Interacciones
