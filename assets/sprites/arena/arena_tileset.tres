@@ -1,6 +1,7 @@
-[gd_resource type="TileSet" format=3 uid="uid://dvhis7325ae76"]
+[gd_resource type="TileSet" load_steps=5 format=3 uid="uid://dvhis7325ae76"]
 
 [ext_resource type="Texture2D" uid="uid://c3fgx0i7vfuku" path="res://assets/sprites/arena/foreground_tilesets.png" id="1_t0306"]
+[ext_resource type="Texture2D" path="res://assets/sprites/arena/trampoline_tile.svg" id="2_trampoline"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ha2b5"]
 texture = ExtResource("1_t0306")
@@ -893,9 +894,17 @@ texture = ExtResource("1_t0306")
 33:41/0 = 0
 34:41/0 = 0
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_trampoline"]
+texture = ExtResource("2_trampoline")
+0:0/0 = 0
+0:0/0/physics_layer_2/polygon_0/points = PackedVector2Array(0, 0, 16, 0, 16, 16, 0, 16)
+
 [resource]
 physics_layer_0/collision_layer = 1
 physics_layer_0/collision_mask = 0
 physics_layer_1/collision_layer = 4
 physics_layer_1/collision_mask = 0
+physics_layer_2/collision_layer = 2
+physics_layer_2/collision_mask = 0
 sources/0 = SubResource("TileSetAtlasSource_ha2b5")
+sources/1 = SubResource("TileSetAtlasSource_trampoline")

@@ -15,11 +15,6 @@ const MovementConstants = preload("res://src/models/player/player_movement_const
 @export_enum("player_1", "player_2") var input_prefix: String = "player_1"
 @export var bot_enabled: bool = false
 @export var dash_rescue_half_extents: Vector2 = Vector2(22.0, 10.0)
-@export var accelerate_speed_multiplier: float = 1.35
-@export var accelerate_duration: float = 0.8
-@export var accelerate_cooldown: float = 4.0
-@export var accelerate_max_speed: float = 210.0
-
 var arena_speed_multiplier: float = 1.0
 
 var idle_color: Color
@@ -35,8 +30,6 @@ var var_jump_speed: float = 0.0
 var ceiling_contact_timer: float = 0.0
 var dash_timer: float = 0.0
 var dash_cooldown_timer: float = 0.0
-var accelerate_timer: float = 0.0
-var accelerate_cooldown_timer: float = 0.0
 var run_animation_time: float = 0.0
 var step_distance: float = 0.0
 var wall_slide_timer: float = 0.0
@@ -120,8 +113,6 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	_set_ducking(false)
 	force_move_x = 0.0
 	force_move_timer = 0.0
-	accelerate_timer = 0.0
-	accelerate_cooldown_timer = 0.0
 	is_dashing = false
 	dash_rescue_hit = false
 	step_distance = 0.0
@@ -139,8 +130,6 @@ func _physics_process(delta: float) -> void:
 
 	dash_cooldown_timer = maxf(dash_cooldown_timer - delta, 0.0)
 	dash_refill_cooldown_timer = maxf(dash_refill_cooldown_timer - delta, 0.0)
-	accelerate_timer = maxf(accelerate_timer - delta, 0.0)
-	accelerate_cooldown_timer = maxf(accelerate_cooldown_timer - delta, 0.0)
 	if platform_drop_timer > 0.0:
 		platform_drop_timer = maxf(platform_drop_timer - delta, 0.0)
 		if is_zero_approx(platform_drop_timer):
@@ -185,9 +174,6 @@ func _physics_process(delta: float) -> void:
 		_update_visual_state(horizontal_input, grounded, delta)
 		return
 
-	if not bot_enabled and input_reader.is_just_pressed(PlayerActionCatalog.ACTION_ACCELERATE):
-		try_activate_accelerate()
-
 	force_move_timer = maxf(force_move_timer - delta, 0.0)
 	if force_move_timer > 0.0:
 		horizontal_input = force_move_x
@@ -211,7 +197,9 @@ func _physics_process(delta: float) -> void:
 		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
 
 	var wall_jump_direction := _wall_direction_within(MovementConstants.WALL_CHECK_DIST)
-	var climb_wall_direction := _wall_direction_within(MovementConstants.CLIMB_CHECK_DIST)
+	var climb_wall_direction := _climbable_wall_direction_within(
+		MovementConstants.CLIMB_CHECK_DIST
+	)
 	var grab_held := not bot_enabled and input_reader.is_pressed(PlayerActionCatalog.ACTION_GRAB)
 	var wall_jump_started := false
 	if movement_state == MovementState.CLIMB:
@@ -285,11 +273,6 @@ func _physics_process(delta: float) -> void:
 	else:
 		var movement_control := 1.0 if grounded else MovementConstants.AIR_MULT
 		var target_run_speed := MovementConstants.MAX_RUN * arena_speed_multiplier
-		if accelerate_timer > 0.0:
-			target_run_speed = minf(
-				target_run_speed * accelerate_speed_multiplier,
-				accelerate_max_speed * arena_speed_multiplier
-			)
 		var target_horizontal_speed := horizontal_input * target_run_speed
 		var is_preserving_excess_speed := (
 			not is_zero_approx(horizontal_input)
@@ -304,9 +287,6 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(
 			velocity.x, target_horizontal_speed, horizontal_rate * movement_control * delta
 		)
-		if accelerate_timer > 0.0:
-			var boosted_max_speed := accelerate_max_speed * arena_speed_multiplier
-			velocity.x = clampf(velocity.x, -boosted_max_speed, boosted_max_speed)
 
 	if movement_state != MovementState.DASH and movement_state != MovementState.CLIMB:
 		if grounded and not jumped:
@@ -342,6 +322,8 @@ func _physics_process(delta: float) -> void:
 	var upward_speed := velocity.y
 	var dash_velocity_before_move := velocity
 	move_and_slide()
+	if movement_state != MovementState.DASH:
+		_handle_trampoline_contacts()
 	if movement_state == MovementState.DASH:
 		_try_dash_corner_correction(delta, dash_velocity_before_move)
 		_handle_dash_contacts()
@@ -438,6 +420,28 @@ func _wall_direction_within(distance: float) -> float:
 		if test_move(global_transform, Vector2(direction * distance, 0.0)):
 			return -direction
 	return 0.0
+
+
+func _climbable_wall_direction_within(distance: float) -> float:
+	for direction in [-1.0, 1.0]:
+		var collision := KinematicCollision2D.new()
+		if test_move(
+			global_transform, Vector2(direction * distance, 0.0), collision
+		) and collision.get_collider() is Node and collision.get_collider().is_in_group("climbable_wall"):
+			return -direction
+	return 0.0
+
+
+func _handle_trampoline_contacts() -> void:
+	if not is_on_floor() or velocity.y < 0.0:
+		return
+	for index in get_slide_collision_count():
+		var collision := get_slide_collision(index)
+		var collider := collision.get_collider()
+		if collider is Node and collider.is_in_group("trampoline") and collision.get_normal().y < -0.5:
+			velocity.y = -MovementConstants.TRAMPOLINE_BOUNCE_SPEED
+			var_jump_timer = 0.0
+			return
 
 
 func _is_on_one_way_platform() -> bool:
@@ -638,14 +642,6 @@ func show_touch_pixel(world_position: Vector2) -> void:
 	tween.tween_interval(TOUCH_PIXEL_LIFETIME * 0.65)
 	tween.tween_property(pixel, "modulate:a", 0.0, TOUCH_PIXEL_LIFETIME * 0.35)
 	tween.tween_callback(pixel.queue_free)
-
-
-func try_activate_accelerate() -> bool:
-	if accelerate_cooldown_timer > 0.0:
-		return false
-	accelerate_timer = accelerate_duration
-	accelerate_cooldown_timer = accelerate_cooldown
-	return true
 
 
 func _update_visual_state(horizontal_input: float, grounded: bool, delta: float) -> void:

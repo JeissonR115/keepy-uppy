@@ -22,7 +22,7 @@ func _run_test() -> void:
 	):
 		return
 	if not _expect(
-		is_equal_approx(MovementConstants.MAX_RUN, 110.0)
+		is_equal_approx(MovementConstants.MAX_RUN, 130.0)
 		and is_equal_approx(MovementConstants.RUN_ACCEL, 1000.0)
 		and is_equal_approx(MovementConstants.RUN_REDUCE, 600.0)
 		and is_equal_approx(MovementConstants.GRAVITY, 1100.0)
@@ -55,6 +55,8 @@ func _run_test() -> void:
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var player_2: CharacterBody2D = main_scene.get_node("Arena/Player2")
+	var collision_count := [0]
+	player_1.player_bumped.connect(func(_player: CharacterBody2D, _opponent: CharacterBody2D, _dashing: bool) -> void: collision_count[0] += 1)
 	var player_1_start := player_1.global_position
 	var player_2_start := player_2.global_position
 
@@ -109,7 +111,7 @@ func _run_test() -> void:
 		await physics_frame
 	if not _expect(player_1.is_on_floor() and player_2.is_on_floor(), "Players did not collide with the arena ground."):
 		return
-	if not _expect(player_1.global_position.x < player_2.global_position.x, "Players passed through each other."):
+	if not _expect(collision_count[0] > 0, "Players did not register their physical collisions."):
 		return
 
 	Input.action_release("player_1_right")

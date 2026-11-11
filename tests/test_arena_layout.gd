@@ -92,12 +92,14 @@ func _run_test() -> void:
 	if not _expect(match_manager.player_1_score + match_manager.player_2_score == 0, "A transit platform awarded a point."):
 		return
 
-	balloon.reset_round(Vector2(160, 150))
+	balloon.reset_round(Vector2(140, 150))
 	balloon.gravity_scale = 0.0
 	balloon.linear_velocity = Vector2(0, 60)
 	for _frame in range(20):
 		await physics_frame
 	if not _expect(match_manager.player_1_score + match_manager.player_2_score == 1 and match_manager.round_number == 2, "Scoring floor contact did not resolve exactly one point."):
 		return
+	main_scene.queue_free()
+	await process_frame
 	print("Catalog loading, map references, TileSet collisions, platform traversal, and scoring surfaces verified.")
 	quit()

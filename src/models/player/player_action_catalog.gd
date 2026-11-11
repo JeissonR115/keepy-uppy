@@ -9,7 +9,6 @@ const ACTION_UP := "up"
 const ACTION_DOWN := "down"
 const ACTION_JUMP := "jump"
 const ACTION_DASH := "dash"
-const ACTION_ACCELERATE := "accelerate"
 const ACTION_GRAB := "grab"
 
 const PLAYERS: Array[Dictionary] = [
@@ -24,7 +23,6 @@ const PLAYERS: Array[Dictionary] = [
 			{"suffix": ACTION_DOWN, "label": "DOWN", "default_key": KEY_S},
 			{"suffix": ACTION_JUMP, "label": "JUMP", "default_key": KEY_F},
 			{"suffix": ACTION_DASH, "label": "DASH", "default_key": KEY_G},
-			{"suffix": ACTION_ACCELERATE, "label": "BOOST", "default_key": KEY_H},
 			{"suffix": ACTION_GRAB, "label": "GRAB", "default_key": KEY_R},
 		],
 	},
@@ -39,7 +37,6 @@ const PLAYERS: Array[Dictionary] = [
 			{"suffix": ACTION_DOWN, "label": "DOWN", "default_key": KEY_DOWN},
 			{"suffix": ACTION_JUMP, "label": "JUMP", "default_key": KEY_1},
 			{"suffix": ACTION_DASH, "label": "DASH", "default_key": KEY_2},
-			{"suffix": ACTION_ACCELERATE, "label": "BOOST", "default_key": KEY_3},
 			{"suffix": ACTION_GRAB, "label": "GRAB", "default_key": KEY_4},
 		],
 	},

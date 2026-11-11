@@ -165,6 +165,9 @@ func _run_test() -> void:
 	player_1.velocity = Vector2.ZERO
 	player_2.velocity = Vector2.ZERO
 	balloon.global_position = Vector2(180, 48)
+	balloon.linear_velocity = Vector2.ZERO
+	balloon.angular_velocity = 0.0
+	balloon.gravity_scale = 0.0
 	match_manager.match_state = match_manager.MatchState.ACTIVE
 	match_manager.expected_balloon_player = player_2
 	var cpu: CPUController = player_2.get_node("CPUController")
@@ -179,5 +182,7 @@ func _run_test() -> void:
 	):
 		return
 
+	main_scene.queue_free()
+	await process_frame
 	print("Serve attribution, alternating turns, fault resolution, bounded pushes, and arena walls verified.")
 	quit()

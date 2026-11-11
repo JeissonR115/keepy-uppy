@@ -1,7 +1,7 @@
 class_name PlayerMovementConstants
 extends RefCounted
 
-const MAX_RUN := 110.0
+const MAX_RUN := 130.0
 const RUN_ACCEL := 1000.0
 const RUN_REDUCE := 600.0
 const AIR_MULT := 0.65
@@ -56,6 +56,7 @@ const CLIMB_DOWN_SPEED := 80.0
 const CLIMB_TIRED_THRESHOLD := 20.0
 const CLIMB_TIRED_BLINK_TIME := 0.2
 const CLIMB_TIRED_ALPHA := 0.35
+const TRAMPOLINE_BOUNCE_SPEED := 280.0
 
 const CAPE_ROWS := 6
 const CAPE_SEGMENT := 2.5

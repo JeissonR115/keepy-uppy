@@ -45,3 +45,11 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CeilingBoundary" unique_id=563285757]
 shape = SubResource("RectangleShape2D_56b3c")
+
+[node name="TrampolineTiles" type="TileMapLayer" parent="." unique_id=398816945 groups=["trampoline"]]
+tile_map_data = PackedByteArray("AAAPAAgAAQAAAAAAAAA=")
+tile_set = ExtResource("1_icps7")
+
+[node name="ClimbableWallTiles" type="TileMapLayer" parent="." unique_id=1348845160 groups=["climbable_wall"]]
+tile_map_data = PackedByteArray("AAADAAcAAAABAAEAAAADAAgAAAABAAEAAAADAAkAAAABAAEAAAADAAoAAAABAAEAAAADAAsAAAABAAEAAAADAAwAAAABAAEAAAADAA0AAAABAAEAAAAaAAcAAAABAAEAAAAaAAgAAAABAAEAAAAaAAkAAAABAAEAAAAaAAoAAAABAAEAAAAaAAsAAAABAAEAAAAaAAwAAAABAAEAAAAaAA0AAAABAAEAAAA=")
+tile_set = ExtResource("1_icps7")

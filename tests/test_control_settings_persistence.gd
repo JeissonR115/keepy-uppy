@@ -39,6 +39,17 @@ func _run_test() -> void:
 		return
 	if not _expect(_has_key("player_1_left", KEY_Z), "A valid binding did not survive reload."):
 		return
+	var legacy_config := ConfigFile.new()
+	if not _expect(legacy_config.load(TEST_SETTINGS_PATH) == OK, "Could not load bindings for the legacy settings check."):
+		return
+	legacy_config.set_value("bindings", "player_1_accelerate", KEY_H)
+	legacy_config.set_value("bindings", "player_2_accelerate", KEY_3)
+	if not _expect(legacy_config.save(TEST_SETTINGS_PATH) == OK, "Could not write legacy accelerate bindings."):
+		return
+	if not _expect(reloaded_manager.load_or_restore_settings(), "Legacy saved boost keys prevented current controls from loading."):
+		return
+	if not _expect(not InputMap.has_action("player_1_accelerate") and not InputMap.has_action("player_2_accelerate"), "Legacy boost keys recreated removed Input Map actions."):
+		return
 
 	var config := ConfigFile.new()
 	config.set_value("settings", "version", 1)
@@ -48,8 +59,6 @@ func _run_test() -> void:
 	if not _expect(not manager.load_or_restore_settings(), "An incomplete settings map was accepted."):
 		return
 	if not _expect(_has_key("player_1_left", KEY_A), "Incomplete settings did not restore defaults."):
-		return
-	if not _expect(_has_key("player_2_accelerate", KEY_3), "Recovery did not restore all player defaults."):
 		return
 	if not _expect(_has_key("player_1_grab", KEY_R), "Recovery did not restore P1 Grab."):
 		return

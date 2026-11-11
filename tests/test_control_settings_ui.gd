@@ -3,9 +3,9 @@ extends SceneTree
 const TEST_SETTINGS_PATH := "/tmp/keepy-controls-keyboard-ui-test.cfg"
 const ACTIONS: Array[String] = [
 	"player_1_left", "player_1_right", "player_1_up", "player_1_down",
-	"player_1_jump", "player_1_dash", "player_1_accelerate", "player_1_grab",
+	"player_1_jump", "player_1_dash", "player_1_grab",
 	"player_2_left", "player_2_right", "player_2_up", "player_2_down",
-	"player_2_jump", "player_2_dash", "player_2_accelerate", "player_2_grab",
+	"player_2_jump", "player_2_dash", "player_2_grab",
 ]
 
 
@@ -81,12 +81,12 @@ func _run_test() -> void:
 		return
 
 	var focus_order: Array = screen.get("focus_order")
-	if not _expect(focus_order.size() == 19, "Not all control rows and settings actions are keyboard reachable."):
+	if not _expect(focus_order.size() == 17, "Not all control rows and settings actions are keyboard reachable."):
 		return
 	await _press_action("player_1_right")
 	var player_2_left_button := screen.call("get_action_button", "player_2_left") as Button
 	if not _expect(
-		screen.get("focused_index") == 8 and player_2_left_button.has_focus(),
+		screen.get("focused_index") == 7 and player_2_left_button.has_focus(),
 		"Right did not move from Player 1 Left to Player 2 Left in the same row."
 	):
 		return
@@ -101,7 +101,7 @@ func _run_test() -> void:
 	await _press_action("player_1_right")
 	var player_2_right_button := screen.call("get_action_button", "player_2_right") as Button
 	if not _expect(
-		screen.get("focused_index") == 9 and player_2_right_button.has_focus(),
+		screen.get("focused_index") == 8 and player_2_right_button.has_focus(),
 		"Horizontal navigation did not switch to Player 2's matching action row."
 	):
 		return
@@ -139,16 +139,16 @@ func _run_test() -> void:
 		if index < ACTIONS.size() - 1:
 			await _press_action("player_1_down")
 
-	# The Cancel Capture, Restore Defaults, and Back controls follow all sixteen rows.
+	# The Cancel Capture, Restore Defaults, and Back controls follow all fourteen rows.
 	await _press_action("player_1_down")
 	if not _expect(
-		screen.get("focused_index") == 16 and (focus_order[16] as Button).has_focus(),
+		screen.get("focused_index") == 14 and (focus_order[14] as Button).has_focus(),
 		"Cancel Capture is not reachable through Player 1 navigation."
 	):
 		return
 	await _press_action("player_1_down")
 	if not _expect(
-		screen.get("focused_index") == 17 and (focus_order[17] as Button).has_focus(),
+		screen.get("focused_index") == 15 and (focus_order[15] as Button).has_focus(),
 		"Restore Defaults is not reachable through Player 1 navigation."
 	):
 		return
@@ -163,7 +163,7 @@ func _run_test() -> void:
 		return
 	await _press_action("player_1_down")
 	if not _expect(
-		screen.get("focused_index") == 18 and (focus_order[18] as Button).has_focus(),
+		screen.get("focused_index") == 16 and (focus_order[16] as Button).has_focus(),
 		"Back to Pause is not reachable through Player 1 navigation."
 	):
 		return
@@ -215,7 +215,7 @@ func _run_test() -> void:
 	if not _expect(not screen.visible and not paused, "Escape did not close the menu flow and resume gameplay."):
 		return
 
-	print("Keyboard navigation across sixteen rows and three actions, rebinding, conflict rejection, capture cancel, reset, pause return, and resume verified.")
+	print("Keyboard navigation across fourteen controls and three actions, rebinding, conflict rejection, capture cancel, reset, pause return, and resume verified.")
 	_remove_test_file()
 	quit()
 

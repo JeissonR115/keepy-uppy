@@ -68,6 +68,9 @@ func _run_test() -> void:
 		return
 	var match_manager: MatchManager = arena.get_node("MatchManager")
 	match_manager.round_intermission = 0.0
+	var sky_map: Node = arena.get_node("MapRoot/SkyTowersGeometry")
+	if not _expect(sky_map.get_node("TrampolineTiles").is_in_group("trampoline") and sky_map.get_node("ClimbableWallTiles").is_in_group("climbable_wall"), "Sky Towers is missing its trampoline or climbable wall layers."):
+		return
 	if not _expect(match_manager.player_1.global_position == Vector2(80, 220) and match_manager.player_2.global_position == Vector2(400, 220), "Selected arena spawns were not applied before restarting the match."):
 		return
 	if not _expect(not match_manager.coin_toss_result.is_empty(), "Confirm did not restart the match after loading the selected arena."):
@@ -82,6 +85,13 @@ func _run_test() -> void:
 	if not _expect(player_1.global_position.x >= 9.0, "Player escaped the second arena's left boundary."):
 		return
 	var balloon: BalloonController = arena.get_node("Balloon")
+	balloon.reset_round(Vector2(248, 80))
+	balloon.gravity_scale = 0.0
+	balloon.linear_velocity = Vector2(0, 100)
+	for _frame in range(42):
+		await physics_frame
+	if not _expect(balloon.linear_velocity.y < 0.0 and not balloon.ground_contact_reported, "Sky Towers trampoline did not return the balloon to play without scoring: pos=%s velocity=%s reported=%s groups=%s." % [balloon.global_position, balloon.linear_velocity, balloon.ground_contact_reported, sky_map.get_node("TrampolineTiles").get_used_cells()]):
+		return
 	balloon.reset_round(Vector2(470, 100))
 	balloon.gravity_scale = 0.0
 	balloon.linear_velocity = Vector2(220, 0)
@@ -96,5 +106,7 @@ func _run_test() -> void:
 		await physics_frame
 	if not _expect(match_manager.player_1_score + match_manager.player_2_score == 1 and match_manager.round_number == 2, "Sky Towers scoring floor did not award exactly one point."):
 		return
-	print("Catalog-driven arena list, metadata fallback, navigation, cancellation, and load confirmation verified.")
+	main_scene.queue_free()
+	await process_frame
+	print("Arena selection, Sky Towers bounds, trampoline rebound, and a complete scoring round verified.")
 	quit()

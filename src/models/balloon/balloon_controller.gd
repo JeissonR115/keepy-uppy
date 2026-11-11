@@ -22,6 +22,7 @@ signal ground_touched
 @export var balloon_collision_radius: float = 9.0
 @export var player_contact_radius: float = 16.0
 @export var gravity_strength: float = 0.14
+@export var trampoline_rebound_speed: float = 180.0
 @export var air_resistance: float = 0.055
 @export var horizontal_damping: float = 0.08
 @export_range(0.0, 1.0) var rebound_strength: float = 0.28
@@ -157,11 +158,19 @@ func _flash_impact(toucher_color: Color) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body == null:
 		return
+	if body.is_in_group("trampoline"):
+		apply_trampoline_bounce()
+		return
 	if body.is_in_group("scoring_ground") and not ground_contact_reported:
 		ground_contact_reported = true
 		_play_ground_burst()
 		audio_manager.call("play_gameplay_event", "balloon_explode", global_position)
 		ground_touched.emit()
+
+
+func apply_trampoline_bounce() -> void:
+	linear_velocity.y = -maxf(absf(linear_velocity.y), trampoline_rebound_speed)
+	sleeping = false
 
 
 func _play_ground_burst() -> void:

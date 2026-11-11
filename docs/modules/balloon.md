@@ -18,12 +18,13 @@ El cuerpo está en la capa 4 y colisiona con las capas 1 y 2. `PlayerContactArea
 3. Un contacto normal combina el vector entre jugador y globo con la dirección de movimiento del jugador. La rapidez de aproximación y velocidad del jugador influyen en la fuerza.
 4. Dash usa `apply_dash_rescue()` y la dirección del dash para calcular un impulso distinto y más fuerte.
 5. El impulso queda pendiente hasta que `MatchManager` valida quién tenía el turno; entonces `apply_pending_contact()` ajusta la velocidad y aplica el impulso.
-6. El integrador reduce gradualmente el movimiento y limita las velocidades. El piso activa `ground_touched` una vez por punto y muestra `GroundBurst`.
+6. El integrador reduce gradualmente el movimiento y limita las velocidades. Solo un TileMapLayer del grupo `scoring_ground` activa `ground_touched` una vez por ronda y muestra `GroundBurst`.
 
 ## Componentes principales
 
 - `player_hit(player)` y `dash_rescued(player, dash_direction)`: contactos que `MatchManager` registra para resolver el turno.
 - `ground_touched`: contacto con un cuerpo del grupo `scoring_ground`.
+- `apply_trampoline_bounce()`: rebota el globo hacia arriba al tocar el grupo `trampoline`, sin reportar contacto de piso.
 - `contact_visualized(player, balloon_position)`: permite que la interfaz coloque los marcadores del contacto.
 - `apply_pending_contact()`: aplica un contacto reservado y devuelve la velocidad resultante para evaluar golpe descendente.
 - `reset_round()`: restablece espera, velocidad, enfriamientos y efecto de suelo.
@@ -37,10 +38,10 @@ El cuerpo está en la capa 4 y colisiona con las capas 1 y 2. `PlayerContactArea
 
 Los valores exportados viven en `balloon_controller.gd`. Parámetros principales: `gravity_strength` (0.14), `rebound_strength` (0.28), `max_fall_speed` (90), `max_hit_speed` (220), `max_horizontal_speed` (220), `air_resistance` (0.055), radios de colisión y contacto (9 y 16). Impulsos normales y de dash se ajustan por separado con `player_hit_impulse`, `dash_rescue_impulse` y sus límites.
 
-El material físico del globo usa rebote 0.28. Las paredes y el techo pertenecen a la escena de geometría activa; solo la capa de suelo del grupo `scoring_ground` termina la jugada.
+El material físico del globo usa rebote 0.28 y el contacto con el grupo `trampoline` garantiza una velocidad vertical mínima de rebote de 180 px/s. La máscara de colisión del globo incluye superficies sólidas y trampolines, pero ignora la capa 4 de plataformas de paso para jugadores. El globo atraviesa esas plataformas sin detonar; los sólidos y muros bloquean sin terminar la ronda. Solo un cuerpo del grupo `scoring_ground` termina la jugada.
 
 ## Flujo de ejecución
 
-`MatchManager` coloca el globo al seleccionar servidor. El primer toque válido lo libera. Después alterna el jugador esperado. Cuando el cuerpo toca el suelo, el controlador emite una sola señal hasta que se llame a `reset_round()`.
+`MatchManager` coloca el globo al seleccionar servidor. El primer toque válido lo libera. Después alterna el jugador esperado. El trampolín lo devuelve al juego con un rebote hacia arriba; plataformas y otras superficies no puntuables no cambian el marcador. Cuando toca el grupo `scoring_ground`, el controlador emite una sola señal hasta que se llame a `reset_round()`.
 
 Más información: [Partida y puntuación](match.md) · [Jugador](player.md) · [Arena](levels.md).
