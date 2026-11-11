@@ -2,12 +2,13 @@
 
 ## Descripción
 
-`PlayerController` implementa el movimiento para los dos personajes y, cuando se activa, una conducta sencilla de bot para Player 2. Los dos usan la misma escena y se distinguen por `input_prefix`.
+`PlayerController` implementa el movimiento compartido para los dos personajes. Cuando `bot_enabled` está activo, un `CPUController` hijo selecciona intenciones para el jugador controlado por CPU; ambos usan las mismas físicas y se distinguen por `input_prefix`.
 
 ## Estructura
 
 - `src/models/player/player_placeholder.tscn`: cuerpo, colisión, sprite geométrico, anclajes y capa, indicador de prioridad, lector de entrada, área de rescate de dash y estela.
-- `src/models/player/player_controller.gd`: movimiento, animación, dash, escalada, aceleración, IA, simulación de capa y empujes detectados.
+- `src/models/player/player_controller.gd`: movimiento, animación, dash, escalada, aceleración, simulación de capa y empujes detectados.
+- `src/models/player/cpu_controller.gd`: estados de CPU derivados del turno activo y decisiones de movimiento, salto y dash.
 - `src/models/player/cape.tscn` / `cape.gd`: relleno, contorno y simulación Verlet cosmética, sin colisión.
 - `src/models/player/player_input_reader.gd`: puente a las acciones configuradas.
 - `src/models/player/player_action_catalog.gd`: catálogo de teclas y colores.
@@ -40,7 +41,7 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara 3 l
 
 ## Interacciones
 
-El controlador obtiene `MatchManager` y `BalloonController` como hermanos dentro de `Arena`. La entrada humana pasa por `PlayerInputReader`. El bot usa `MatchManager.expected_balloon_player` para moverse, saltar y rescatar solo durante su turno; si detecta al jugador 1 cerca del globo, intenta desafiarlo con dash. El globo recibe la llamada de rescate y la partida decide si el toque era válido. Los nuevos estados conservan las capas de colisión, los empujes `player_bumped` escalados por prioridad, el rescate del globo y el boost existente; el bot mantiene su control de turno y usa el mismo movimiento, salto y dash locales.
+El controlador obtiene `MatchManager` y `BalloonController` como hermanos dentro de `Arena`. La entrada humana pasa por `PlayerInputReader`; la IA entrega intenciones a `PlayerController`, que sigue siendo el único responsable de ejecutar el movimiento. La FSM del CPU refleja si el juego está inactivo, si le corresponde el toque o si el turno pertenece al rival. En su turno, calcula una intersección descendente limitada por el horizonte de predicción y persigue ese punto; cuando todavía se espera el saque inicial, persigue el globo directamente. En turno rival, evade primero cualquier trayectoria de amenaza; solo si la zona es segura y la decisión de agresividad lo permite, se posiciona en el trayecto entre el rival y el globo. Todos los contactos, incluso los causados accidentalmente al evadir, pasan por la validación normal de `MatchManager`.
 
 ## Configuración
 
@@ -48,7 +49,7 @@ La configuración objetivo de movimiento y capa está centralizada en `src/model
 
 Dash, sus estados, pared, escalada, stamina, capa, paleta y sus tiempos usan `player_movement_constants.gd`; agacharse reduce la cápsula 6 px y la restaura al salir de la postura. La capa usa segmentos de 2.5 px, gravedad de 250 px/s², damping de 0.90, empuje de viento de 3.0, cuatro iteraciones, taper de 0.6 y reinicio a 48 px. Boost conserva `accelerate_speed_multiplier` (1.35), `accelerate_duration` (0.8), `accelerate_cooldown` (4.0) y `accelerate_max_speed` (210). El tamaño del área de rescate se ajusta con `dash_rescue_half_extents`.
 
-El bot usa distancias constantes privadas al principio del script: tolerancia horizontal, alineación de salto, rango de dash y distancia de amenaza.
+`CPUController` expone `reaction_time` (0.1 s, rango 0–2 s), `prediction_error_margin` (8 px, rango 0–64 px), `aggression_level` (0.35, rango 0–1), `dash_threshold_distance` (56 px, rango 0–200 px) y `prediction_horizon` (3 s, rango 0.25–5 s). El error se sortea una vez por turno propio y queda acotado por el margen configurado. La agresividad se sortea al entrar al turno rival. `MatchManager.match_seed_override` permite fijar la semilla (`-1` genera una nueva); cada CPU deriva su flujo pseudoaleatorio local de la semilla de partida y el prefijo del jugador, sin consumir el RNG global al decidir.
 
 ## Flujo de ejecución
 

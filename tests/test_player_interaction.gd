@@ -166,6 +166,8 @@ func _run_test() -> void:
 	balloon.global_position = Vector2(180, 48)
 	match_manager.match_state = match_manager.MatchState.ACTIVE
 	match_manager.expected_balloon_player = player_2
+	var cpu: CPUController = player_2.get_node("CPUController")
+	cpu.reaction_time = 0.0
 	player_2.bot_enabled = true
 	var bot_start_x := player_2.global_position.x
 	for _frame in range(10):

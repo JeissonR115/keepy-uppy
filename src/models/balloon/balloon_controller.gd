@@ -8,9 +8,9 @@ signal ground_touched
 
 @export var player_hit_impulse: float = 180.0
 @export var min_player_hit_impulse: float = 120.0
-@export var max_player_hit_impulse: float = 240.0
+@export var max_player_hit_impulse: float = 340.0
 @export var impact_speed_factor: float = 0.2
-@export var dash_rescue_impulse: float = 300.0
+@export var dash_rescue_impulse: float = 350.0
 @export var max_dash_rescue_impulse: float = 360.0
 @export var movement_direction_factor: float = 0.45
 @export var dash_movement_direction_factor: float = 0.4

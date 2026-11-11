@@ -20,4 +20,4 @@
 ## 4. Acceptance and Integration
 
 - [x] 4.1 Add reproducible acceptance coverage for start/stop under 0.1 s, full jump near 28 px, dash near 36 px, retained 325 px/s hyper speed, climb stamina durations, 4 px corner correction, cape length within 15 percent, and the guide's local two-player interactions; verify with the targeted player, dash, interaction, and cape tests.
-- [ ] 4.2 Run the complete automated test set documented in `README.md` and launch the project headlessly with `godot --headless --path . --quit-after 5`; resolve regressions in physics timing, menus/control remapping, collisions, and scene loading before marking the change complete.
+- [x] 4.2 Run the complete automated test set documented in `README.md` and launch the project headlessly with `godot --headless --path . --quit-after 5`; resolve regressions in physics timing, menus/control remapping, collisions, and scene loading before marking the change complete.

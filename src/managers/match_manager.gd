@@ -28,6 +28,7 @@ signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
 @export_range(1, 99) var target_score: int = 5
 @export_range(1, 99) var sets_to_win: int = 3
 @export_range(-1, 1, 1) var coin_toss_override: int = -1
+@export_range(-1, 2147483647, 1) var match_seed_override: int = -1
 @export_range(0.0, 10.0, 0.1) var round_intermission: float = 1.5
 @export var player_1_spawn_position: Vector2 = Vector2(72, 144)
 @export var player_2_spawn_position: Vector2 = Vector2(248, 144)
@@ -40,6 +41,7 @@ signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
 enum MatchState { ACTIVE, ROUND_OVER, COMPLETE }
 
 var match_state: MatchState = MatchState.ACTIVE
+var match_seed: int = 0
 var player_1_score: int = 0
 var player_2_score: int = 0
 var player_1_sets: int = 0
@@ -95,6 +97,11 @@ func _start_new_match() -> void:
 	player_2.reset_for_round(player_2_spawn_position)
 	var toss_value := randi_range(0, 1) if coin_toss_override < 0 else coin_toss_override
 	coin_toss_result = "HEADS" if toss_value == 0 else "TAILS"
+	match_seed = (
+		randi()
+		if match_seed_override < 0
+		else match_seed_override
+	)
 	var opening_player := player_1 if toss_value == 0 else player_2
 	set_next_server(opening_player)
 	balloon.reset_round(_balloon_spawn_for(opening_player), true)

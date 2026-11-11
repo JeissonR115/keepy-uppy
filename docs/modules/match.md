@@ -35,7 +35,7 @@ El globo informa de toques y piso; los jugadores aportan colisiones y posición.
 
 ## Configuración
 
-Valores exportados en `match_manager.gd`: `target_score` (5 puntos), `sets_to_win` (3), `round_intermission` (1.5 s), `balloon_spawn_offset` (30 px), posiciones de inicio (72,144) y (248,144), `coin_toss_override` (-1 para sorteo aleatorio), fuerzas de empuje y `max_push_speed` (320).
+Valores exportados en `match_manager.gd`: `target_score` (5 puntos), `sets_to_win` (3), `round_intermission` (1.5 s), `balloon_spawn_offset` (30 px), posiciones de inicio (72,144) y (248,144), `coin_toss_override` (-1 para sorteo aleatorio), `match_seed_override` (-1 para generar una semilla de IA nueva por partida), fuerzas de empuje y `max_push_speed` (320).
 
 ## Flujo de ejecución
 
