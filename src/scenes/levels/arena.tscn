@@ -1,10 +1,14 @@
 [gd_scene format=3 uid="uid://bx1x2m2brclly"]
 
-[ext_resource type="PackedScene" path="res://src/models/player/player_placeholder.tscn" id="1_player"]
-[ext_resource type="PackedScene" path="res://src/models/balloon/balloon_placeholder.tscn" id="2_balloon"]
+[ext_resource type="PackedScene" uid="uid://c3ntij34b1goe" path="res://src/models/player/player_placeholder.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://dn4srepj42unf" path="res://src/models/balloon/balloon_placeholder.tscn" id="2_balloon"]
 [ext_resource type="Script" uid="uid://6khrn6cd7hi8" path="res://src/managers/match_manager.gd" id="4_match_manager"]
-[ext_resource type="AudioStream" uid="uid://bmmakh04udwpy" path="res://assets/music/bgMusic.wav" id="5_lg7eo"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/hud/scoreboard.tscn" id="5_scoreboard"]
+[ext_resource type="Shader" uid="uid://8ty8cwyvoldu" path="res://src/scenes/levels/world_screen_effect.gdshader" id="6_screen_effect"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_world_screen_effect"]
+shader = ExtResource("6_screen_effect")
+shader_parameter/pixel_block_size = 3.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(320, 16)
@@ -18,7 +22,10 @@ size = Vector2(16, 180)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
 size = Vector2(320, 16)
 
-[node name="Arena" type="Node2D" unique_id=142473774]
+[node name="Arena" type="CanvasGroup" unique_id=142473774]
+material = SubResource("ShaderMaterial_world_screen_effect")
+fit_margin = 0.0
+clear_margin = 0.0
 
 [node name="Background" type="Polygon2D" parent="." unique_id=1498819952]
 color = Color(0.090196, 0.117647, 0.188235, 1)
@@ -80,8 +87,3 @@ polygon = PackedVector2Array(-160, 8, 160, 8, 160, 10, -160, 10)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling" unique_id=1057815789]
 shape = SubResource("RectangleShape2D_ceiling")
-
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=288801207]
-physics_interpolation_mode = 1
-stream = ExtResource("5_lg7eo")
-autoplay = true

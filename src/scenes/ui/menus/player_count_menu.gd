@@ -12,6 +12,7 @@ const PLAYER_COUNT_OPTIONS: Array[String] = [
 @onready var player_2: PlayerController = get_parent().get_node("Arena/Player2")
 @onready var match_manager: MatchManager = get_parent().get_node("Arena/MatchManager")
 @onready var keyboard_navigator: MenuKeyboardNavigator = $KeyboardNavigator
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 @onready var menu_buttons: Array[Button] = [
 	$Panel/MenuScroll/Margins/Content/OnePlayerButton,
 	$Panel/MenuScroll/Margins/Content/TwoPlayersButton,
@@ -25,6 +26,7 @@ var restart_match_on_selection: bool = false
 func _ready() -> void:
 	layer = 10
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	audio_manager.call("play_menu_music")
 	keyboard_navigator.moved.connect(_move_selection)
 	keyboard_navigator.confirmed.connect(_confirm_selection)
 	for index in range(menu_buttons.size()):
@@ -39,6 +41,7 @@ func _ready() -> void:
 
 
 func open_menu() -> void:
+	audio_manager.call("play_menu_music")
 	selected_index = 0
 	_refresh_selection()
 	restart_match_on_selection = true
@@ -84,12 +87,15 @@ func _confirm_selection() -> void:
 func _open_controls() -> void:
 	if not visible:
 		return
+	audio_manager.call("play", "menu_select")
 	suspend_menu()
 	controls_requested.emit()
 
 
 func _select_player_count(player_count: int) -> void:
+	audio_manager.call("play", "menu_select")
 	player_2.bot_enabled = player_count == 1
+	audio_manager.call("play_match_music")
 	if restart_match_on_selection:
 		restart_match_on_selection = false
 		match_manager.restart_match()

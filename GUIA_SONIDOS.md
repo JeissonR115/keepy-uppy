@@ -50,17 +50,17 @@ res://audio/
   sound_presets.json                # copia del manifiesto
   PENDIENTES.md                     # solo si faltan WAV por exportar
   sfx/
-    jump/jump_01.wav
-    laugh_p1/laugh_p1_01.wav ... _03.wav
-    laugh_p2/laugh_p2_01.wav ... _03.wav
-    dash/dash_01.wav
-    footstep/footstep_01.wav ... _04.wav
-    balloon_touch/balloon_touch_soft_01.wav ... _hard_04.wav
-    balloon_explode/balloon_explode_01.wav
-    set_new_p1/set_new_p1_01.wav
-    set_new_p2/set_new_p2_01.wav
-    match_start/match_start_01.wav
-    menu_select/menu_select_01.wav
+	jump/jump_01.wav
+	laugh_p1/laugh_p1_01.wav ... _03.wav
+	laugh_p2/laugh_p2_01.wav ... _03.wav
+	dash/dash_01.wav
+	footstep/footstep_01.wav ... _04.wav
+	balloon_touch/balloon_touch_soft_01.wav ... _hard_04.wav
+	balloon_explode/balloon_explode_01.wav
+	set_new_p1/set_new_p1_01.wav
+	set_new_p2/set_new_p2_01.wav
+	match_start/match_start_01.wav
+	menu_select/menu_select_01.wav
 tools/
   render_sfx.py                     # opcional: renderiza el manifiesto a WAV
 ```
@@ -82,12 +82,12 @@ Estructura de un evento:
   "files": ["res://audio/sfx/jump/jump_01.wav"],
   "tiers": [ { "name": "soft", "max_intensity": 0.33 } ],
   "playback": {
-    "bus": "SFX",
-    "volume_db": -4,
-    "volume_db_by_intensity": [-12, -2],
-    "pitch_jitter": 0.04,
-    "positional": true,
-    "max_distance": 800
+	"bus": "SFX",
+	"volume_db": -4,
+	"volume_db_by_intensity": [-12, -2],
+	"pitch_jitter": 0.04,
+	"positional": true,
+	"max_distance": 800
   },
   "render": { "variants": 1 }
 }

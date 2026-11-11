@@ -9,6 +9,7 @@ signal returned_to_menu
 @onready var cancel_button: Button = $SettingsPanel/Content/Buttons/CancelButton
 @onready var reset_button: Button = $SettingsPanel/Content/Buttons/ResetButton
 @onready var close_button: Button = $SettingsPanel/Content/Buttons/CloseButton
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 var action_buttons: Dictionary = {}
 var captured_action: String = ""
 var was_paused_before_open: bool = false
@@ -85,12 +86,15 @@ func _populate_action_columns() -> void:
 		player_columns.add_child(_create_player_column(player_data))
 
 	cancel_button.pressed.connect(_cancel_capture)
+	cancel_button.pressed.connect(_play_menu_select)
 	cancel_button.focus_entered.connect(_on_control_focus_entered.bind(cancel_button))
 	focus_order.append(cancel_button)
 	reset_button.pressed.connect(_restore_defaults)
+	reset_button.pressed.connect(_play_menu_select)
 	reset_button.focus_entered.connect(_on_control_focus_entered.bind(reset_button))
 	focus_order.append(reset_button)
 	close_button.pressed.connect(close)
+	close_button.pressed.connect(_play_menu_select)
 	close_button.focus_entered.connect(_on_control_focus_entered.bind(close_button))
 	focus_order.append(close_button)
 
@@ -122,6 +126,7 @@ func _create_player_column(player_data: Dictionary) -> VBoxContainer:
 		binding_button.name = "ActionButton_%s" % action_name
 		binding_button.add_theme_color_override("font_color", player_data.color)
 		binding_button.pressed.connect(_begin_capture.bind(action_name))
+		binding_button.pressed.connect(_play_menu_select)
 		binding_button.focus_entered.connect(_on_control_focus_entered.bind(binding_button))
 		row.add_child(binding_button)
 		action_buttons[action_name] = binding_button
@@ -256,3 +261,7 @@ func _refresh_action_button(action_name: String) -> void:
 func _binding_text(action_name: String) -> String:
 	var event: InputEventKey = settings_manager.get_binding_event(action_name)
 	return "UNBOUND" if event == null else event.as_text()
+
+
+func _play_menu_select() -> void:
+	audio_manager.call("play", "menu_select")

@@ -6,7 +6,7 @@
 
 ## Estructura
 
-- `src/models/player/player_placeholder.tscn`: cuerpo, colisión, sprite geométrico, anclajes y capa, indicador de prioridad, lector de entrada, área de rescate de dash y estela.
+- `src/models/player/player_placeholder.tscn`: cuerpo, colisión, sprite geométrico, anclajes y capa, indicador de prioridad, lector de entrada y área de rescate de dash.
 - `src/models/player/player_controller.gd`: movimiento, animación, dash, escalada, aceleración, simulación de capa y empujes detectados.
 - `src/models/player/cpu_controller.gd`: estados de CPU derivados del turno activo y decisiones de movimiento, salto y dash.
 - `src/models/player/cape.tscn` / `cape.gd`: relleno, contorno y simulación Verlet cosmética, sin colisión.
@@ -20,7 +20,7 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara 3 l
 1. Al iniciar, el controlador configura su `PlayerInputReader` con `input_prefix` y asigna colores de estado.
 2. `_physics_process()` calcula movimiento horizontal con una carrera de 90 px/s, acelera a 1000 px/s² y aplica control aéreo de 0.65. El exceso de velocidad decae a 400 px/s² cuando se mantiene la dirección; al soltar o invertirla, vuelve rápidamente a la velocidad objetivo.
 3. La gravedad es de 900 px/s², limita la caída a 160 px/s y permite una caída rápida de 240 px/s a 300 px/s². El salto de -105 px/s combina 0.1 s de coyote, 0.08 s de búfer y hasta 0.2 s de altura variable; saltar con dirección añade 40 px/s horizontales.
-4. Dash consume una carga, congela solo al jugador durante 0.05 s y después recorre ocho direcciones a 240 px/s por 0.15 s. La carga se recupera al aterrizar tras la demora de 0.1 s; el dash termina a 160 px/s. Su área de rescate y estela se activan al terminar el freeze, y el área solo puede rescatar un globo por dash.
+4. Dash consume una carga, congela solo al jugador durante 0.05 s y después acelera en ocho direcciones durante 0.2 s, recorriendo más de 55 px con un pico de velocidad de 360 px/s. La carga se recupera al aterrizar tras la demora de 0.1 s; el dash termina a 160 px/s. Su área de rescate se activa al terminar el freeze, y la misma capa se estira hacia atrás con el impulso del dash; el área solo puede rescatar un globo por dash.
 5. Las técnicas encadenadas conservan el movimiento: saltar desde un dash horizontal hace un super de 260 px/s y -105 px/s; el dash diagonal hacia abajo que aterriza hace un ultra de 1.2x y permite agacharse para un hyper de 325 px/s y -52.5 px/s. Saltar durante un dash hacia arriba junto a una pared hace un rebote de 170 px/s y -160 px/s, con salto variable y dirección forzada por sus ventanas configuradas.
 6. Boost acelera durante un periodo con enfriamiento y tope de velocidad horizontal propios.
 7. Las colisiones laterales emiten `player_bumped`; `MatchManager` aplica el empuje según prioridad y dash.
@@ -32,7 +32,7 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara 3 l
 
 - `PlayerController._physics_process()`: bucle de control físico.
 - `PlayerCape.simulate()`: integra partículas y restricciones de la capa.
-- `_begin_dash()` / `_end_dash()`: activan y apagan el área y la estela.
+- `_begin_dash()` / `_end_dash()`: activan y apagan el área de rescate; la capa acompaña el dash y se estira con su impulso.
 - `_on_dash_rescue_area_body_entered()`: llama `BalloonController.apply_dash_rescue()`.
 - `try_activate_accelerate()`: inicia boost si terminó el enfriamiento.
 - `set_priority_indicator()`: muestra la prioridad visual.

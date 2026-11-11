@@ -16,15 +16,67 @@ the bot's turn, it tries to challenge and push Player 1 away first.
 
 ## Display
 
-The logical viewport is 320x180, displayed at 960x540 (integer 3x scale).
-The viewport keeps its 16:9 aspect ratio and uses nearest-neighbor filtering
-for canvas textures.
+The logical viewport is 320x180 and displays at 960x540 while preserving its
+16:9 aspect ratio. Canvas items use linear texture filtering and scale directly
+to the window instead of being rendered through a low-resolution pixelated
+viewport.
+
+## Visuals
+
+The project-wide GUI theme uses `DotGothic16-Regular.ttf` from
+`assets/fonts/DotGothic16/`. Player visuals are basic colored rectangles; the
+player cape remains procedurally simulated and follows its character anchors.
+The arena uses a 32-bit-style pixel-screen effect on the game world only; the
+HUD and menus are rendered on independent canvas layers so text stays clear.
+
+Verify the global font, rectangle visuals, screen-effect isolation, and cape
+instances with:
+
+```sh
+godot --headless --path . --script res://tests/test_visual_assets.gd
+```
 
 ## Audio
 
-No owner-supplied audio files are present, so the prototype has no audio
-dependencies or hooks. Player states, balloon impacts, priority, and round
-results are communicated visually.
+Sound effects are configured in `audio/sound_presets.json` and played through
+the `AudioManager` autoload. The project has `SFX` and `UI` buses; generated
+files live under `audio/sfx/`. The current WAVs are silent placeholders because
+the exact preset exporters were unavailable. See `audio/PENDIENTES.md` for the
+presets, render variations, and files that still need to be exported. Replace
+the placeholders with exact synthesizer exports without changing the manifest.
+
+Run the focused playback/manifest checks with:
+
+```sh
+godot --headless --path . --script res://tests/test_audio_manager.gd
+```
+
+Run all focused sound checks, including offline gameplay and local-action
+dispatch, with:
+
+```sh
+for test in \
+  tests/test_audio_*.gd \
+  tests/test_player_audio.gd \
+  tests/test_balloon_audio.gd \
+  tests/test_match_menu_audio.gd; do
+  godot --headless --path . --script "res://$test" || exit 1
+done
+```
+
+Gameplay sounds are limited to the actions assigned in
+`KEEPY_UPPY_BALLOON_SOUNDS.md`; landing, climbing, wall grabbing, dash refill,
+death, and respawn remain silent.
+
+Menu music (`assets/music/menu.wav`) starts automatically and loops while the
+player is outside a match. Selecting a mode switches to looping
+`assets/music/bgMusic.wav`, mixed at -4 dB and a slightly lower pitch
+(0.92); menu music is mixed at -6 dB. The menu track returns automatically
+when the match ends. Verify transitions and loop settings with:
+
+```sh
+godot --headless --path . --script res://tests/test_music_manager.gd
+```
 
 ## Manual launch and render checklist
 
@@ -287,11 +339,12 @@ Manual movement checks:
 - [ ] Press jump within the Coyote Time window after leaving the floor, and confirm the jump still triggers.
 - [ ] Press jump just before landing and confirm Jump Buffer triggers immediately on landing.
 - [ ] Dash in each of the eight directions and confirm an un-directed dash follows the player's facing.
+- [ ] Confirm a dash pulses faster through its middle, travels at least 55 px, and stretches the same pixelated cape behind the player.
 - [ ] Attempt to dash again during cooldown and confirm no second dash begins.
-- [ ] Dash through the balloon, verify the rescue impulse follows dash direction, and confirm the zone and separate trail end with the dash.
+- [ ] Dash through the balloon, verify the rescue impulse follows dash direction, and confirm the same player cape trails during the dash while the rescue zone ends with it.
 - [ ] Re-enter the balloon with the same dash activation and confirm it is not hit a second time.
 - [ ] Confirm the player with priority can push farther than the other player, including during dash.
 - [ ] Confirm a dash can push the other player and free a player trapped under them.
 - [ ] Confirm same-tick ties go to the non-priority player and a dash rescue takes priority over a normal hit.
 - [ ] Confirm a gold outline identifies the priority player and moves when priority changes.
-- [ ] Confirm balloon hits flash visibly and the dash trail appears only during the dash, without relying on sound.
+- [ ] Confirm balloon hits flash visibly and the player's cape remains visible and trails behind during dash, without relying on sound.

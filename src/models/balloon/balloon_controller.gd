@@ -26,11 +26,14 @@ signal ground_touched
 @export var horizontal_damping: float = 0.08
 @export_range(0.0, 1.0) var rebound_strength: float = 0.28
 
+const BALLOON_REF_SPEED := 240.0
+
 @onready var player_contact_area: Area2D = $PlayerContactArea
 @onready var visual: Polygon2D = $Visual
 @onready var ground_burst: Polygon2D = $GroundBurst
 @onready var balloon_collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var player_contact_shape: CollisionShape2D = $PlayerContactArea/CollisionShape2D
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 
 var ground_contact_reported: bool = false
 var waiting_for_first_touch: bool = false
@@ -129,11 +132,16 @@ func apply_dash_rescue(player: CharacterBody2D, dash_direction: Vector2) -> bool
 		dash_rescue_impulse,
 		max_dash_rescue_impulse
 	)
+	var approach_speed := maxf(
+		player.velocity.dot(rescue_direction) - linear_velocity.dot(rescue_direction),
+		0.0
+	)
 	_queue_player_contact(
 		player,
 		ContactType.DASH_RESCUE,
 		launch_direction * impulse_strength,
-		launch_direction
+		launch_direction,
+		approach_speed
 	)
 	return true
 
@@ -150,6 +158,7 @@ func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("scoring_ground") and not ground_contact_reported:
 		ground_contact_reported = true
 		_play_ground_burst()
+		audio_manager.call("play_gameplay_event", "balloon_explode", global_position)
 		ground_touched.emit()
 
 
@@ -213,7 +222,8 @@ func _on_player_contact_area_body_entered(body: Node2D) -> void:
 			player,
 			ContactType.NORMAL,
 			launch_direction * impulse_strength,
-			launch_direction
+			launch_direction,
+			approach_speed
 		)
 
 
@@ -230,7 +240,8 @@ func _queue_player_contact(
 	player: CharacterBody2D,
 	contact_type: ContactType,
 	impulse: Vector2,
-	launch_direction: Vector2
+	launch_direction: Vector2,
+	approach_speed: float
 ) -> void:
 	var controller := player as PlayerController
 	var toucher_color := controller.idle_color if controller != null else Color.WHITE
@@ -242,7 +253,14 @@ func _queue_player_contact(
 		"type": contact_type,
 		"impulse": impulse,
 		"direction": launch_direction,
+		"impact_speed": approach_speed,
 	}
+	audio_manager.call(
+		"play_gameplay_event",
+		"balloon_touch",
+		global_position,
+		clampf(approach_speed / BALLOON_REF_SPEED, 0.0, 1.0)
+	)
 	if contact_type == ContactType.DASH_RESCUE:
 		dash_rescued.emit(player, launch_direction)
 	else:

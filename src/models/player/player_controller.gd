@@ -7,6 +7,7 @@ enum MovementState { NORMAL, DASH, CLIMB }
 
 const TOUCH_PIXEL_LIFETIME := 2.0
 const TOUCH_PIXEL_HALF_SIZE := 2.0
+const STEP_DISTANCE := 14.0
 const MovementConstants = preload("res://src/models/player/player_movement_constants.gd")
 
 @export_enum("player_1", "player_2") var input_prefix: String = "player_1"
@@ -32,6 +33,7 @@ var dash_cooldown_timer: float = 0.0
 var accelerate_timer: float = 0.0
 var accelerate_cooldown_timer: float = 0.0
 var run_animation_time: float = 0.0
+var step_distance: float = 0.0
 var wall_slide_timer: float = 0.0
 var climb_stamina: float = MovementConstants.CLIMB_MAX_STAMINA
 var tired_blink_timer: float = 0.0
@@ -55,11 +57,11 @@ var normal_collision_height: float = 0.0
 @onready var player_collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var input_reader: PlayerInputReader = $InputReader
 @onready var cpu_controller: CPUController = $CPUController
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 @onready var match_manager: MatchManager = get_parent().get_node("MatchManager")
 @onready var balloon: BalloonController = get_parent().get_node("Balloon")
 @onready var dash_rescue_area: Area2D = $DashRescueArea
 @onready var dash_rescue_shape: CollisionShape2D = $DashRescueArea/CollisionShape2D
-@onready var dash_trail: Line2D = $DashTrail
 @onready var cape_anchor_a: Marker2D = $CapeAnchors/AnchorA
 @onready var cape_anchor_b: Marker2D = $CapeAnchors/AnchorB
 @onready var cape: PlayerCape = $Cape
@@ -67,17 +69,16 @@ var normal_collision_height: float = 0.0
 
 func _ready() -> void:
 	input_reader.configure(input_prefix)
+	idle_color = PlayerActionCatalog.player_color(input_prefix)
 	if input_prefix == PlayerActionCatalog.PLAYER_ONE_PREFIX:
-		idle_color = PlayerActionCatalog.player_color(input_prefix)
 		run_color = Color(0.470588, 0.890196, 0.945098)
 		rise_color = Color(0.772549, 0.960784, 0.980392)
 		fall_color = Color(0.172549, 0.537255, 0.607843)
 	else:
-		idle_color = PlayerActionCatalog.player_color(input_prefix)
 		run_color = Color(1.0, 0.780392, 0.466667)
 		rise_color = Color(1.0, 0.898039, 0.729412)
 		fall_color = Color(0.690196, 0.286275, 0.270588)
-	dash_color = Color(1.0, 1.0, 1.0)
+	dash_color = Color.WHITE
 	visual.color = idle_color
 	var capsule := player_collision_shape.shape.duplicate() as CapsuleShape2D
 	player_collision_shape.shape = capsule
@@ -85,7 +86,6 @@ func _ready() -> void:
 	var rescue_rectangle := dash_rescue_shape.shape as RectangleShape2D
 	rescue_rectangle.size = dash_rescue_half_extents * 2.0
 	dash_rescue_area.monitoring = false
-	dash_trail.visible = false
 	dash_rescue_area.body_entered.connect(_on_dash_rescue_area_body_entered)
 
 
@@ -117,11 +117,19 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	accelerate_cooldown_timer = 0.0
 	is_dashing = false
 	dash_rescue_hit = false
+	step_distance = 0.0
 	dash_rescue_area.monitoring = false
-	dash_trail.visible = false
 
 
 func _physics_process(delta: float) -> void:
+	if (
+		multiplayer.has_multiplayer_peer()
+		and not multiplayer.multiplayer_peer is OfflineMultiplayerPeer
+		and not is_multiplayer_authority()
+	):
+		_update_footsteps(delta)
+		return
+
 	dash_cooldown_timer = maxf(dash_cooldown_timer - delta, 0.0)
 	dash_refill_cooldown_timer = maxf(dash_refill_cooldown_timer - delta, 0.0)
 	accelerate_timer = maxf(accelerate_timer - delta, 0.0)
@@ -219,6 +227,9 @@ func _physics_process(delta: float) -> void:
 		var_jump_speed = velocity.y
 		jump_buffer_timer = 0.0
 		coyote_timer = 0.0
+		audio_manager.call(
+			"play_local_action", "jump", global_position, is_multiplayer_authority()
+		)
 
 	var wall_slide_active := (
 		movement_state == MovementState.NORMAL
@@ -236,6 +247,16 @@ func _physics_process(delta: float) -> void:
 		velocity.y = wall_slide_limit
 
 	if movement_state == MovementState.DASH:
+		var dash_progress := 1.0 - dash_timer / MovementConstants.DASH_TIME
+		var speed_pulse := 1.0 + MovementConstants.DASH_SPEED_PULSE * sin(PI * dash_progress)
+		var current_dash_speed := MovementConstants.DASH_SPEED * speed_pulse
+		if dash_ultra_triggered and is_zero_approx(dash_velocity.y):
+			dash_velocity = Vector2(
+				signf(dash_velocity.x) * current_dash_speed * MovementConstants.ULTRA_MULT,
+				0.0
+			)
+		else:
+			dash_velocity = dash_direction * current_dash_speed
 		velocity = dash_velocity
 		dash_timer = maxf(dash_timer - delta, 0.0)
 	elif movement_state == MovementState.CLIMB:
@@ -306,6 +327,7 @@ func _physics_process(delta: float) -> void:
 		_handle_dash_contacts()
 	else:
 		_update_ceiling_contact(delta, upward_speed)
+	_update_footsteps(delta)
 
 	if movement_state != MovementState.DASH and is_on_floor():
 		climb_stamina = MovementConstants.CLIMB_MAX_STAMINA
@@ -361,6 +383,9 @@ func _handle_dash_contacts() -> void:
 			_set_ducking(false)
 			jump_buffer_timer = 0.0
 			_end_dash(false)
+			audio_manager.call(
+				"play_local_action", "jump", global_position, is_multiplayer_authority(), 0.15
+			)
 			return
 
 	if not is_on_floor():
@@ -373,6 +398,9 @@ func _handle_dash_contacts() -> void:
 		_set_ducking(false)
 		jump_buffer_timer = 0.0
 		_end_dash(false)
+		audio_manager.call(
+			"play_local_action", "jump", global_position, is_multiplayer_authority(), 0.15
+		)
 	elif is_zero_approx(dash_direction.y):
 		velocity = Vector2(
 			MovementConstants.SUPER_JUMP_H * signf(facing_direction.x),
@@ -380,6 +408,9 @@ func _handle_dash_contacts() -> void:
 		)
 		jump_buffer_timer = 0.0
 		_end_dash(false)
+		audio_manager.call(
+			"play_local_action", "jump", global_position, is_multiplayer_authority(), 0.15
+		)
 
 
 func _wall_direction_within(distance: float) -> float:
@@ -427,7 +458,9 @@ func _update_cape(delta: float, frozen: bool = false) -> void:
 		cape_anchor_b.global_position,
 		velocity,
 		get_cape_color(),
-		frozen
+		frozen,
+		dash_direction if is_dashing else Vector2.ZERO,
+		(1.0 - dash_timer / MovementConstants.DASH_TIME) if is_dashing else 0.0
 	)
 
 
@@ -463,13 +496,16 @@ func _perform_wall_jump(wall_jump_direction: float, from_climb: bool) -> void:
 	jump_buffer_timer = 0.0
 	coyote_timer = 0.0
 	_set_ducking(false)
+	audio_manager.call(
+		"play_local_action", "jump", global_position, is_multiplayer_authority()
+	)
 
 
 func _try_dash_corner_correction(delta: float, previous_velocity: Vector2) -> bool:
 	if get_slide_collision_count() == 0:
 		return false
 	var perpendicular := Vector2(-dash_direction.y, dash_direction.x)
-	var forward_step := dash_direction * minf(MovementConstants.DASH_SPEED * delta, 1.0)
+	var forward_step := dash_direction * minf(previous_velocity.length() * delta, 1.0)
 	for offset in range(1, int(MovementConstants.DASH_CORNER_CORRECTION) + 1):
 		for direction in [-1.0, 1.0]:
 			var correction: Vector2 = perpendicular * offset * direction
@@ -593,6 +629,8 @@ func _update_visual_state(horizontal_input: float, grounded: bool, delta: float)
 		tired_blink_timer = 0.0
 		visual.modulate.a = 1.0
 
+	visual.scale = Vector2.ONE
+	visual.rotation = 0.0
 	if is_dashing:
 		visual.color = dash_color
 		visual.scale = Vector2(1.15, 0.85)
@@ -600,12 +638,18 @@ func _update_visual_state(horizontal_input: float, grounded: bool, delta: float)
 	elif ducking:
 		visual.color = fall_color
 		visual.scale = Vector2(1.0, 0.7)
-		visual.rotation = 0.0
+	elif movement_state == MovementState.CLIMB:
+		visual.color = run_color
+		if velocity.y < 0.0:
+			visual.rotation = -0.08
+		elif velocity.y > 0.0:
+			visual.rotation = 0.08
+	elif wall_slide_timer > 0.0 and not grounded:
+		visual.color = fall_color
+		visual.rotation = -0.08 if facing_direction.x < 0.0 else 0.08
 	elif not grounded:
-		visual.rotation = 0.0
 		if velocity.y < 0.0:
 			visual.color = rise_color
-			visual.scale = Vector2(0.92, 1.08)
 		else:
 			visual.color = fall_color
 			visual.scale = Vector2(1.08, 0.92)
@@ -613,24 +657,23 @@ func _update_visual_state(horizontal_input: float, grounded: bool, delta: float)
 		run_animation_time += delta
 		var squash := sin(run_animation_time * 14.0) * 0.05
 		visual.color = run_color
-		visual.scale = Vector2(1.0 + squash, 1.0 - squash)
-		visual.rotation = 0.0
+		visual.scale = Vector2(1.0 + squash * 0.5, 1.0 - squash * 0.5)
 	else:
 		visual.color = idle_color
-		visual.scale = Vector2.ONE
-		visual.rotation = 0.0
 
 
 func _begin_dash() -> void:
+	step_distance = 0.0
 	dash_timer = MovementConstants.DASH_TIME
 	dash_velocity = dash_direction * MovementConstants.DASH_SPEED
+	audio_manager.call(
+		"play_local_action", "dash", global_position, is_multiplayer_authority()
+	)
 	is_dashing = true
 	dash_rescue_hit = false
 	dash_rescue_area.position = Vector2.ZERO
 	dash_rescue_area.rotation = dash_direction.angle()
 	dash_rescue_area.monitoring = true
-	dash_trail.points = PackedVector2Array([-dash_direction * 32.0, Vector2.ZERO])
-	dash_trail.visible = true
 
 
 func _end_dash(apply_exit_velocity: bool = true) -> void:
@@ -642,7 +685,6 @@ func _end_dash(apply_exit_velocity: bool = true) -> void:
 	is_dashing = false
 	movement_state = MovementState.NORMAL
 	dash_rescue_area.monitoring = false
-	dash_trail.visible = false
 
 
 func _set_ducking(active: bool) -> void:
@@ -670,3 +712,23 @@ func _report_player_collisions() -> void:
 		var collider := get_slide_collision(index).get_collider()
 		if collider is CharacterBody2D and collider.is_in_group("players"):
 			player_bumped.emit(self, collider, is_dashing)
+
+
+func _update_footsteps(delta: float) -> void:
+	if (
+		is_on_floor()
+		and movement_state == MovementState.NORMAL
+		and not ducking
+		and absf(velocity.x) > 10.0
+	):
+		step_distance += absf(velocity.x) * delta
+		if step_distance >= STEP_DISTANCE:
+			step_distance = 0.0
+			audio_manager.call(
+				"play_at",
+				"footstep",
+				global_position,
+				clampf(absf(velocity.x) / MovementConstants.MAX_RUN, 0.0, 1.0)
+			)
+	else:
+		step_distance = 0.0

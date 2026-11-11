@@ -35,7 +35,8 @@ func _run_test() -> void:
 	balloon.max_hit_speed = balloon.max_dash_rescue_impulse
 	balloon.max_horizontal_speed = balloon.max_dash_rescue_impulse
 	var match_manager: Node = main_scene.get_node("Arena/MatchManager")
-	var trail: Line2D = player.get_node("DashTrail")
+	var cape: PlayerCape = player.get_node("Cape")
+	var cape_fill: Polygon2D = cape.get_node("Polygon2D")
 	var rescue_area: Area2D = player.get_node("DashRescueArea")
 	balloon.dash_rescued.connect(_on_dash_rescued)
 	player.global_position = Vector2(120, 90)
@@ -43,7 +44,10 @@ func _run_test() -> void:
 	balloon.reset_round(Vector2(160, 90))
 	match_manager.set_next_server(player)
 
-	if not _expect(not rescue_area.monitoring and not trail.visible, "Dash effects should start inactive."):
+	if not _expect(
+		not rescue_area.monitoring and cape.visible and cape_fill.visible,
+		"Dash zone should start inactive while the player's cape remains visible."
+	):
 		return
 	Input.action_press("player_1_right")
 	Input.action_press("player_1_dash")
@@ -51,7 +55,10 @@ func _run_test() -> void:
 		await physics_frame
 		if rescue_area.monitoring:
 			break
-	if not _expect(rescue_area.monitoring and trail.visible, "Dash zone and trail did not activate."):
+	if not _expect(
+		rescue_area.monitoring and cape.visible and cape_fill.visible,
+		"Dash zone did not activate with the player's cape visible as its trail."
+	):
 		return
 	for _frame in range(3):
 		await physics_frame
@@ -83,7 +90,10 @@ func _run_test() -> void:
 
 	for _frame in range(20):
 		await physics_frame
-	if not _expect(not rescue_area.monitoring and not trail.visible, "Dash zone or trail outlived its active interval."):
+	if not _expect(
+		not rescue_area.monitoring and cape.visible and cape_fill.visible,
+		"Dash zone outlived its active interval or the player's cape disappeared."
+	):
 		return
 
 	Input.action_release("player_1_right")

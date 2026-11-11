@@ -29,7 +29,9 @@ func simulate(
 	anchor_b: Vector2,
 	player_velocity: Vector2,
 	cape_color: Color,
-	frozen: bool = false
+	frozen: bool = false,
+	dash_direction: Vector2 = Vector2.ZERO,
+	dash_progress: float = 0.0
 ) -> void:
 	fill.color = cape_color
 	outline.default_color = cape_color.darkened(MovementConstants.CAPE_OUTLINE_DARKEN)
@@ -55,6 +57,9 @@ func simulate(
 	var acceleration := Vector2(0.0, MovementConstants.CAPE_GRAVITY)
 	if _is_finite_vector(player_velocity):
 		acceleration -= player_velocity * MovementConstants.CAPE_WIND_GAIN
+	var dash_intensity := sin(PI * clampf(dash_progress, 0.0, 1.0))
+	if _is_finite_vector(dash_direction):
+		acceleration -= dash_direction * MovementConstants.CAPE_DASH_PULL * dash_intensity
 	for column in 2:
 		for row in range(1, MovementConstants.CAPE_ROWS):
 			var index := column * MovementConstants.CAPE_ROWS + row
@@ -68,6 +73,9 @@ func simulate(
 
 	var anchors := [anchor_a, anchor_b]
 	var base_width := anchor_a.distance_to(anchor_b)
+	var segment_length := MovementConstants.CAPE_SEGMENT * (
+		1.0 + MovementConstants.CAPE_DASH_STRETCH * dash_intensity
+	)
 	for _iteration in MovementConstants.CAPE_ITERATIONS:
 		for column in 2:
 			var column_start := column * MovementConstants.CAPE_ROWS
@@ -76,7 +84,7 @@ func simulate(
 				_constrain(
 					column_start + row,
 					column_start + row + 1,
-					MovementConstants.CAPE_SEGMENT,
+					segment_length,
 					row == 0
 				)
 		for row in range(1, MovementConstants.CAPE_ROWS):

@@ -80,7 +80,12 @@ func _run_test() -> void:
 			"Unexpected dash direction for case %d: %s" % [index, player.dash_direction]
 		):
 			return
-		if not _expect(player.dash_trail.visible, "Dash trail was not visible during dash case %d." % index):
+		if not _expect(
+			player.cape.visible
+			and player.cape.get_node("Polygon2D").visible
+			and player.cape.positions.size() == MovementConstants.CAPE_ROWS * 2,
+			"Player cape did not provide the visible dash trail for case %d." % index
+		):
 			return
 		if not _expect(not player.dash_available, "Dash charge was not consumed immediately."):
 			return
@@ -91,7 +96,10 @@ func _run_test() -> void:
 			await physics_frame
 			if not player.is_dashing and player.dash_freeze_timer <= 0.0:
 				break
-		if not _expect(not player.dash_trail.visible, "Dash trail remained visible after dash case %d." % index):
+		if not _expect(
+			player.cape.visible and player.cape.get_node("Polygon2D").visible,
+			"Player cape disappeared after dash case %d." % index
+		):
 			return
 
 	player.reset_for_round(Vector2(120, 80))
@@ -133,8 +141,8 @@ func _run_test() -> void:
 			break
 	var dash_distance := player.global_position.distance_to(dash_start)
 	if not _expect(
-		dash_distance >= 35.0 and dash_distance <= 37.0,
-		"Dash distance was not approximately 36 px: %s." % dash_distance
+		dash_distance >= 55.0 and dash_distance <= 75.0,
+		"Dynamic dash did not travel substantially farther than its previous 36 px: %s." % dash_distance
 	):
 		return
 	if not _expect(
@@ -174,10 +182,15 @@ func _run_test() -> void:
 			break
 	if not _expect(
 		player.dash_ultra_triggered
-		and is_equal_approx(
-			player.dash_velocity.x,
-			MovementConstants.DASH_SPEED * Vector2(1.0, 1.0).normalized().x * MovementConstants.ULTRA_MULT
-		)
+		and player.dash_velocity.x
+		>= MovementConstants.DASH_SPEED
+		* Vector2(1.0, 1.0).normalized().x
+		* MovementConstants.ULTRA_MULT
+		and player.dash_velocity.x
+		<= MovementConstants.DASH_SPEED
+		* (1.0 + MovementConstants.DASH_SPEED_PULSE)
+		* Vector2(1.0, 1.0).normalized().x
+		* MovementConstants.ULTRA_MULT
 		and is_zero_approx(player.dash_velocity.y)
 		and player.ducking,
 		"Downward diagonal dash did not trigger an ultra and duck."
@@ -200,15 +213,25 @@ func _run_test() -> void:
 	if not _expect(
 		not player.is_dashing
 		and not player.ducking
-		and is_equal_approx(player.velocity.x, 325.0)
-		and is_equal_approx(player.velocity.y, -52.5),
-		"Ducking dash did not chain into a hyper jump with retained speed."
+		and is_equal_approx(
+			player.velocity.x,
+			MovementConstants.SUPER_JUMP_H * MovementConstants.DUCK_SUPER_X_MULT
+		)
+		and is_equal_approx(
+			player.velocity.y,
+			MovementConstants.JUMP_SPEED * MovementConstants.DUCK_SUPER_Y_MULT
+		),
+		"Ducking dash did not chain into a hyper jump with retained speed: dashing=%s ducking=%s velocity=%s floor=%s." % [
+			player.is_dashing, player.ducking, player.velocity, player.is_on_floor()
+		]
 	):
 		return
+	var hyper_speed := MovementConstants.SUPER_JUMP_H * MovementConstants.DUCK_SUPER_X_MULT
 	for _frame in range(3):
 		await physics_frame
 	if not _expect(
-		player.velocity.x > 300.0,
+		player.velocity.x
+		> hyper_speed - MovementConstants.RUN_REDUCE * 3.0 / 60.0 - 0.1,
 		"Hyper speed did not decay slowly while steering in the same direction."
 	):
 		return
@@ -281,7 +304,7 @@ func _run_test() -> void:
 	corner_shape.shape = corner_rectangle
 	corner_obstacle.add_child(corner_shape)
 	main_scene.get_node("Arena").add_child(corner_obstacle)
-	player.reset_for_round(Vector2(130, 79.5))
+	player.reset_for_round(Vector2(130, 78.0))
 	for _frame in range(2):
 		await physics_frame
 	Input.action_press("player_1_right")
@@ -305,7 +328,10 @@ func _run_test() -> void:
 		and player.global_position.y < corner_contact_y
 		and player.global_position.y
 		>= corner_contact_y - MovementConstants.DASH_CORNER_CORRECTION - 0.1,
-		"Dash did not travel around a corner using at most 4 px of correction."
+		"Dash did not travel around a corner using at most 4 px of correction: started=%s contact=%s contact_y=%s end=%s velocity=%s dashing=%s." % [
+			corner_dash_started, corner_contact_observed, corner_contact_y,
+			player.global_position, player.velocity, player.is_dashing
+		]
 	):
 		return
 	Input.action_release("player_1_right")

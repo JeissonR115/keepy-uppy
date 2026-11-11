@@ -19,6 +19,7 @@ extends CanvasLayer
 @onready var player_count_menu: PlayerCountMenu = get_node("../../PlayerCountMenu")
 @onready var set_result_panel: PanelContainer = $SetResultPanel
 @onready var set_result_label: Label = $SetResultPanel/SetResultLabel
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 var set_result_tween: Tween
 var controls_return_to_player_count: bool = false
 var player_count_suspended_by_pause: bool = false
@@ -28,7 +29,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	winner_navigator.confirmed.connect(_return_to_player_count_menu)
 	winner_navigator.cancelled.connect(_return_to_player_count_menu)
-	controls_button.pressed.connect(pause_menu.open_pause)
+	controls_button.pressed.connect(_on_controls_pressed)
+	winner_navigator.confirmed.connect(_play_menu_select)
+	winner_ok_button.pressed.connect(_play_menu_select)
 	winner_ok_button.pressed.connect(_return_to_player_count_menu)
 	pause_menu.controls_requested.connect(_open_control_settings)
 	pause_menu.player_count_requested.connect(_open_player_count_menu)
@@ -205,6 +208,7 @@ func _on_coin_toss_completed(_result: String, _first_server: CharacterBody2D) ->
 
 
 func _on_match_ended(winner: CharacterBody2D) -> void:
+	audio_manager.call("play_menu_music")
 	status_label.text = "%s WINS" % _player_name(winner)
 	winner_label.text = "%s WINS" % _player_name(winner)
 	winner_overlay.visible = true
@@ -219,6 +223,15 @@ func _return_to_player_count_menu() -> void:
 	winner_navigator.enabled = false
 	winner_overlay.visible = false
 	player_count_menu.open_menu()
+
+
+func _on_controls_pressed() -> void:
+	audio_manager.call("play", "menu_select")
+	pause_menu.open_pause()
+
+
+func _play_menu_select() -> void:
+	audio_manager.call("play", "menu_select")
 
 
 func _refresh_competitive_state() -> void:

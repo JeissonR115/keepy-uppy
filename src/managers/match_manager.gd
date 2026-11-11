@@ -37,6 +37,7 @@ signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
 @onready var player_1: CharacterBody2D = $"../Player1"
 @onready var player_2: CharacterBody2D = $"../Player2"
 @onready var balloon: BalloonController = $"../Balloon"
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 
 enum MatchState { ACTIVE, ROUND_OVER, COMPLETE }
 
@@ -78,6 +79,7 @@ func restart_match() -> void:
 
 
 func _start_new_match() -> void:
+	audio_manager.call("play_gameplay_event", "match_start")
 	match_state = MatchState.ACTIVE
 	player_1_score = 0
 	player_2_score = 0
@@ -280,6 +282,7 @@ func _finish_round() -> void:
 	next_server = point_winner
 	score_changed.emit(player_1_score, player_2_score)
 	round_ended.emit(point_winner, player_1_score, player_2_score)
+	audio_manager.call("play_gameplay_event", _player_audio_event("laugh", point_winner))
 
 	if player_1_score >= target_score or player_2_score >= target_score:
 		var completed_set_player_1_score := player_1_score
@@ -294,6 +297,9 @@ func _finish_round() -> void:
 			completed_set_player_2_score,
 			player_1_sets,
 			player_2_sets
+		)
+		audio_manager.call(
+			"play_gameplay_event", _player_audio_event("set_new", point_winner)
 		)
 		player_1_score = 0
 		player_2_score = 0
@@ -333,6 +339,11 @@ func _restart_point() -> void:
 
 func _opponent_of(player: CharacterBody2D) -> CharacterBody2D:
 	return player_2 if player == player_1 else player_1
+
+
+func _player_audio_event(prefix: String, player: CharacterBody2D) -> String:
+	var player_index := 1 if player == player_1 else 2
+	return "%s_p%d" % [prefix, player_index]
 
 
 func _on_player_bumped(

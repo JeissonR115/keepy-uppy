@@ -23,6 +23,7 @@ const CONFIRMATION_OPTIONS: Array[String] = ["YES, RESTART", "NO, GO BACK"]
 	$ConfirmationPanel/Content/Options/ConfirmButton,
 	$ConfirmationPanel/Content/Options/CancelButton,
 ]
+@onready var audio_manager: Node = get_node("/root/AudioManager")
 
 var current_screen: MenuScreen = MenuScreen.HIDDEN
 var selected_index: int = 0
@@ -157,6 +158,7 @@ func _go_back() -> void:
 
 
 func _on_pause_option_pressed(index: int) -> void:
+	audio_manager.call("play", "menu_select")
 	match index:
 		0:
 			close_pause()
@@ -170,6 +172,7 @@ func _on_pause_option_pressed(index: int) -> void:
 
 
 func _on_confirmation_pressed(index: int) -> void:
+	audio_manager.call("play", "menu_select")
 	if index == 0:
 		current_screen = MenuScreen.HIDDEN
 		visible = false

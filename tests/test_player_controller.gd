@@ -27,8 +27,8 @@ func _run_test() -> void:
 		and is_equal_approx(MovementConstants.RUN_REDUCE, 400.0)
 		and is_equal_approx(MovementConstants.GRAVITY, 900.0)
 		and is_equal_approx(MovementConstants.JUMP_SPEED, -105.0)
-		and is_equal_approx(MovementConstants.DASH_SPEED, 240.0)
-		and is_equal_approx(MovementConstants.DASH_TIME, 0.15)
+		and is_equal_approx(MovementConstants.DASH_SPEED, 300.0)
+		and is_equal_approx(MovementConstants.DASH_TIME, 0.2)
 		and is_equal_approx(MovementConstants.CLIMB_MAX_STAMINA, 110.0),
 		"Player movement tuning constants do not match the movement guide."
 	):

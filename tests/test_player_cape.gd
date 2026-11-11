@@ -41,7 +41,8 @@ func _run_test() -> void:
 		and cape.initialized
 		and cape.positions.size() == MovementConstants.CAPE_ROWS * 2
 		and cape.get_parent() == player
-		and cape.z_index < player.visual.z_index
+		and cape.z_index <= player.visual.z_index
+		and cape.get_index() < player.visual.get_index()
 		and outline.closed,
 		"Cape scene was not player-owned, top-level, initialized, and layered behind the player."
 	):
@@ -56,6 +57,30 @@ func _run_test() -> void:
 		fill.polygon.size() == MovementConstants.CAPE_ROWS * 2
 		and outline.points.size() == fill.polygon.size(),
 		"Cape fill and outline did not render the complete two-column mesh."
+	):
+		return
+	var cape_min_x := INF
+	var cape_max_x := -INF
+	for point in fill.polygon:
+		cape_min_x = minf(cape_min_x, point.x)
+		cape_max_x = maxf(cape_max_x, point.x)
+	if not _expect(
+		fill.visible
+		and outline.visible
+		and fill.color.a >= 1.0
+		and (cape_min_x < player.global_position.x - 6.0
+		or cape_max_x > player.global_position.x + 6.0),
+		"Cape mesh was hidden or did not extend beyond the player's silhouette."
+	):
+		return
+	var arena := player.get_parent()
+	var arena_effect := arena.material as ShaderMaterial
+	if not _expect(
+		arena is CanvasGroup
+		and arena_effect != null
+		and arena_effect.shader != null
+		and is_equal_approx(arena_effect.get_shader_parameter("pixel_block_size"), 3.0),
+		"Cape is not included in the arena's 32-bit pixel-rendering effect."
 	):
 		return
 	var base_color: Color = player.idle_color
@@ -146,6 +171,25 @@ func _run_test() -> void:
 			"Cape length exceeded the accepted 15 percent tolerance."
 		):
 			return
+	cape.simulate(
+		1.0 / 60.0,
+		anchor_a.global_position,
+		anchor_b.global_position,
+		Vector2(300.0, 0.0),
+		player.get_cape_color(),
+		false,
+		Vector2.RIGHT,
+		0.5
+	)
+	var stretched_length := 0.0
+	for row in range(MovementConstants.CAPE_ROWS - 1):
+		stretched_length += cape.positions[row].distance_to(cape.positions[row + 1])
+	if not _expect(
+		stretched_length > MovementConstants.CAPE_SEGMENT
+		* (MovementConstants.CAPE_ROWS - 1) * 1.2,
+		"Dash motion did not stretch the player's cape."
+	):
+		return
 	for point in fill.polygon:
 		if not _expect(
 			is_equal_approx(point.x, roundf(point.x))

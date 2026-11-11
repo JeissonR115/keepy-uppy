@@ -1,63 +1,57 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://c3ntij34b1goe"]
 
-[ext_resource type="Script" path="res://src/models/player/player_controller.gd" id="1_player_controller"]
-[ext_resource type="Script" path="res://src/models/player/player_input_reader.gd" id="2_input_reader"]
-[ext_resource type="PackedScene" path="res://src/models/player/cape.tscn" id="3_cape"]
-[ext_resource type="Script" path="res://src/models/player/cpu_controller.gd" id="4_cpu_controller"]
+[ext_resource type="Script" uid="uid://8y6oodyt7hms" path="res://src/models/player/player_controller.gd" id="1_player_controller"]
+[ext_resource type="Script" uid="uid://d1fhghi4tptlu" path="res://src/models/player/player_input_reader.gd" id="2_input_reader"]
+[ext_resource type="PackedScene" uid="uid://cqkiko0p50gsi" path="res://src/models/player/cape.tscn" id="3_cape"]
+[ext_resource type="Script" uid="uid://ht8jd5u6v3sh" path="res://src/models/player/cpu_controller.gd" id="4_cpu_controller"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player"]
 radius = 6.0
 height = 24.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dash_rescue"]
-size = Vector2(44, 20)
+size = Vector2(12, 22)
 
-[node name="PlayerPlaceholder" type="CharacterBody2D" groups=["players"]]
-script = ExtResource("1_player_controller")
+[node name="PlayerPlaceholder" type="CharacterBody2D" unique_id=321193328 groups=["players"]]
 collision_layer = 2
 collision_mask = 3
+script = ExtResource("1_player_controller")
 
-[node name="CapeAnchors" type="Node2D" parent="."]
+[node name="CapeAnchors" type="Node2D" parent="." unique_id=885826377]
 
-[node name="AnchorA" type="Marker2D" parent="CapeAnchors"]
+[node name="AnchorA" type="Marker2D" parent="CapeAnchors" unique_id=1274014201]
 position = Vector2(0, -8)
 
-[node name="AnchorB" type="Marker2D" parent="CapeAnchors"]
+[node name="AnchorB" type="Marker2D" parent="CapeAnchors" unique_id=1288452344]
 position = Vector2(-3, -6)
 
-[node name="Cape" parent="." instance=ExtResource("3_cape")]
+[node name="Cape" parent="." unique_id=918249522 instance=ExtResource("3_cape")]
 
-[node name="PriorityIndicator" type="Polygon2D" parent="."]
+[node name="PriorityIndicator" type="Polygon2D" parent="." unique_id=441771129]
 visible = false
 z_index = -1
-polygon = PackedVector2Array(-9, -13, 0, -18, 9, -13, 9, 13, 0, 18, -9, 13)
 color = Color(1, 0.839216, 0.317647, 0.8)
+polygon = PackedVector2Array(-9, -13, 0, -18, 9, -13, 9, 13, 0, 18, -9, 13)
 
-[node name="Visual" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(-6, -12, 6, -12, 6, 12, -6, 12)
+[node name="Visual" type="Polygon2D" parent="." unique_id=218045876]
 color = Color(0.290196, 0.764706, 0.843137, 1)
+polygon = PackedVector2Array(-4, -11, 0, -12, 4, -11, 6, -8, 6, 12, -6, 12, -6, -8)
 
-[node name="InputReader" type="Node" parent="."]
+[node name="InputReader" type="Node" parent="." unique_id=1798229334]
 script = ExtResource("2_input_reader")
 
-[node name="CPUController" type="Node" parent="."]
+[node name="CPUController" type="Node" parent="." unique_id=1858928775]
 script = ExtResource("4_cpu_controller")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1269787317]
 shape = SubResource("CapsuleShape2D_player")
 
-[node name="DashRescueArea" type="Area2D" parent="."]
+[node name="DashRescueArea" type="Area2D" parent="." unique_id=1014521820]
 collision_layer = 0
 collision_mask = 4
 monitoring = false
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DashRescueArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DashRescueArea" unique_id=976572373]
+position = Vector2(0, 1)
 shape = SubResource("RectangleShape2D_dash_rescue")
-
-[node name="DashTrail" type="Line2D" parent="."]
-visible = false
-width = 4.0
-default_color = Color(0.745098, 0.952941, 0.984314, 0.8)
-begin_cap_mode = 1
-end_cap_mode = 1
