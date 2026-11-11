@@ -21,6 +21,7 @@ signal balloon_turn_changed(player: CharacterBody2D)
 signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
 
 @export var normal_push_strength: float = 30.0
+@export var start_match_on_ready: bool = true
 @export var priority_push_strength: float = 90.0
 @export var non_priority_dash_push_strength: float = 60.0
 @export var priority_dash_push_strength: float = 180.0
@@ -71,7 +72,8 @@ func _ready() -> void:
 	balloon.ground_touched.connect(_on_ground_touched)
 	player_1.player_bumped.connect(_on_player_bumped)
 	player_2.player_bumped.connect(_on_player_bumped)
-	_start_new_match()
+	if start_match_on_ready:
+		_start_new_match()
 
 
 func restart_match() -> void:

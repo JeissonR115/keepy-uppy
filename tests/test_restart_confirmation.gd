@@ -48,6 +48,7 @@ func _run_test() -> void:
 	):
 		return
 	player_count_menu._select_player_count(2)
+	player_count_menu._select_level("classic")
 	manager.player_1_score = 3
 	manager.player_2_score = 1
 	manager.player_1_sets = 2
@@ -97,6 +98,12 @@ func _run_test() -> void:
 	if not _expect(
 		player_count_menu.selected_index == 0,
 		"Horizontal navigation did not return to the one-player option."
+	):
+		return
+	_press_key(player_count_menu.keyboard_navigator, KEY_F)
+	if not _expect(
+		player_count_menu.visible and player_count_menu.showing_levels and paused,
+		"Confirming a player count did not open level selection."
 	):
 		return
 	_press_key(player_count_menu.keyboard_navigator, KEY_F)

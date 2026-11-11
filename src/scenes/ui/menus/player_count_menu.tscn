@@ -72,5 +72,57 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = " CONTROLS"
 
+[node name="LevelPanel" type="PanelContainer" parent="." unique_id=1781627362]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -108.0
+offset_top = -76.0
+offset_right = 108.0
+offset_bottom = 76.0
+
+[node name="Content" type="VBoxContainer" parent="LevelPanel" unique_id=1781627363]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="LevelPanel/Content" unique_id=1781627364]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "CHOOSE ARENA"
+horizontal_alignment = 1
+
+[node name="ClassicButton" type="Button" parent="LevelPanel/Content" unique_id=1781627365]
+custom_minimum_size = Vector2(190, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "> CLASSIC COURT  320x180"
+
+[node name="SkyTowersButton" type="Button" parent="LevelPanel/Content" unique_id=1781627366]
+custom_minimum_size = Vector2(190, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "  SKY TOWERS  640x360"
+
+[node name="AncientRuinsButton" type="Button" parent="LevelPanel/Content" unique_id=1781627367]
+custom_minimum_size = Vector2(190, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "  ANCIENT RUINS  800x450"
+
+[node name="BackButton" type="Button" parent="LevelPanel/Content" unique_id=1781627368]
+custom_minimum_size = Vector2(190, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "  BACK"
+
+[node name="Hint" type="Label" parent="LevelPanel/Content" unique_id=1781627369]
+layout_mode = 2
+theme_override_font_sizes/font_size = 6
+text = "W/S SELECT   F PLAY   G BACK"
+horizontal_alignment = 1
+
 [node name="KeyboardNavigator" type="Node" parent="." unique_id=1185143100]
 script = ExtResource("2_keyboard_navigator")

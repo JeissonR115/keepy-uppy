@@ -38,8 +38,6 @@ func _run_test() -> void:
 		"Pause options are not laid out in a single vertical column."
 	):
 		return
-	manager.player_1_score = 2
-	var match_round_before: int = int(manager.round_number)
 	var remapped_down := _key_event(KEY_K)
 	if not _expect(
 		settings_manager.try_set_binding("player_1_down", remapped_down).valid,
@@ -70,8 +68,11 @@ func _run_test() -> void:
 	):
 		return
 	player_count_menu._select_player_count(2)
+	player_count_menu._select_level("classic")
 	if not _expect(not paused, "Selecting a mode did not resume gameplay."):
 		return
+	manager.player_1_score = 2
+	var match_round_before: int = int(manager.round_number)
 	scoreboard.call("_input", _escape_event())
 	if not _expect(
 		pause_menu.visible and not player_count_menu.visible and paused,
@@ -146,7 +147,9 @@ func _run_test() -> void:
 	if not _expect(
 		pause_menu.current_screen == pause_menu.MenuScreen.PAUSE
 		and paused and manager.player_1_score == 2,
-		"Cancelling restart changed the match state or left the pause menu."
+		"Cancelling restart changed the match state or left the pause menu: screen=%s paused=%s score=%s menu_visible=%s." % [
+			pause_menu.current_screen, paused, manager.player_1_score, pause_menu.visible,
+		]
 	):
 		return
 

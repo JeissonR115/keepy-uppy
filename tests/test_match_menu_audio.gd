@@ -25,9 +25,11 @@ func _run_test() -> void:
 	var player_count_menu: PlayerCountMenu = main_scene.get_node("PlayerCountMenu")
 	var pause_menu: PauseMenu = main_scene.get_node("Arena/Scoreboard/PauseMenu")
 
+	player_count_menu._select_player_count(2)
+	player_count_menu._select_level("classic")
 	if not _expect(
 		audio_manager._last_paths.has("match_start"),
-		"Starting a new match did not trigger match_start."
+		"Starting a match after arena selection did not trigger match_start."
 	):
 		return
 	await create_timer(0.2).timeout
@@ -73,7 +75,6 @@ func _run_test() -> void:
 
 	var menu_sounds := audio_manager.get_child_count()
 	player_count_menu.open_menu()
-	player_count_menu.restart_match_on_selection = false
 	player_count_menu._select_player_count(2)
 	if not _expect(
 		audio_manager.get_child_count() == menu_sounds + 1
@@ -82,6 +83,7 @@ func _run_test() -> void:
 	):
 		return
 
+	player_count_menu._select_level("classic")
 	await create_timer(0.2).timeout
 	menu_sounds = audio_manager.get_child_count()
 	pause_menu._on_pause_option_pressed(2)

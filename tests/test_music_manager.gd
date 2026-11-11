@@ -42,6 +42,7 @@ func _run_test() -> void:
 		return
 
 	menu._select_player_count(2)
+	menu._select_level("classic")
 	if not _expect(
 		manager._match_music.playing and not manager._menu_music.playing,
 		"Selecting a game mode did not switch to match music."

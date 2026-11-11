@@ -124,5 +124,4 @@ player_2_grab={
 
 [rendering]
 
-textures/canvas_textures/default_texture_filter=1
 rendering_device/driver.windows="d3d12"

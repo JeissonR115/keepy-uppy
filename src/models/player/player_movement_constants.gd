@@ -1,14 +1,14 @@
 class_name PlayerMovementConstants
 extends RefCounted
 
-const MAX_RUN := 100.0
+const MAX_RUN := 110.0
 const RUN_ACCEL := 1000.0
 const RUN_REDUCE := 600.0
 const AIR_MULT := 0.65
 
 const GRAVITY := 1100.0
-const MAX_FALL := 200.0
-const FAST_MAX_FALL := 300.0
+const MAX_FALL := 220.0
+const FAST_MAX_FALL := 330.0
 const FAST_MAX_ACCEL := 350.0
 const HALF_GRAV_THRESHOLD := 40.0
 

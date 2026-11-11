@@ -8,6 +8,8 @@ enum MovementState { NORMAL, DASH, CLIMB }
 const TOUCH_PIXEL_LIFETIME := 2.0
 const TOUCH_PIXEL_HALF_SIZE := 2.0
 const STEP_DISTANCE := 14.0
+const PLATFORM_DROP_DURATION := 0.28
+const PLATFORM_COLLISION_LAYER_INDEX := 3
 const MovementConstants = preload("res://src/models/player/player_movement_constants.gd")
 
 @export_enum("player_1", "player_2") var input_prefix: String = "player_1"
@@ -25,6 +27,7 @@ var fall_color: Color
 var dash_color: Color
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
+var platform_drop_timer: float = 0.0
 var var_jump_timer: float = 0.0
 var var_jump_speed: float = 0.0
 var ceiling_contact_timer: float = 0.0
@@ -95,6 +98,8 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	movement_state = MovementState.NORMAL
 	coyote_timer = 0.0
 	jump_buffer_timer = 0.0
+	platform_drop_timer = 0.0
+	set_collision_mask_value(PLATFORM_COLLISION_LAYER_INDEX, true)
 	var_jump_timer = 0.0
 	var_jump_speed = 0.0
 	ceiling_contact_timer = 0.0
@@ -134,7 +139,11 @@ func _physics_process(delta: float) -> void:
 	dash_refill_cooldown_timer = maxf(dash_refill_cooldown_timer - delta, 0.0)
 	accelerate_timer = maxf(accelerate_timer - delta, 0.0)
 	accelerate_cooldown_timer = maxf(accelerate_cooldown_timer - delta, 0.0)
-	var grounded := is_on_floor()
+	if platform_drop_timer > 0.0:
+		platform_drop_timer = maxf(platform_drop_timer - delta, 0.0)
+		if is_zero_approx(platform_drop_timer):
+			set_collision_mask_value(PLATFORM_COLLISION_LAYER_INDEX, true)
+	var grounded := is_on_floor() and platform_drop_timer <= 0.0
 	var cpu_state := cpu_controller.update_decision(delta)
 	var bot_active := cpu_state != CPUController.State.INACTIVE
 	var horizontal_input := _horizontal_input(bot_active)
@@ -187,7 +196,15 @@ func _physics_process(delta: float) -> void:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
 
 	if _jump_requested(bot_active, grounded):
-		jump_buffer_timer = MovementConstants.JUMP_BUFFER
+		var down_held := (
+			not bot_enabled and input_reader.is_pressed(PlayerActionCatalog.ACTION_DOWN)
+		)
+		if grounded and down_held and _is_on_one_way_platform():
+			_begin_platform_drop()
+			grounded = false
+			jump_buffer_timer = 0.0
+		else:
+			jump_buffer_timer = MovementConstants.JUMP_BUFFER
 	else:
 		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
 
@@ -418,6 +435,20 @@ func _wall_direction_within(distance: float) -> float:
 		if test_move(global_transform, Vector2(direction * distance, 0.0)):
 			return -direction
 	return 0.0
+
+
+func _is_on_one_way_platform() -> bool:
+	for index in get_slide_collision_count():
+		var collider := get_slide_collision(index).get_collider()
+		if collider is Node and collider.is_in_group("one_way_platform"):
+			return true
+	return false
+
+
+func _begin_platform_drop() -> void:
+	platform_drop_timer = PLATFORM_DROP_DURATION
+	set_collision_mask_value(PLATFORM_COLLISION_LAYER_INDEX, false)
+	velocity.y = maxf(velocity.y, 60.0)
 
 
 func _update_climb_state(delta: float) -> void:

@@ -9,10 +9,11 @@ Open this folder in Godot 4.x and run the project. The main scene is
 placeholders and does not require external art or audio.
 
 At startup, choose **1 PLAYER** to play against a simple bot or **2 PLAYERS**
-for local multiplayer. Use Player 1's Up/Down controls (W/S by default) and
-Jump (F) to select. In one-player mode, the bot controls Player 2 and moves
-to intercept the balloon on its turn. If Player 1 is close to the balloon on
-the bot's turn, it tries to challenge and push Player 1 away first.
+for local multiplayer, then choose the arena. Use Player 1's Up/Down controls
+(W/S by default) and Jump (F) to select. In one-player mode, the bot controls
+Player 2 and moves to intercept the balloon on its turn. If Player 1 is close
+to the balloon on the bot's turn, it tries to challenge and push Player 1 away
+first.
 
 ## Display
 
@@ -81,7 +82,7 @@ godot --headless --path . --script res://tests/test_music_manager.gd
 ## Manual launch and render checklist
 
 - [ ] Open the project in Godot 4.x and confirm there are no import or missing-resource errors.
-- [ ] Run the project and confirm the two players, balloon, floor, and side boundaries are visible without floating platforms.
+- [ ] Choose each arena and confirm its floor, walls, platforms, players, and balloon are visible.
 - [ ] Confirm the 960x540 window shows crisp, unblurred placeholder edges.
 - [ ] Resize the window and confirm the game retains its 16:9 aspect ratio and integer pixel scaling.
 
@@ -92,15 +93,23 @@ dash, and accelerate. Player 1 uses A/D/W/S, F, G, and H. Player 2 uses the
 arrow keys and the physical top-row 1/2/3 keys. Actions can be rebound without
 changing movement logic. Use the in-game **KEYS** menu to rebind them and save
 the complete map locally; Project Settings > Input Map remains available for
-development.
+development. On one-way platforms, hold **Down** and press **Jump** to drop
+through.
+
+Verify level switching and platform drop-through with:
+
+```sh
+godot --headless --path . --script res://tests/test_level_selection.gd
+godot --headless --path . --script res://tests/test_platform_drop.gd
+```
 
 ## Pause and menu navigation
 
 - Press **Escape** during play to open or close the pause menu.
-- At startup, the player-count menu is the only menu open. Select **Keyboard Controls** to edit bindings before choosing a game mode; returning from controls restores player selection.
+- At startup, the player-count menu is the only menu open. Select **Keyboard Controls** to edit bindings before choosing a game mode; returning from controls restores player selection. After choosing one or two players, choose Classic Court, Sky Towers, or Ancient Ruins.
 - Only one menu is shown at a time: opening pause hides player selection, and opening controls replaces the menu that launched it.
 - The pause menu is a single vertical column: Player 1's **Up/Down** actions (default W/S) move between options; **Left/Right** do not change its selection. The restart confirmation uses **Left/Right** (default A/D) to choose Yes or No. Other menus also use Player 1's current directional actions; **Jump** confirms (default F) and **Dash** goes back (default G). Remapping those actions updates menu navigation too.
-- Choose **Resume**, **Restart**, or **Controls**. Confirming **Restart** opens the 1- or 2-player selection; choosing a mode starts a fresh match and retains saved control bindings.
+- Choose **Resume**, **Restart**, or **Controls**. Confirming **Restart** opens player-count and then arena selection; choosing an arena starts a fresh match and retains saved control bindings.
 - Player-count, controls, and winner menus remain keyboard navigable. Escape opens or closes pause during play and cancels an active key capture.
 
 Verify pause navigation, restart cancellation, controls entry, and gameplay isolation with:

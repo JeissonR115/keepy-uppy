@@ -65,6 +65,7 @@ func _run_test() -> void:
 	):
 		return
 	player_count_menu._select_player_count(2)
+	player_count_menu._select_level("classic")
 	if not _expect(not paused and not player_count_menu.visible, "Selecting a mode did not start gameplay."):
 		return
 	scoreboard.call("_input", _escape_event())

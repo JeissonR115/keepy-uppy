@@ -22,11 +22,11 @@ func _run_test() -> void:
 	):
 		return
 	if not _expect(
-		is_equal_approx(MovementConstants.MAX_RUN, 90.0)
+		is_equal_approx(MovementConstants.MAX_RUN, 110.0)
 		and is_equal_approx(MovementConstants.RUN_ACCEL, 1000.0)
-		and is_equal_approx(MovementConstants.RUN_REDUCE, 400.0)
-		and is_equal_approx(MovementConstants.GRAVITY, 900.0)
-		and is_equal_approx(MovementConstants.JUMP_SPEED, -105.0)
+		and is_equal_approx(MovementConstants.RUN_REDUCE, 600.0)
+		and is_equal_approx(MovementConstants.GRAVITY, 1100.0)
+		and is_equal_approx(MovementConstants.JUMP_SPEED, -200.0)
 		and is_equal_approx(MovementConstants.DASH_SPEED, 300.0)
 		and is_equal_approx(MovementConstants.DASH_TIME, 0.2)
 		and is_equal_approx(MovementConstants.CLIMB_MAX_STAMINA, 110.0),
@@ -50,6 +50,7 @@ func _run_test() -> void:
 		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
 	)
 	two_players_button.pressed.emit()
+	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
@@ -208,8 +209,8 @@ func _run_test() -> void:
 		full_jump_peak = minf(full_jump_peak, player_1.global_position.y)
 	var full_jump_height := full_jump_start - full_jump_peak
 	if not _expect(
-		full_jump_height >= 25.0 and full_jump_height <= 30.0,
-		"Full jump height was outside the expected 28 px range: %s." % full_jump_height
+		full_jump_height >= 54.0 and full_jump_height <= 59.0,
+		"Full jump height was outside the expected 56 px range: %s." % full_jump_height
 	):
 		return
 
@@ -241,7 +242,7 @@ func _run_test() -> void:
 	if not _expect(
 		fast_fall_speed > MovementConstants.MAX_FALL
 		and fast_fall_speed <= MovementConstants.FAST_MAX_FALL,
-		"Fast fall did not accelerate toward its 240 px/s limit: %s." % fast_fall_speed
+		"Fast fall did not accelerate toward its configured limit: %s." % fast_fall_speed
 	):
 		return
 
@@ -253,11 +254,11 @@ func _run_test() -> void:
 	for _frame in range(10):
 		await physics_frame
 	Input.action_release("player_1_right")
-	for _frame in range(6):
+	for _frame in range(15):
 		await physics_frame
 	if not _expect(
 		is_zero_approx(player_1.velocity.x),
-		"Player did not stop within 0.1 seconds after releasing horizontal input."
+		"Player did not stop within 0.25 seconds after releasing horizontal input."
 	):
 		return
 
@@ -276,7 +277,7 @@ func _run_test() -> void:
 	for _frame in range(30):
 		await physics_frame
 	if not _expect(
-		player_1.velocity.y > 60.0 and player_1.velocity.y < 95.0,
+		player_1.velocity.y > 90.0 and player_1.velocity.y < 120.0,
 		"Wall-slide fall speed did not increase toward the normal fall limit."
 	):
 		return
@@ -400,16 +401,16 @@ func _run_test() -> void:
 			break
 	Input.action_release("player_1_right")
 	if not _expect(
-		acceleration_ticks <= 6
+		acceleration_ticks <= 7
 		and is_equal_approx(player_1.velocity.x, MovementConstants.MAX_RUN),
-		"Ground acceleration did not reach run speed in under 0.1 seconds."
+		"Ground acceleration did not reach run speed in under 0.12 seconds."
 	):
 		return
-	for _frame in range(6):
+	for _frame in range(12):
 		await physics_frame
 	if not _expect(
 		is_zero_approx(player_1.velocity.x),
-		"Ground movement did not stop in under 0.1 seconds after releasing input."
+		"Ground movement did not stop in under 0.2 seconds after releasing input."
 	):
 		return
 

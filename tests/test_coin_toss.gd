@@ -38,6 +38,7 @@ func _verify_toss(outcome: int, expected_result: String) -> bool:
 		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
 	)
 	two_players_button.pressed.emit()
+	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 	await process_frame
 
 	var player_1: CharacterBody2D = manager.player_1

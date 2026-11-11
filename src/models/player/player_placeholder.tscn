@@ -14,7 +14,7 @@ size = Vector2(12, 22)
 
 [node name="PlayerPlaceholder" type="CharacterBody2D" unique_id=321193328 groups=["players"]]
 collision_layer = 2
-collision_mask = 3
+collision_mask = 7
 script = ExtResource("1_player_controller")
 
 [node name="CapeAnchors" type="Node2D" parent="." unique_id=885826377]

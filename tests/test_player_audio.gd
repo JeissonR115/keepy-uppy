@@ -26,6 +26,7 @@ func _run_test() -> void:
 		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
 	)
 	two_players_button.pressed.emit()
+	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 	var player: PlayerController = main_scene.get_node("Arena/Player1")
 	for _frame in range(12):
 		await physics_frame

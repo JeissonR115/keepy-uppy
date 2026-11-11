@@ -29,6 +29,7 @@ func _run_test() -> void:
 		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
 	)
 	two_players_button.pressed.emit()
+	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 
 	var player: CharacterBody2D = main_scene.get_node("Arena/Player1")
 	var balloon: RigidBody2D = main_scene.get_node("Arena/Balloon")

@@ -5,6 +5,8 @@
 [ext_resource type="Script" uid="uid://6khrn6cd7hi8" path="res://src/managers/match_manager.gd" id="4_match_manager"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/hud/scoreboard.tscn" id="5_scoreboard"]
 [ext_resource type="Shader" uid="uid://8ty8cwyvoldu" path="res://src/scenes/levels/world_screen_effect.gdshader" id="6_screen_effect"]
+[ext_resource type="Script" path="res://src/managers/level_manager.gd" id="7_level_manager"]
+[ext_resource type="Script" path="res://src/scenes/levels/arena_camera.gd" id="8_arena_camera"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_world_screen_effect"]
 shader = ExtResource("6_screen_effect")
@@ -33,6 +35,7 @@ polygon = PackedVector2Array(0, 0, 320, 0, 320, 180, 0, 180)
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1534016173]
 position = Vector2(160, 90)
+script = ExtResource("8_arena_camera")
 
 [node name="Player1" parent="." unique_id=375731400 instance=ExtResource("1_player")]
 position = Vector2(72, 144)
@@ -46,6 +49,7 @@ position = Vector2(160, 48)
 
 [node name="MatchManager" type="Node" parent="." unique_id=1945426257]
 script = ExtResource("4_match_manager")
+start_match_on_ready = false
 
 [node name="Scoreboard" parent="." unique_id=2060849212 instance=ExtResource("5_scoreboard")]
 
@@ -87,3 +91,6 @@ polygon = PackedVector2Array(-160, 8, 160, 8, 160, 10, -160, 10)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling" unique_id=1057815789]
 shape = SubResource("RectangleShape2D_ceiling")
+
+[node name="LevelManager" type="Node" parent="." unique_id=1570546805]
+script = ExtResource("7_level_manager")

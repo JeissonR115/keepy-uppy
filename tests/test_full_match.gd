@@ -44,6 +44,7 @@ func _run_test() -> void:
 		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
 	)
 	two_players_button.pressed.emit()
+	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 	await process_frame
 	balloon = main_scene.get_node("Arena/Balloon")
 	var player_1: CharacterBody2D = manager.player_1

@@ -20,6 +20,7 @@ func _run_test() -> void:
 	main_scene.get_node(
 		"PlayerCountMenu/Panel/MenuScroll/Margins/Content/TwoPlayersButton"
 	).pressed.emit()
+	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 	await process_frame
 
 	var arena: Node = main_scene.get_node("Arena")

@@ -13,13 +13,13 @@
 - `src/models/player/player_input_reader.gd`: puente a las acciones configuradas.
 - `src/models/player/player_action_catalog.gd`: catálogo de teclas y colores.
 
-La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara 3 le permite interactuar con el entorno (capa 1) y otros jugadores (capa 2). `DashRescueArea` busca el globo en la capa 4.
+La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara incluye el entorno (capa 1), otros jugadores (capa 2) y plataformas unidireccionales (capa 4). `DashRescueArea` busca el globo en la capa 4.
 
 ## Funcionamiento
 
 1. Al iniciar, el controlador configura su `PlayerInputReader` con `input_prefix` y asigna colores de estado.
-2. `_physics_process()` calcula movimiento horizontal con una carrera de 90 px/s, acelera a 1000 px/s² y aplica control aéreo de 0.65. El exceso de velocidad decae a 400 px/s² cuando se mantiene la dirección; al soltar o invertirla, vuelve rápidamente a la velocidad objetivo.
-3. La gravedad es de 900 px/s², limita la caída a 160 px/s y permite una caída rápida de 240 px/s a 300 px/s². El salto de -105 px/s combina 0.1 s de coyote, 0.08 s de búfer y hasta 0.2 s de altura variable; saltar con dirección añade 40 px/s horizontales.
+2. `_physics_process()` calcula movimiento horizontal con una carrera de 110 px/s, acelera a 1000 px/s² y aplica control aéreo de 0.65. El exceso de velocidad decae a 600 px/s² cuando se mantiene la dirección; al soltar o invertirla, vuelve rápidamente a la velocidad objetivo.
+3. La gravedad es de 1100 px/s², limita la caída a 220 px/s y permite una caída rápida de 330 px/s a 350 px/s². El salto combina 0.1 s de coyote, 0.08 s de búfer y hasta 0.2 s de altura variable; saltar con dirección añade 50 px/s horizontales. En una plataforma unidireccional, Abajo + Salto desactiva brevemente solo su capa de colisión para permitir atravesarla.
 4. Dash consume una carga, congela solo al jugador durante 0.05 s y después acelera en ocho direcciones durante 0.2 s, recorriendo más de 55 px con un pico de velocidad de 360 px/s. La carga se recupera al aterrizar tras la demora de 0.1 s; el dash termina a 160 px/s. Su área de rescate se activa al terminar el freeze, y la misma capa se estira hacia atrás con el impulso del dash; el área solo puede rescatar un globo por dash.
 5. Las técnicas encadenadas conservan el movimiento: saltar desde un dash horizontal hace un super de 260 px/s y -105 px/s; el dash diagonal hacia abajo que aterriza hace un ultra de 1.2x y permite agacharse para un hyper de 325 px/s y -52.5 px/s. Saltar durante un dash hacia arriba junto a una pared hace un rebote de 170 px/s y -160 px/s, con salto variable y dirección forzada por sus ventanas configuradas.
 6. Boost acelera durante un periodo con enfriamiento y tope de velocidad horizontal propios.
