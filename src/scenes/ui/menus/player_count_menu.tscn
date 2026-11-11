@@ -31,6 +31,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
 horizontal_scroll_mode = 0
+follow_focus = true
 
 [node name="Margins" type="MarginContainer" parent="Panel/MenuScroll" unique_id=1985068717]
 layout_mode = 2
@@ -79,14 +80,14 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -108.0
+offset_left = -140.0
 offset_top = -76.0
-offset_right = 108.0
+offset_right = 140.0
 offset_bottom = 76.0
 
 [node name="Content" type="VBoxContainer" parent="LevelPanel" unique_id=1781627363]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 3
 
 [node name="Title" type="Label" parent="LevelPanel/Content" unique_id=1781627364]
 layout_mode = 2
@@ -94,31 +95,79 @@ theme_override_font_sizes/font_size = 12
 text = "CHOOSE ARENA"
 horizontal_alignment = 1
 
-[node name="ClassicButton" type="Button" parent="LevelPanel/Content" unique_id=1781627365]
-custom_minimum_size = Vector2(190, 18)
+[node name="SelectionRow" type="HBoxContainer" parent="LevelPanel/Content" unique_id=1781627366]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 5
+
+[node name="ArenaScroll" type="ScrollContainer" parent="LevelPanel/Content/SelectionRow" unique_id=1781627367]
+custom_minimum_size = Vector2(108, 88)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ArenaList" type="VBoxContainer" parent="LevelPanel/Content/SelectionRow/ArenaScroll" unique_id=1781627380]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="NoArenasLabel" type="Label" parent="LevelPanel/Content/SelectionRow/ArenaScroll/ArenaList" unique_id=1781627381]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = "NO ARENAS AVAILABLE"
+autowrap_mode = 2
+
+[node name="ArenaDetails" type="PanelContainer" parent="LevelPanel/Content/SelectionRow" unique_id=1781627382]
+custom_minimum_size = Vector2(150, 88)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DetailsContent" type="VBoxContainer" parent="LevelPanel/Content/SelectionRow/ArenaDetails" unique_id=1781627383]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ArenaPreview" type="TextureRect" parent="LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent" unique_id=1781627384]
+custom_minimum_size = Vector2(136, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PreviewFallback" type="Label" parent="LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent" unique_id=1781627385]
+layout_mode = 2
+theme_override_font_sizes/font_size = 6
+text = "ARENA PREVIEW"
+horizontal_alignment = 1
+
+[node name="ArenaName" type="Label" parent="LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent" unique_id=1781627386]
 layout_mode = 2
 theme_override_font_sizes/font_size = 8
-text = "> CLASSIC COURT  320x180"
+text = "ARENA"
+autowrap_mode = 2
 
-[node name="SkyTowersButton" type="Button" parent="LevelPanel/Content" unique_id=1781627366]
-custom_minimum_size = Vector2(190, 18)
+[node name="ArenaMetadata" type="Label" parent="LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent" unique_id=1781627387]
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
-text = "  SKY TOWERS  640x360"
+theme_override_font_sizes/font_size = 5
+text = "MEDIUM  320×180  2 PLAYERS"
+autowrap_mode = 2
 
-[node name="AncientRuinsButton" type="Button" parent="LevelPanel/Content" unique_id=1781627367]
-custom_minimum_size = Vector2(190, 18)
+[node name="ArenaDescription" type="Label" parent="LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent" unique_id=1781627388]
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
-text = "  ANCIENT RUINS  800x450"
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 6
+text = "Arena description."
+autowrap_mode = 2
 
-[node name="BackButton" type="Button" parent="LevelPanel/Content" unique_id=1781627368]
-custom_minimum_size = Vector2(190, 18)
+[node name="BackButton" type="Button" parent="LevelPanel/Content" unique_id=1781627389]
+custom_minimum_size = Vector2(180, 16)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
-text = "  BACK"
+theme_override_font_sizes/font_size = 7
+text = "BACK"
 
-[node name="Hint" type="Label" parent="LevelPanel/Content" unique_id=1781627369]
+[node name="Hint" type="Label" parent="LevelPanel/Content" unique_id=1781627390]
 layout_mode = 2
 theme_override_font_sizes/font_size = 6
 text = "W/S SELECT   F PLAY   G BACK"

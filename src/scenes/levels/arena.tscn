@@ -1,96 +1,43 @@
-[gd_scene format=3 uid="uid://bx1x2m2brclly"]
+[gd_scene load_steps=9 format=3]
 
-[ext_resource type="PackedScene" uid="uid://c3ntij34b1goe" path="res://src/models/player/player_placeholder.tscn" id="1_player"]
-[ext_resource type="PackedScene" uid="uid://dn4srepj42unf" path="res://src/models/balloon/balloon_placeholder.tscn" id="2_balloon"]
-[ext_resource type="Script" uid="uid://6khrn6cd7hi8" path="res://src/managers/match_manager.gd" id="4_match_manager"]
-[ext_resource type="PackedScene" path="res://src/scenes/ui/hud/scoreboard.tscn" id="5_scoreboard"]
-[ext_resource type="Shader" uid="uid://8ty8cwyvoldu" path="res://src/scenes/levels/world_screen_effect.gdshader" id="6_screen_effect"]
-[ext_resource type="Script" path="res://src/managers/level_manager.gd" id="7_level_manager"]
-[ext_resource type="Script" path="res://src/scenes/levels/arena_camera.gd" id="8_arena_camera"]
+[ext_resource type="PackedScene" path="res://src/models/player/player_placeholder.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://src/models/balloon/balloon_placeholder.tscn" id="2_balloon"]
+[ext_resource type="Script" path="res://src/managers/match_manager.gd" id="3_match_manager"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/hud/scoreboard.tscn" id="4_scoreboard"]
+[ext_resource type="Script" path="res://src/managers/level_manager.gd" id="5_level_manager"]
+[ext_resource type="Script" path="res://src/scenes/levels/arena_camera.gd" id="6_arena_camera"]
+[ext_resource type="Shader" path="res://src/scenes/levels/world_screen_effect.gdshader" id="7_screen_effect"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_world_screen_effect"]
-shader = ExtResource("6_screen_effect")
+shader = ExtResource("7_screen_effect")
 shader_parameter/pixel_block_size = 3.0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
-size = Vector2(320, 16)
-
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ceiling"]
-bounce = 0.28
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_side_wall"]
-size = Vector2(16, 180)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
-size = Vector2(320, 16)
-
-[node name="Arena" type="CanvasGroup" unique_id=142473774]
+[node name="Arena" type="CanvasGroup"]
 material = SubResource("ShaderMaterial_world_screen_effect")
 fit_margin = 0.0
 clear_margin = 0.0
 
-[node name="Background" type="Polygon2D" parent="." unique_id=1498819952]
-color = Color(0.090196, 0.117647, 0.188235, 1)
-polygon = PackedVector2Array(0, 0, 320, 0, 320, 180, 0, 180)
+[node name="MapRoot" type="Node2D" parent="."]
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=1534016173]
+[node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(160, 90)
-script = ExtResource("8_arena_camera")
+script = ExtResource("6_arena_camera")
 
-[node name="Player1" parent="." unique_id=375731400 instance=ExtResource("1_player")]
+[node name="Player1" parent="." instance=ExtResource("1_player")]
 position = Vector2(72, 144)
 
-[node name="Player2" parent="." unique_id=1581247689 instance=ExtResource("1_player")]
+[node name="Player2" parent="." instance=ExtResource("1_player")]
 position = Vector2(248, 144)
 input_prefix = "player_2"
 
-[node name="Balloon" parent="." unique_id=1231891030 instance=ExtResource("2_balloon")]
+[node name="Balloon" parent="." instance=ExtResource("2_balloon")]
 position = Vector2(160, 48)
 
-[node name="MatchManager" type="Node" parent="." unique_id=1945426257]
-script = ExtResource("4_match_manager")
+[node name="MatchManager" type="Node" parent="."]
+script = ExtResource("3_match_manager")
 start_match_on_ready = false
 
-[node name="Scoreboard" parent="." unique_id=2060849212 instance=ExtResource("5_scoreboard")]
+[node name="Scoreboard" parent="." instance=ExtResource("4_scoreboard")]
 
-[node name="ScoringGround" type="StaticBody2D" parent="." unique_id=1893525094 groups=["scoring_ground"]]
-position = Vector2(160, 172)
-collision_mask = 0
-
-[node name="Visual" type="Polygon2D" parent="ScoringGround" unique_id=293120036]
-color = Color(0.258824, 0.345098, 0.478431, 1)
-polygon = PackedVector2Array(-160, -8, 160, -8, 160, 8, -160, 8)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="ScoringGround" unique_id=2076330299]
-shape = SubResource("RectangleShape2D_ground")
-
-[node name="LeftWall" type="StaticBody2D" parent="." unique_id=1430768808]
-position = Vector2(0, 90)
-collision_mask = 0
-physics_material_override = SubResource("PhysicsMaterial_ceiling")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall" unique_id=1655470342]
-shape = SubResource("RectangleShape2D_side_wall")
-
-[node name="RightWall" type="StaticBody2D" parent="." unique_id=367104442]
-position = Vector2(320, 90)
-collision_mask = 0
-physics_material_override = SubResource("PhysicsMaterial_ceiling")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall" unique_id=380823065]
-shape = SubResource("RectangleShape2D_side_wall")
-
-[node name="Ceiling" type="StaticBody2D" parent="." unique_id=1092939658]
-position = Vector2(160, 0)
-collision_mask = 0
-physics_material_override = SubResource("PhysicsMaterial_ceiling")
-
-[node name="Visual" type="Polygon2D" parent="Ceiling" unique_id=655477395]
-color = Color(0.258824, 0.345098, 0.478431, 1)
-polygon = PackedVector2Array(-160, 8, 160, 8, 160, 10, -160, 10)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling" unique_id=1057815789]
-shape = SubResource("RectangleShape2D_ceiling")
-
-[node name="LevelManager" type="Node" parent="." unique_id=1570546805]
-script = ExtResource("7_level_manager")
+[node name="LevelManager" type="Node" parent="."]
+script = ExtResource("5_level_manager")

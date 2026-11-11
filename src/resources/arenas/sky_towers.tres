@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ArenaData" load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://src/scenes/levels/sky_towers.tscn" id="1_map"]
+[ext_resource type="Script" path="res://src/resources/arena_data.gd" id="2_data"]
+[ext_resource type="Texture2D" path="res://assets/sprites/arena/sky_towers_preview.svg" id="3_preview"]
+
+[resource]
+script = ExtResource("2_data")
+id = "sky-towers"
+display_name = "Sky Towers"
+description = "A larger arena with staggered one-way platforms and room to chase the balloon."
+theme_name = "Sky Stone"
+recommended_players = 2
+size_classification = 2
+preview_texture = ExtResource("3_preview")
+map_scene = ExtResource("1_map")
+playable_bounds = Rect2(0, 0, 480, 270)
+player_1_spawn = Vector2(80, 220)
+player_2_spawn = Vector2(400, 220)

@@ -250,9 +250,9 @@ func _on_ground_touched() -> void:
 	if match_state != MatchState.ACTIVE:
 		return
 	if not round_has_valid_contact:
-		next_server = round_server
+		round_faulting_player = null
 		match_state = MatchState.ROUND_OVER
-		round_replay_requested = true
+		round_replay_requested = false
 		call_deferred("_finish_round")
 		return
 	consecutive_downward_fault_player = null
@@ -273,10 +273,12 @@ func _finish_round() -> void:
 	var point_winner: CharacterBody2D
 	if is_instance_valid(round_faulting_player):
 		point_winner = _opponent_of(round_faulting_player)
-	elif is_instance_valid(last_valid_toucher):
+	elif round_has_valid_contact and is_instance_valid(last_valid_toucher):
 		point_winner = last_valid_toucher
+	elif is_instance_valid(round_server):
+		point_winner = _opponent_of(round_server)
 	else:
-		point_winner = round_server
+		point_winner = next_server
 	if point_winner == player_1:
 		player_1_score += 1
 	else:

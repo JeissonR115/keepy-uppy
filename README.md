@@ -5,8 +5,9 @@ Local two-player balloon game prototype made with Godot 4.x.
 ## Run
 
 Open this folder in Godot 4.x and run the project. The main scene is
-`src/scenes/main/main.tscn`. The current arena uses built-in geometric
-placeholders and does not require external art or audio.
+`src/scenes/main/main.tscn`. Arenas use the reusable TileSet in
+`assets/sprites/arena/foreground_tilesets.png` and are selected from the
+arena catalog before each match.
 
 At startup, choose **1 PLAYER** to play against a simple bot or **2 PLAYERS**
 for local multiplayer, then choose the arena. Use Player 1's Up/Down controls
@@ -27,8 +28,8 @@ viewport.
 The project-wide GUI theme uses `DotGothic16-Regular.ttf` from
 `assets/fonts/DotGothic16/`. Player visuals are basic colored rectangles; the
 player cape remains procedurally simulated and follows its character anchors.
-The arena uses a 32-bit-style pixel-screen effect on the game world only; the
-HUD and menus are rendered on independent canvas layers so text stays clear.
+The arena terrain uses 16-pixel tiles; previews and the HUD remain separate
+from gameplay geometry.
 
 Verify the global font, rectangle visuals, screen-effect isolation, and cape
 instances with:
@@ -100,13 +101,13 @@ Verify level switching and platform drop-through with:
 
 ```sh
 godot --headless --path . --script res://tests/test_level_selection.gd
-godot --headless --path . --script res://tests/test_platform_drop.gd
+godot --headless --path . --script res://tests/test_arena_layout.gd
 ```
 
 ## Pause and menu navigation
 
 - Press **Escape** during play to open or close the pause menu.
-- At startup, the player-count menu is the only menu open. Select **Keyboard Controls** to edit bindings before choosing a game mode; returning from controls restores player selection. After choosing one or two players, choose Classic Court, Sky Towers, or Ancient Ruins.
+- At startup, the player-count menu is the only menu open. Select **Keyboard Controls** to edit bindings before choosing a game mode; returning from controls restores player selection. After choosing one or two players, choose a catalog arena and review its preview and details.
 - Only one menu is shown at a time: opening pause hides player selection, and opening controls replaces the menu that launched it.
 - The pause menu is a single vertical column: Player 1's **Up/Down** actions (default W/S) move between options; **Left/Right** do not change its selection. The restart confirmation uses **Left/Right** (default A/D) to choose Yes or No. Other menus also use Player 1's current directional actions; **Jump** confirms (default F) and **Dash** goes back (default G). Remapping those actions updates menu navigation too.
 - Choose **Resume**, **Restart**, or **Controls**. Confirming **Restart** opens player-count and then arena selection; choosing an arena starts a fresh match and retains saved control bindings.

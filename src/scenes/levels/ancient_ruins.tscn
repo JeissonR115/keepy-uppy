@@ -1,0 +1,127 @@
+[gd_scene format=3 uid="uid://c4bato76328em"]
+
+[sub_resource type="RectangleShape2D" id="GroundShape"]
+size = Vector2(800, 16)
+
+[sub_resource type="RectangleShape2D" id="WallShape"]
+size = Vector2(16, 450)
+
+[sub_resource type="RectangleShape2D" id="CeilingShape"]
+size = Vector2(800, 16)
+
+[sub_resource type="RectangleShape2D" id="PlatformShortShape"]
+size = Vector2(144, 12)
+
+[sub_resource type="RectangleShape2D" id="PlatformWideShape"]
+size = Vector2(208, 12)
+
+[sub_resource type="RectangleShape2D" id="PlatformMidShape"]
+size = Vector2(168, 12)
+
+[sub_resource type="RectangleShape2D" id="PlatformHighShape"]
+size = Vector2(128, 12)
+
+[node name="AncientRuins" type="Node2D" unique_id=973060669]
+metadata/world_size = Vector2(800, 450)
+
+[node name="Background" type="Polygon2D" parent="." unique_id=1421821736]
+color = Color(0.16, 0.11, 0.16, 1)
+polygon = PackedVector2Array(0, 0, 800, 0, 800, 450, 0, 450)
+
+[node name="Moon" type="Polygon2D" parent="." unique_id=1855912803]
+position = Vector2(650, 68)
+color = Color(0.94, 0.68, 0.43, 1)
+polygon = PackedVector2Array(0, -22, 16, -16, 22, 0, 16, 16, 0, 22, -16, 16, -22, 0, -16, -16)
+
+[node name="DistantRuins" type="Polygon2D" parent="." unique_id=1657543131]
+position = Vector2(0, 300)
+color = Color(0.28, 0.18, 0.23, 1)
+polygon = PackedVector2Array(0, 56, 74, 56, 74, 4, 100, 4, 100, 56, 158, 56, 158, 22, 190, 22, 190, 56, 270, 56, 270, 0, 302, 0, 302, 56, 368, 56, 368, 15, 410, 15, 410, 56, 486, 56, 486, 5, 520, 5, 520, 56, 586, 56, 586, 18, 626, 18, 626, 56, 700, 56, 700, 0, 738, 0, 738, 56, 800, 56, 800, 150, 0, 150)
+
+[node name="ScoringGround" type="StaticBody2D" parent="." unique_id=2011798965 groups=["scoring_ground"]]
+position = Vector2(400, 442)
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="ScoringGround" unique_id=702702057]
+color = Color(0.48, 0.31, 0.25, 1)
+polygon = PackedVector2Array(-400, -8, 400, -8, 400, 8, -400, 8)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ScoringGround" unique_id=990676996]
+shape = SubResource("GroundShape")
+
+[node name="LeftWall" type="StaticBody2D" parent="." unique_id=638700446]
+position = Vector2(0, 225)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall" unique_id=232907687]
+shape = SubResource("WallShape")
+
+[node name="RightWall" type="StaticBody2D" parent="." unique_id=1550657001]
+position = Vector2(800, 225)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall" unique_id=1892239754]
+shape = SubResource("WallShape")
+
+[node name="Ceiling" type="StaticBody2D" parent="." unique_id=1347620935]
+position = Vector2(400, 0)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling" unique_id=685540187]
+shape = SubResource("CeilingShape")
+
+[node name="PlatformWest" type="StaticBody2D" parent="." unique_id=492708766 groups=["one_way_platform", "scoring_ground"]]
+position = Vector2(150, 370)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="PlatformWest" unique_id=1577521408]
+color = Color(0.77, 0.48, 0.3, 1)
+polygon = PackedVector2Array(-72, -6, 72, -6, 72, 6, -72, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformWest" unique_id=1728327544]
+shape = SubResource("PlatformShortShape")
+one_way_collision = true
+one_way_collision_margin = 3.0
+
+[node name="PlatformCenterLow" type="StaticBody2D" parent="." unique_id=859246502 groups=["one_way_platform", "scoring_ground"]]
+position = Vector2(355, 310)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="PlatformCenterLow" unique_id=1541130440]
+color = Color(0.84, 0.61, 0.37, 1)
+polygon = PackedVector2Array(-104, -6, 104, -6, 104, 6, -104, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformCenterLow" unique_id=2095035155]
+shape = SubResource("PlatformWideShape")
+one_way_collision = true
+one_way_collision_margin = 3.0
+
+[node name="PlatformEast" type="StaticBody2D" parent="." unique_id=1849922163 groups=["one_way_platform", "scoring_ground"]]
+position = Vector2(650, 252)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="PlatformEast" unique_id=2115173775]
+color = Color(0.77, 0.48, 0.3, 1)
+polygon = PackedVector2Array(-84, -6, 84, -6, 84, 6, -84, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformEast" unique_id=1796268078]
+shape = SubResource("PlatformMidShape")
+one_way_collision = true
+one_way_collision_margin = 3.0
+
+[node name="PlatformHigh" type="StaticBody2D" parent="." unique_id=1302097491 groups=["one_way_platform", "scoring_ground"]]
+position = Vector2(400, 190)
+collision_layer = 4
+collision_mask = 0
+
+[node name="Visual" type="Polygon2D" parent="PlatformHigh" unique_id=2073440342]
+color = Color(0.91, 0.69, 0.4, 1)
+polygon = PackedVector2Array(-64, -6, 64, -6, 64, 6, -64, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlatformHigh" unique_id=1836417139]
+shape = SubResource("PlatformHighShape")
+one_way_collision = true
+one_way_collision_margin = 3.0

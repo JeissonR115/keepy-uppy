@@ -20,6 +20,8 @@ const MovementConstants = preload("res://src/models/player/player_movement_const
 @export var accelerate_cooldown: float = 4.0
 @export var accelerate_max_speed: float = 210.0
 
+var arena_speed_multiplier: float = 1.0
+
 var idle_color: Color
 var run_color: Color
 var rise_color: Color
@@ -282,16 +284,16 @@ func _physics_process(delta: float) -> void:
 		pass
 	else:
 		var movement_control := 1.0 if grounded else MovementConstants.AIR_MULT
-		var target_run_speed := MovementConstants.MAX_RUN
+		var target_run_speed := MovementConstants.MAX_RUN * arena_speed_multiplier
 		if accelerate_timer > 0.0:
 			target_run_speed = minf(
-				MovementConstants.MAX_RUN * accelerate_speed_multiplier,
-				accelerate_max_speed
+				target_run_speed * accelerate_speed_multiplier,
+				accelerate_max_speed * arena_speed_multiplier
 			)
 		var target_horizontal_speed := horizontal_input * target_run_speed
 		var is_preserving_excess_speed := (
 			not is_zero_approx(horizontal_input)
-			and absf(velocity.x) > maxf(MovementConstants.MAX_RUN, target_run_speed)
+			and absf(velocity.x) > target_run_speed
 			and signf(velocity.x) == horizontal_input
 		)
 		var horizontal_rate := (
@@ -303,7 +305,8 @@ func _physics_process(delta: float) -> void:
 			velocity.x, target_horizontal_speed, horizontal_rate * movement_control * delta
 		)
 		if accelerate_timer > 0.0:
-			velocity.x = clampf(velocity.x, -accelerate_max_speed, accelerate_max_speed)
+			var boosted_max_speed := accelerate_max_speed * arena_speed_multiplier
+			velocity.x = clampf(velocity.x, -boosted_max_speed, boosted_max_speed)
 
 	if movement_state != MovementState.DASH and movement_state != MovementState.CLIMB:
 		if grounded and not jumped:

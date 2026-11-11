@@ -17,7 +17,7 @@
 3. `set_next_server()` define servidor, último jugador que tocó, jugador esperado y prioridad.
 4. Los contactos del globo se guardan en listas hasta `resolve_pending_contacts()`. El método comprueba todos los candidatos del mismo ciclo; un contacto fuera de turno se resuelve como falta aunque el callback válido haya llegado primero.
 5. Un golpe cuya velocidad vertical resultante apunta hacia abajo se marca como falta y se repite el saque sin sumar punto. Si el mismo jugador comete esa falta dos veces consecutivas, se le descuenta un punto (el marcador no baja de cero) y el siguiente saque pasa al rival.
-6. Un toque fuera de turno concede punto al rival del infractor. En jugada normal, solo se puntúa al tocar el piso; suma el último jugador que tocó válidamente el globo. El piso antes de cualquier toque válido repite el saque.
+6. Un toque fuera de turno concede punto al rival del infractor. En jugada normal, solo se puntúa al tocar el piso designado; suma el último jugador que tocó válidamente el globo. Si el globo cae sin un toque válido, anota el rival del saque inicial.
 7. Al llegar a `target_score`, se registra el set, se emite su resultado y se reinicia el marcador de puntos. Al llegar a `sets_to_win`, la partida pasa a `COMPLETE` y emite `match_ended`.
 8. El siguiente saque normal corresponde al ganador del punto. Los reinicios esperan `round_intermission` antes de volver a colocar jugadores y globo.
 

@@ -10,7 +10,7 @@ Keepy Uppy es un juego local de dos jugadores en el que los jugadores mantienen 
 - **Resolución lógica:** 320 × 180; la ventana tiene un tamaño inicial de 960 × 540 y usa escalado entero.
 - **Ejecución:** abrir el proyecto en Godot y ejecutar `src/scenes/main/main.tscn`, configurada como escena principal.
 
-El juego usa nodos de física 2D (`CharacterBody2D`, `RigidBody2D`, `StaticBody2D` y `Area2D`). La presentación actual usa geometría dibujada en escenas y no depende de paquetes externos de arte.
+El juego usa nodos de física 2D (`CharacterBody2D`, `RigidBody2D`, `StaticBody2D` y `Area2D`). Las arenas combinan escenas `TileMapLayer` con `TileSet`, bounds configurables y recursos de catálogo.
 
 ## Contexto y objetivo
 
@@ -27,8 +27,10 @@ Main
 │   ├── Player1 / Player2
 │   ├── Balloon
 │   ├── MatchManager
-│   ├── Scoreboard
-│   └── suelo, paredes y techo
+│   ├── MapRoot
+│   │   └── escena de arena seleccionada
+│   ├── LevelManager / Camera2D
+│   └── Scoreboard
 └── PlayerCountMenu
 ```
 
@@ -39,7 +41,8 @@ Main
 | `src/managers/` | Reglas de partida y almacenamiento/configuración de controles. |
 | `src/models/` | Controladores y escenas reutilizables de jugador, globo y entorno. |
 | `src/scenes/main/` | Composición de la escena de entrada. |
-| `src/scenes/levels/` | Escena de arena. |
+| `src/scenes/levels/` | Raíz de partida, cámara y escenas de geometría de cada arena. |
+| `src/resources/` | Metadatos de arenas y catálogo ordenado. |
 | `src/scenes/ui/` | Marcador, pausa, selección de jugadores y configuración de teclas. |
 | `tests/` | Pruebas automatizadas de lógica, escenas e interacción. |
 | `openspec/` | Propuestas, especificaciones y cambios de OpenSpec. |
@@ -50,7 +53,7 @@ Main
 - [Jugador y bot](modules/player.md): movimiento, salto, dash, empujes, presentación y lógica del bot.
 - [Globo y física](modules/balloon.md): contactos, impulsos, gravedad, límites de velocidad y efecto al tocar el suelo.
 - [Partida y puntuación](modules/match.md): saque, turnos, faltas, puntos, sets y señales de coordinación.
-- [Niveles y arena](modules/levels.md): escena principal, composición de la arena y colisiones ambientales.
+- [Niveles y arena](modules/levels.md): catálogo, selector, TileSet, bounds y colisiones ambientales.
 - [Interfaz](modules/ui.md): navegación de menús, marcador, pausa, configuración y pantalla de ganador.
 
 ## Dependencias entre módulos

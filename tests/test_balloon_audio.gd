@@ -68,7 +68,7 @@ func _run_test() -> void:
 	):
 		return
 
-	var ground: Node = main_scene.get_node("Arena/ScoringGround")
+	var ground: Node = main_scene.get_node("Arena/MapRoot/ClassicArenaGeometry/ScoringFloorTiles")
 	var sounds_before_burst := _positional_sound_count()
 	balloon._on_body_entered(ground)
 	balloon._on_body_entered(ground)

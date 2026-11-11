@@ -383,39 +383,16 @@ func _get_balloon_bounds() -> Rect2:
 	var arena: Node = player.get_parent()
 	var viewport_size: Vector2 = arena.get_viewport_rect().size
 	var radius: float = player.balloon.balloon_collision_radius
-	var left_bound: float = radius
-	var right_bound: float = viewport_size.x - radius
-	var ceiling_bound: float = radius
-	var ground_bound: float = viewport_size.y - radius
-
-	var left_wall := arena.get_node_or_null("LeftWall/CollisionShape2D") as CollisionShape2D
-	var right_wall := arena.get_node_or_null("RightWall/CollisionShape2D") as CollisionShape2D
-	var ceiling := arena.get_node_or_null("Ceiling/CollisionShape2D") as CollisionShape2D
-	var ground := arena.get_node_or_null("ScoringGround/CollisionShape2D") as CollisionShape2D
-	if left_wall != null and left_wall.shape is RectangleShape2D:
-		left_bound = (
-			left_wall.global_position.x
-			+ (left_wall.shape as RectangleShape2D).size.x * 0.5
-			+ radius
-		)
-	if right_wall != null and right_wall.shape is RectangleShape2D:
-		right_bound = (
-			right_wall.global_position.x
-			- (right_wall.shape as RectangleShape2D).size.x * 0.5
-			- radius
-		)
-	if ceiling != null and ceiling.shape is RectangleShape2D:
-		ceiling_bound = (
-			ceiling.global_position.y
-			+ (ceiling.shape as RectangleShape2D).size.y * 0.5
-			+ radius
-		)
-	if ground != null and ground.shape is RectangleShape2D:
-		ground_bound = (
-			ground.global_position.y
-			- (ground.shape as RectangleShape2D).size.y * 0.5
-			- radius
-		)
+	var world_bounds := Rect2(Vector2.ZERO, viewport_size)
+	var level_manager := arena.get_node_or_null("LevelManager")
+	if level_manager != null and level_manager.has_method("get_selected_arena"):
+		var selected_arena: Resource = level_manager.call("get_selected_arena")
+		if selected_arena != null:
+			world_bounds = selected_arena.get("playable_bounds")
+	var left_bound := world_bounds.position.x + radius
+	var right_bound := world_bounds.end.x - radius
+	var ceiling_bound := world_bounds.position.y + radius
+	var ground_bound := world_bounds.end.y - radius
 	return Rect2(
 		Vector2(left_bound, ceiling_bound),
 		Vector2(right_bound - left_bound, ground_bound - ceiling_bound)

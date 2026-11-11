@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://s6mod5pis82q"
-path="res://.godot/imported/f0.png-0e119227dea454d39eed233793c73983.ctex"
+uid="uid://dyi3rikotdicw"
+path="res://.godot/imported/sky_towers_preview.svg-d839b47f2c25daf5d188f1c8a843be08.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/player/Animations/player/asleep/f0.png"
-dest_files=["res://.godot/imported/f0.png-0e119227dea454d39eed233793c73983.ctex"]
+source_file="res://assets/sprites/arena/sky_towers_preview.svg"
+dest_files=["res://.godot/imported/sky_towers_preview.svg-d839b47f2c25daf5d188f1c8a843be08.ctex"]
 
 [params]
 
@@ -38,3 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false

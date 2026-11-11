@@ -1,0 +1,47 @@
+[gd_scene format=4]
+
+[ext_resource type="TileSet" path="res://assets/sprites/arena/arena_tileset.tres" id="1_icps7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3r275"]
+size = Vector2(16, 270)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qcvnl"]
+size = Vector2(16, 270)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_56b3c"]
+size = Vector2(480, 8)
+
+[node name="SkyTowersGeometry" type="Node2D" unique_id=474713139]
+
+[node name="Background" type="Polygon2D" parent="." unique_id=302233242]
+color = Color(0.08, 0.11, 0.18, 1)
+polygon = PackedVector2Array(0, 0, 480, 0, 480, 270, 0, 270)
+
+[node name="ScoringFloorTiles" type="TileMapLayer" parent="." unique_id=1205773713 groups=["scoring_ground"]]
+tile_map_data = PackedByteArray("AAAAAA8AAAABAAEAAAABAA8AAAABAAEAAAACAA8AAAABAAEAAAADAA8AAAABAAEAAAAEAA8AAAABAAEAAAAFAA8AAAABAAEAAAAGAA8AAAABAAEAAAAHAA8AAAABAAEAAAAIAA8AAAABAAEAAAAJAA8AAAABAAEAAAAKAA8AAAABAAEAAAALAA8AAAABAAEAAAAMAA8AAAABAAEAAAANAA8AAAABAAEAAAAOAA8AAAABAAEAAAAPAA8AAAABAAEAAAAQAA8AAAABAAEAAAARAA8AAAABAAEAAAASAA8AAAABAAEAAAATAA8AAAABAAEAAAAUAA8AAAABAAEAAAAVAA8AAAABAAEAAAAWAA8AAAABAAEAAAAXAA8AAAABAAEAAAAYAA8AAAABAAEAAAAZAA8AAAABAAEAAAAaAA8AAAABAAEAAAAbAA8AAAABAAEAAAAcAA8AAAABAAEAAAAdAA8AAAABAAEAAAA=")
+tile_set = ExtResource("1_icps7")
+
+[node name="OneWayPlatforms" type="TileMapLayer" parent="." unique_id=630021139 groups=["one_way_platform"]]
+tile_map_data = PackedByteArray("AAAFAAoAAAACAAEAAAAGAAoAAAACAAEAAAAHAAoAAAACAAEAAAAIAAoAAAACAAEAAAAJAAoAAAACAAEAAAAUAAoAAAACAAEAAAAVAAoAAAACAAEAAAAWAAoAAAACAAEAAAAXAAoAAAACAAEAAAAYAAoAAAACAAEAAAANAAcAAAACAAEAAAAOAAcAAAACAAEAAAAPAAcAAAACAAEAAAAQAAcAAAACAAEAAAARAAcAAAACAAEAAAA=")
+tile_set = ExtResource("1_icps7")
+
+[node name="LeftBoundary" type="StaticBody2D" parent="." unique_id=1764292962]
+position = Vector2(0, 135)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftBoundary" unique_id=2036284568]
+shape = SubResource("RectangleShape2D_3r275")
+
+[node name="RightBoundary" type="StaticBody2D" parent="." unique_id=1915701889]
+position = Vector2(480, 135)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightBoundary" unique_id=1180597563]
+shape = SubResource("RectangleShape2D_qcvnl")
+
+[node name="CeilingBoundary" type="StaticBody2D" parent="." unique_id=693742332]
+position = Vector2(240, 0)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CeilingBoundary" unique_id=563285757]
+shape = SubResource("RectangleShape2D_56b3c")

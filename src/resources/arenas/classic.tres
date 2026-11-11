@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ArenaData" load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://src/scenes/levels/arena_classic.tscn" id="1_heycr"]
+[ext_resource type="Script" path="res://src/resources/arena_data.gd" id="2_xm3tx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/arena/classic_preview.svg" id="3_preview"]
+
+[resource]
+script = ExtResource("2_xm3tx")
+id = "classic"
+display_name = "Classic Court"
+description = "A compact arena with a level floor and two one-way platforms."
+theme_name = "Stone"
+size_classification = 0
+map_scene = ExtResource("1_heycr")
+preview_texture = ExtResource("3_preview")

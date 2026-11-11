@@ -155,6 +155,8 @@ func _flash_impact(toucher_color: Color) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if body == null:
+		return
 	if body.is_in_group("scoring_ground") and not ground_contact_reported:
 		ground_contact_reported = true
 		_play_ground_burst()

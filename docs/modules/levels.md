@@ -1,47 +1,40 @@
-# Niveles y arena
+# Arenas y TileSet
 
-## Descripción
+## Estructura actual
 
-El proyecto contiene una arena clásica y dos niveles grandes seleccionables. Sky Towers mide 640 × 360 y Ancient Ruins mide 800 × 450; ambos tienen paredes, piso y plataformas unidireccionales.
+- `src/scenes/main/main.tscn` mantiene la raíz de la partida y abre la selección inicial.
+- `src/scenes/levels/arena.tscn` contiene jugadores, globo, cámara, marcador y gestores persistentes.
+- `src/scenes/levels/arena_classic.tscn` es Classic Court (320 × 180); `src/scenes/levels/sky_towers.tscn` es Sky Towers (480 × 270).
+- `src/managers/level_manager.gd` carga mapas desde el catálogo y aplica bounds, spawns y ajustes.
+- `src/scenes/levels/arena_camera.gd` sigue la acción y limita la vista a los bounds seleccionados.
+- `src/resources/arena_data.gd` describe una arena; `src/resources/arena_catalog.tres` define el orden de selección.
+- `assets/sprites/arena/arena_tileset.tres` usa `foreground_tilesets.png` con celdas de 16 × 16 px, colisión sólida en la capa 1 y plataformas de una vía en la capa 4.
+- Las miniaturas `classic_preview.svg` y `sky_towers_preview.svg` se muestran en el panel de selección.
 
-## Estructura
+## Mapas disponibles
 
-- `src/scenes/main/main.tscn`: punto de entrada. Instancia gestor de controles, arena y menú de jugadores.
-- `src/scenes/levels/arena.tscn`: fondo, cámara, dos jugadores, globo, gestor de partida, marcador y geometría de colisión.
-- `src/scenes/levels/sky_towers.tscn` y `ancient_ruins.tscn`: niveles alternativos con plataformas elevadas.
-- `src/managers/level_manager.gd`: carga el nivel elegido, actualiza spawns y configura límites de cámara.
-- `src/scenes/levels/arena_camera.gd`: cámara compartida que sigue a ambos jugadores y al globo.
-- `project.godot`: escena principal y configuración de resolución y escalado.
+| Arena | Tamaño | Tema | Características |
+|---|---:|---|---|
+| Classic Court | 320 × 180 | Stone | Piso puntuable y dos plataformas de una vía. |
+| Sky Towers | 480 × 270 | Sky Stone | Piso puntuable, tres plataformas elevadas y límites ampliados. |
 
-## Funcionamiento
+El menú obtiene sus opciones, dimensiones, tema y miniatura de `ArenaData`; al registrar otra escena, aparece sin añadir código de selección por mapa.
 
-1. Godot ejecuta `src/scenes/main/main.tscn`.
-2. La escena `Main` carga `ControlSettingsManager`, `Arena` y `PlayerCountMenu`.
-3. Al elegir uno o dos jugadores, aparece el selector de nivel con Classic Court, Sky Towers y Ancient Ruins.
-4. `LevelManager` conserva el escenario clásico en los nodos de Arena o instancia el nivel alternativo elegido. La cámara compartida acompaña a jugadores y globo dentro de los límites activos.
-5. El piso y las plataformas están en el grupo `scoring_ground`; el contacto del globo con cualquiera de esas superficies resuelve el punto. Las plataformas alternativas usan la capa de colisión 4 y solo se atraviesan de abajo hacia arriba.
-6. Los jugadores pueden bajar a través de una plataforma con Abajo + Salto; el globo también colisiona y puntúa al tocarla.
+## Crear y registrar un mapa
 
-## Componentes principales
+1. Crea una escena `Node2D` en `src/scenes/levels/` para la geometría del mapa. Añade `TileMapLayer` y asígnale `arena_tileset.tres`.
+2. Pinta suelo sólido con tiles que tengan colisión en la capa 1 y plataformas atravesables con tiles de la capa 4. Los jugadores ya pueden bajar con Abajo + Salto.
+3. Marca únicamente el TileMapLayer del suelo que termina la ronda con el grupo `scoring_ground`. Las plataformas de tránsito no deben pertenecer a ese grupo.
+4. Añade los límites laterales y el techo como cuerpos de colisión de la escena. El `playable_bounds` del recurso debe describir el área completa que la cámara y las entidades pueden ocupar.
+5. Crea un recurso de tipo `ArenaData` y establece `id` único, nombre, descripción, tema, clasificación de tamaño, jugadores recomendados, escena del mapa, bounds y spawns. Asigna una textura importada para la miniatura; si falta, la selección muestra una tarjeta neutral.
+6. Añade el recurso al array `arenas` de `src/resources/arena_catalog.tres`. El orden del array es el orden del menú; no hace falta modificar `PlayerCountMenu`.
+7. Ejecuta el proyecto y comprueba el encuadre, spawns, colisiones, plataformas de una vía y puntuación. Mantén multiplicadores en `1.0` salvo que el mapa necesite un ajuste probado.
 
-- `Arena/Player1`, `Arena/Player2`: instancias de `player_placeholder.tscn`.
-- `Arena/Balloon`: instancia de `balloon_placeholder.tscn`.
-- `Arena/MatchManager`: reglas competitivas.
-- `Arena/Scoreboard`: HUD y overlays.
-- `Arena/ScoringGround`, `LeftWall`, `RightWall`, `Ceiling`: límites clásicos estáticos.
-- `Arena/LevelManager`: selección y configuración del escenario.
-- `Camera2D`: cámara de seguimiento compartido con límites configurables.
+## Convenciones
 
-## Interacciones
-
-La escena principal sirve como raíz para referencias relativas: los jugadores y `MatchManager` localizan sus nodos hermanos en Arena; el marcador llega al menú de selección a través de Main. Las formas de suelo y paredes usan capa 1; las plataformas unidireccionales usan capa 4. La máscara de los jugadores y el globo incluye ambas capas.
-
-## Configuración
-
-`project.godot` declara un viewport lógico de 320 × 180 y una ventana inicial de 960 × 540. Los niveles grandes amplían el área de mundo y la cámara sigue la acción. El piso, paredes, techo y plataformas se definen en sus escenas `.tscn`.
-
-## Flujo de ejecución
-
-`Main` es la escena raíz. Al entrar a escena se inicializan los controladores de Arena; `MatchManager` sortea un servidor y coloca el globo, y `PlayerCountMenu` detiene el árbol hasta que se elijan el modo y el escenario. La arena permanece activa debajo de las capas de interfaz durante la partida.
+- El piso puntuable es una superficie distinta de las plataformas elevadas. El globo solo resuelve una ronda al tocar algo del grupo `scoring_ground`.
+- Usa el origen superior izquierdo para bounds en coordenadas de mundo. Los spawns y límites se expresan en los mismos píxeles del mundo.
+- Las arenas no deben incluir jugadores, globo, HUD ni gestores; esos nodos pertenecen a la escena persistente `arena.tscn`.
+- Para añadir mecánicas a tiles en el futuro, conserva el comportamiento neutral de los tiles sin propiedades de juego.
 
 Más información: [Partida](match.md) · [Globo](balloon.md) · [Interfaz](ui.md).

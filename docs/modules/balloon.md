@@ -37,7 +37,7 @@ El cuerpo está en la capa 4 y colisiona con las capas 1 y 2. `PlayerContactArea
 
 Los valores exportados viven en `balloon_controller.gd`. Parámetros principales: `gravity_strength` (0.14), `rebound_strength` (0.28), `max_fall_speed` (90), `max_hit_speed` (220), `max_horizontal_speed` (220), `air_resistance` (0.055), radios de colisión y contacto (9 y 16). Impulsos normales y de dash se ajustan por separado con `player_hit_impulse`, `dash_rescue_impulse` y sus límites.
 
-El material físico del globo usa rebote 0.28. En `arena.tscn`, las paredes y el techo también asignan un material con rebote 0.28; el piso es el único contacto que termina la jugada.
+El material físico del globo usa rebote 0.28. Las paredes y el techo pertenecen a la escena de geometría activa; solo la capa de suelo del grupo `scoring_ground` termina la jugada.
 
 ## Flujo de ejecución
 
