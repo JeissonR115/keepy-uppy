@@ -1,0 +1,126 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climb/f0.png" id="1_n3ffx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climb/f1.png" id="2_y3331"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climbLoop/f0.png" id="3_6bio0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climbLoop/f1.png" id="4_o08hn"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climbLoop/f2.png" id="5_lodr3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climbLoop/f3.png" id="6_4sll8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climbLoop/f4.png" id="7_s2y1h"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/climbLoop/f5.png" id="8_w64id"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/danger/f0.png" id="9_1owbo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/danger/f1.png" id="10_ru5ka"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/danger/f2.png" id="11_jj887"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/danger/f3.png" id="12_u0qt3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/danger/f4.png" id="13_e4sf1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/danger/f5.png" id="14_gxbyg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/jump/f0.png" id="15_cr8x6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/jump/f1.png" id="16_x1lui"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/jump/f2.png" id="17_4du2m"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/jump/f3.png" id="18_3wpk0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/still/f0.png" id="19_hwso1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/still/f1.png" id="20_bj1vm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/still/f2.png" id="21_g2pfr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/still/f3.png" id="22_8liks"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/still/f4.png" id="23_fwjkr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/Animations/player_sweat/still/f5.png" id="24_n733f"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_n3ffx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_y3331")
+}],
+"loop": 0,
+"name": &"climb",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_6bio0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_o08hn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_lodr3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_4sll8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_s2y1h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_w64id")
+}],
+"loop": 1,
+"name": &"climbLoop",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_1owbo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_ru5ka")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_jj887")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_u0qt3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_e4sf1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_gxbyg")
+}],
+"loop": 0,
+"name": &"danger",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("15_cr8x6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_x1lui")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_4du2m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_3wpk0")
+}],
+"loop": 0,
+"name": &"jump",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("19_hwso1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_bj1vm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_g2pfr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_8liks")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_fwjkr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_n733f")
+}],
+"loop": 1,
+"name": &"still",
+"speed": 10.0
+}]

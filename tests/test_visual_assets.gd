@@ -46,15 +46,64 @@ func _run_test() -> void:
 
 	for player_name: String in ["Player1", "Player2"]:
 		var player: PlayerController = main_scene.get_node("Arena/%s" % player_name)
+		var effect := player.get_node("ActionEffect") as AnimatedSprite2D
+		var capsule := player.player_collision_shape.shape as CapsuleShape2D
 		if not _expect(
-			player.visual is Polygon2D
-			and player.visual.polygon.size() == 4
-			and player.visual.polygon[0] == Vector2(-6.0, -12.0)
-			and player.visual.polygon[2] == Vector2(6.0, 12.0)
+			player.visual is AnimatedSprite2D
+			and player.visual.sprite_frames.get_animation_names().size() == 13
+			and player.visual.sprite_frames.get_frame_count("idle") == 66
+			and player.visual.sprite_frames.get_frame_texture("idle", 0).get_width() == 32
+			and effect.sprite_frames.get_animation_names().size() == 5
+			and not effect.sprite_frames.has_animation("idle")
+			and player.visual.position == Vector2(0, -4)
+			and effect.z_index > player.visual.z_index
+			and capsule.radius == 5.0
+			and capsule.height == 23.0
+			and player.player_collision_shape.position == Vector2(0, 0.5)
 			and player.get_node("Cape") is PlayerCape,
-			"%s is not a basic rectangle with its procedural cape." % player_name
+			"%s sprite resources, retained collision, or cape are incorrectly configured." % player_name
 		):
 			return
+		for animation_name: String in [
+			"runSlow", "runFast", "flip", "fall", "fallFast", "fallPose",
+			"dangling", "dash", "wallslide", "climbPull", "climbPush", "climbup"
+		]:
+			var frame_count := player.visual.sprite_frames.get_frame_count(animation_name)
+			if not _expect(frame_count > 0, "%s has no body animation frames." % animation_name):
+				return
+			for frame_index in frame_count:
+				var texture := player.visual.sprite_frames.get_frame_texture(animation_name, frame_index)
+				if not _expect(
+					texture != null and texture.get_size() == Vector2(32, 32),
+					"%s frame %s is missing or is not 32 by 32 pixels." % [animation_name, frame_index]
+				):
+					return
+		for animation_name: String in ["jump", "climb", "climbLoop", "danger", "still"]:
+			if not _expect(
+				effect.sprite_frames.get_frame_count(animation_name) > 0,
+				"%s has no action-effect frames." % animation_name
+			):
+				return
+			for frame_index in effect.sprite_frames.get_frame_count(animation_name):
+				var texture := effect.sprite_frames.get_frame_texture(animation_name, frame_index)
+				if not _expect(
+					texture != null and texture.get_size() == Vector2(32, 32),
+					"%s effect frame %s is missing or is not 32 by 32 pixels." % [animation_name, frame_index]
+				):
+					return
+	var player_1 := main_scene.get_node("Arena/Player1") as PlayerController
+	var player_2 := main_scene.get_node("Arena/Player2") as PlayerController
+	if not _expect(
+		player_1.visual.sprite_frames == player_2.visual.sprite_frames
+		and player_1.action_effect.sprite_frames == player_2.action_effect.sprite_frames
+		and player_1.visual.flip_h == player_2.visual.flip_h
+		and player_1.visual.modulate == Color.WHITE
+		and player_1.get_node("ActionEffect").modulate == Color.WHITE
+		and player_2.visual.modulate == PlayerPresentationController.PLAYER_TWO_TINT
+		and player_2.get_node("ActionEffect").modulate == PlayerPresentationController.PLAYER_TWO_TINT,
+		"Player 2's body and effects do not use the subtle orange tint."
+	):
+		return
 
 	var arena: CanvasGroup = main_scene.get_node("Arena")
 	var screen_effect := arena.material as ShaderMaterial
@@ -73,5 +122,5 @@ func _run_test() -> void:
 	):
 		return
 
-	print("DotGothic16 is unaffected by the isolated 32-bit arena effect; players use rectangles.")
+	print("Pixel font, arena layers, animated player sprites, effects, and player tint verified.")
 	quit()

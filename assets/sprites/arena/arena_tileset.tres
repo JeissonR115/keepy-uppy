@@ -1,7 +1,7 @@
-[gd_resource type="TileSet" load_steps=5 format=3 uid="uid://dvhis7325ae76"]
+[gd_resource type="TileSet" format=3 uid="uid://dvhis7325ae76"]
 
 [ext_resource type="Texture2D" uid="uid://c3fgx0i7vfuku" path="res://assets/sprites/arena/foreground_tilesets.png" id="1_t0306"]
-[ext_resource type="Texture2D" path="res://assets/sprites/arena/trampoline_tile.svg" id="2_trampoline"]
+[ext_resource type="Texture2D" uid="uid://d1h6f3t6vbwih" path="res://assets/sprites/arena/trampoline_tile.svg" id="2_trampoline"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ha2b5"]
 texture = ExtResource("1_t0306")

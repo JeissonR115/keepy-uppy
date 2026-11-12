@@ -28,32 +28,50 @@ func _run_test() -> void:
 
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
-	var player_2: CharacterBody2D = main_scene.get_node("Arena/Player2")
 	player_1.reset_for_round(Vector2(160, 152))
 	for _frame in range(2):
 		await physics_frame
 	Input.action_press("player_1_right")
-	var acceleration_ticks := 0
-	for _frame in range(10):
+	var acceleration_frames := 0
+	for _frame in range(12):
 		await physics_frame
-		if player_1.velocity.x > 0.0:
-			acceleration_ticks += 1
+		acceleration_frames += 1
 		if player_1.velocity.x >= MovementConstants.MAX_RUN:
 			break
 	Input.action_release("player_1_right")
 	if not _expect(
-		acceleration_ticks <= 7
+		acceleration_frames <= 7
 		and is_equal_approx(player_1.velocity.x, MovementConstants.MAX_RUN),
-		"Ground acceleration did not reach run speed in under 0.12 seconds."
+		"Ground acceleration did not reach run speed within 0.12 seconds."
 	):
 		return
 	for _frame in range(12):
 		await physics_frame
 	if not _expect(
 		is_zero_approx(player_1.velocity.x),
-		"Ground movement did not stop in under 0.2 seconds after releasing input."
+		"Ground movement did not stop within 0.2 seconds after releasing input."
 	):
 		return
 
-	print('Ground acceleration and deceleration verified.')
+	Input.action_press("player_1_right")
+	for _frame in range(8):
+		await physics_frame
+	Input.action_release("player_1_right")
+	Input.action_press("player_1_left")
+	var reversal_frames := 0
+	for _frame in range(20):
+		await physics_frame
+		reversal_frames += 1
+		if player_1.velocity.x <= -MovementConstants.MAX_RUN:
+			break
+	Input.action_release("player_1_left")
+	if not _expect(
+		player_1.velocity.x <= -MovementConstants.MAX_RUN
+		and absf(player_1.velocity.x) <= MovementConstants.MAX_RUN
+		and reversal_frames <= 20,
+		"Ground reversal exceeded its configured response or horizontal speed limit."
+	):
+		return
+
+	print('Ground acceleration, braking, reversal, and horizontal speed limit verified.')
 	quit()

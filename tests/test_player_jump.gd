@@ -88,6 +88,30 @@ func _run_test() -> void:
 
 	for _frame in range(50):
 		await physics_frame
+	player_1.global_position = Vector2(108, 104)
+	player_1.velocity = Vector2.ZERO
+	player_1.coyote_timer = 0.0
+	for _frame in range(3):
+		await physics_frame
+	Input.action_press("player_1_right")
+	for _frame in range(20):
+		await physics_frame
+		if not player_1.is_on_floor():
+			break
+	Input.action_release("player_1_right")
+	for _frame in range(ceili(MovementConstants.COYOTE_TIME * 60.0) + 1):
+		await physics_frame
+	Input.action_press("player_1_jump")
+	await physics_frame
+	Input.action_release("player_1_jump")
+	if not _expect(
+		player_1.velocity.y >= 0.0,
+		"Coyote Time allowed a jump after its configured interval expired."
+	):
+		return
+
+	for _frame in range(50):
+		await physics_frame
 	player_1.global_position = Vector2(170, 150)
 	player_1.velocity = Vector2.ZERO
 	await physics_frame
@@ -105,12 +129,31 @@ func _run_test() -> void:
 		"Jump Buffer did not trigger a jump on landing."
 	):
 		return
+	Input.action_release("player_1_jump")
+	for _frame in range(40):
+		await physics_frame
+	player_1.global_position = Vector2(170, 80)
+	player_1.velocity = Vector2(0.0, 100.0)
+	Input.action_press("player_1_jump")
+	await physics_frame
+	Input.action_release("player_1_jump")
+	for _frame in range(ceili(MovementConstants.JUMP_BUFFER * 60.0) + 2):
+		await physics_frame
+	for _frame in range(40):
+		await physics_frame
+		if player_1.is_on_floor():
+			break
+	if not _expect(
+		player_1.is_on_floor() and player_1.velocity.y >= 0.0,
+		"Expired jump buffer triggered unexpectedly after landing."
+	):
+		return
 
 	Input.action_release("player_1_right")
 	Input.action_release("player_1_jump")
 	player_1.global_position = Vector2(160, 152)
 	player_1.velocity = Vector2.ZERO
-	for _frame in range(2):
+	for _frame in range(8):
 		await physics_frame
 	if not _expect(player_1.is_on_floor(), "Player 1 did not settle on the floor before jump measurements."):
 		return
@@ -133,7 +176,7 @@ func _run_test() -> void:
 
 	player_1.global_position = Vector2(160, 152)
 	player_1.velocity = Vector2.ZERO
-	for _frame in range(2):
+	for _frame in range(8):
 		await physics_frame
 	var short_jump_start := player_1.global_position.y
 	var short_jump_peak := short_jump_start
@@ -152,9 +195,10 @@ func _run_test() -> void:
 	player_1.global_position = Vector2(200, 60)
 	player_1.velocity = Vector2.ZERO
 	Input.action_press("player_1_down")
+	var fast_fall_speed := 0.0
 	for _frame in range(28):
 		await physics_frame
-	var fast_fall_speed := player_1.velocity.y
+		fast_fall_speed = maxf(fast_fall_speed, player_1.velocity.y)
 	Input.action_release("player_1_down")
 	if not _expect(
 		fast_fall_speed > MovementConstants.MAX_FALL
