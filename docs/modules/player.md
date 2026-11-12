@@ -7,11 +7,17 @@
 ## Estructura
 
 - `src/models/player/player_placeholder.tscn`: cuerpo, colisión, sprite geométrico, anclajes y capa, indicador de prioridad, lector de entrada y área de rescate de dash.
-- `src/models/player/player_controller.gd`: movimiento, animación, dash, escalada, carrera automática, simulación de capa y empujes detectados.
+- `src/models/player/player_controller.gd`: orquesta movimiento, callbacks físicos y contactos; es el único propietario de `move_and_slide()`.
+- `src/models/player/player_input_reader.gd`: traduce acciones humanas y decisiones del bot a intenciones de movimiento.
+- `src/models/player/player_dash_techniques.gd`: técnicas de dash, corrección de esquina, ducking, rescate y eventos de colisión.
+- `src/models/player/player_climb_techniques.gd`: detección de muros escalables, velocidad/stamina de escalada, wall-slide y wall-jump.
+- `src/models/player/player_surface_techniques.gd` y `player_jump_techniques.gd`: interacciones con plataformas de paso, trampolines, techos y altura variable de salto.
+- `src/models/player/player_presentation_controller.gd`: estado visual, coordinación de capa, paleta, pasos y escena compartida de píxel.
 - `src/models/player/cpu_controller.gd`: estados de CPU derivados del turno activo y decisiones de movimiento, salto y dash.
+- `src/models/player/cpu_interception_predictor.gd`: simulación acotada de intercepción, con entradas explícitas y resultado `{found, position, time}`.
 - `src/models/player/cape.tscn` / `cape.gd`: relleno, contorno y simulación Verlet cosmética, sin colisión.
 - `src/models/player/player_input_reader.gd`: puente a las acciones configuradas.
-- `src/models/player/player_action_catalog.gd`: catálogo de teclas y colores.
+- `src/models/player/player_action_catalog.gd`: catálogo de teclas, colores de identidad y paleta de movimiento (correr, ascender y caer).
 
 La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara incluye el entorno (capa 1), otros jugadores (capa 2) y plataformas unidireccionales (capa 4). `DashRescueArea` busca el globo en la capa 4.
 
@@ -22,7 +28,6 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara inc
 3. La gravedad es de 1100 px/s², limita la caída a 220 px/s y permite una caída rápida de 330 px/s a 350 px/s². El salto combina 0.1 s de coyote, 0.08 s de búfer y hasta 0.2 s de altura variable; saltar con dirección añade 50 px/s horizontales. En una plataforma unidireccional, Abajo + Salto desactiva brevemente solo su capa de colisión para permitir atravesarla.
 4. Dash consume una carga, congela solo al jugador durante 0.05 s y después acelera en ocho direcciones durante 0.2 s, recorriendo más de 55 px con un pico de velocidad de 360 px/s. La carga se recupera al aterrizar tras la demora de 0.1 s; el dash termina a 160 px/s. Su área de rescate se activa al terminar el freeze, y la misma capa se estira hacia atrás con el impulso del dash; el área solo puede rescatar un globo por dash.
 5. Las técnicas encadenadas conservan el movimiento: saltar desde un dash horizontal hace un super de 260 px/s y -105 px/s; el dash diagonal hacia abajo que aterriza hace un ultra de 1.2x y permite agacharse para un hyper de 325 px/s y -52.5 px/s. Saltar durante un dash hacia arriba junto a una pared hace un rebote de 170 px/s y -160 px/s, con salto variable y dirección forzada por sus ventanas configuradas.
-6. Boost acelera durante un periodo con enfriamiento y tope de velocidad horizontal propios.
 7. Las colisiones laterales emiten `player_bumped`; `MatchManager` aplica el empuje según prioridad y dash.
 8. En el aire, empujar hacia una pared limita la caída desde 20 hasta 160 px/s a lo largo de 1.2 s. Saltar junto a una pared hace un wall jump de 130 px/s alejándose y -105 px/s, aun sin Grab. Mantener Grab (R para P1, 4 para P2 por defecto) a 2 px de un TileMapLayer del grupo `climbable_wall` entra en escalada sin gravedad: arriba va a -45 px/s y consume 45.5 de stamina/s; quieto consume 10/s, abajo baja a 80 px/s sin costo. El salto de pared consume 27.5 y fuerza la dirección de salida por 0.16 s. Los límites de arena no se trepan a menos que se marquen explícitamente como escalables. La stamina máxima es 110, solo se restaura en el suelo, y por debajo de 20 el jugador parpadea.
 9. `PlayerCape` simula seis filas de partículas Verlet en coordenadas globales después del movimiento, fija sus dos anclajes por tick y dibuja un polígono afinado con vértices redondeados. Cada jugador conserva su propia capa; teletransportes, respawns y puntos no finitos la reinician. Durante el freeze local del dash, la simulación se pausa.
@@ -35,12 +40,12 @@ La escena define un `CharacterBody2D` en la capa de colisión 2. Su máscara inc
 - `_begin_dash()` / `_end_dash()`: activan y apagan el área de rescate; la capa acompaña el dash y se estira con su impulso.
 - `_on_dash_rescue_area_body_entered()`: llama `BalloonController.apply_dash_rescue()`.
 - `set_priority_indicator()`: muestra la prioridad visual.
-- `show_touch_pixel()`: coloca el marcador del contacto y lo desvanece en dos segundos.
+- `show_touch_pixel()`: instancia `src/scenes/ui/components/touch_pixel.tscn` en coordenadas locales del jugador. Esta escena compartida configura el píxel 4×4, z-index 5 y desvanecimiento de dos segundos.
 - Señal `player_bumped(player, opponent, while_dashing)`: informa colisión entre personajes.
 
 ## Interacciones
 
-El controlador obtiene `MatchManager` y `BalloonController` como hermanos dentro de `Arena`. La entrada humana pasa por `PlayerInputReader`; la IA entrega intenciones a `PlayerController`, que sigue siendo el único responsable de ejecutar el movimiento. La FSM del CPU refleja si el juego está inactivo, si le corresponde el toque o si el turno pertenece al rival. En su turno, calcula una intersección descendente limitada por el horizonte de predicción y persigue ese punto; cuando todavía se espera el saque inicial, persigue el globo directamente. En turno rival, evade primero cualquier trayectoria de amenaza; solo si la zona es segura y la decisión de agresividad lo permite, se posiciona en el trayecto entre el rival y el globo. Todos los contactos, incluso los causados accidentalmente al evadir, pasan por la validación normal de `MatchManager`.
+El controlador obtiene `MatchManager` y `BalloonController` como hermanos dentro de `Arena`. La entrada humana pasa por `PlayerInputReader`; la IA delega la predicción en `CPUInterceptionPredictor` y entrega intenciones a `PlayerController`, que sigue siendo el único responsable de ejecutar el movimiento. La FSM del CPU refleja si el juego está inactivo, si le corresponde el toque o si el turno pertenece al rival. En su turno, calcula una intersección descendente limitada por el horizonte de predicción y persigue ese punto; cuando todavía se espera el saque inicial, persigue el globo directamente. En turno rival, evade primero cualquier trayectoria de amenaza; solo si la zona es segura y la decisión de agresividad lo permite, se posiciona en el trayecto entre el rival y el globo. Todos los contactos, incluso los causados accidentalmente al evadir, pasan por la validación normal de `MatchManager`.
 
 ## Configuración
 

@@ -89,9 +89,9 @@ godot --headless --path . --script res://tests/test_music_manager.gd
 
 ## Player movement
 
-Each player has separate Input Map actions for left, right, up, down, jump,
-dash, and accelerate. Player 1 uses A/D/W/S, F, G, and H. Player 2 uses the
-arrow keys and the physical top-row 1/2/3 keys. Actions can be rebound without
+Each player has seven separate Input Map actions: left, right, up, down, jump,
+dash, and grab. Player 1 uses A/D/W/S, F, G, and R. Player 2 uses the
+arrow keys and the physical top-row 1/2/4 keys. Actions can be rebound without
 changing movement logic. Use the in-game **KEYS** menu to rebind them and save
 the complete map locally; Project Settings > Input Map remains available for
 development. On one-way platforms, hold **Down** and press **Jump** to drop
@@ -170,17 +170,18 @@ godot --headless --path . --script res://tests/test_control_settings_ui.gd
 Controls-menu acceptance checks (covered by `test_control_settings_ui.gd`):
 
 - [x] Open the pause menu with Escape, choose **CONTROLS** with W/S and F, and keep play paused.
-- [x] Use W/S to browse all eight actions for each player, plus capture cancel, Restore Defaults, and Back.
+- [x] Use W/S to browse all seven actions for each player, plus capture cancel, Restore Defaults, and Back.
 - [x] Use W/S to focus an action and F to start capture; press a valid key and confirm its displayed binding updates.
 - [x] During capture, press Escape or G and cancel capture without changing the previous key.
 - [x] Reject conflicting key assignments without replacing the existing binding.
 - [x] Use W/S to reach **RESTORE DEFAULTS**, press F, and restore both players' documented defaults.
 - [x] Use G to return to pause and choose **RESUME** with F.
 
-Integration verification (Godot 4.7.2): all 22 `tests/test_*.gd` scripts passed
-in headless mode, and the main scene started successfully with
-`godot --headless --path . --quit-after 5`. Reproduce the complete automated
-suite and scene launch with:
+The project currently contains 47 `tests/test_*.gd` scripts. On the pre-refactor
+Godot 4.7.2 baseline, 27 of 39 scripts exited successfully, 12 had documented
+pre-existing failures, and the main scene exited successfully with
+`godot --headless --path . --quit-after 5`. Run the current suite and scene launch
+with:
 
 ```sh
 for test in tests/test_*.gd; do
@@ -193,22 +194,10 @@ Run the automated independent-movement and remapping check with:
 
 ```sh
 godot --headless --path . --script res://tests/test_player_controller.gd
+godot --headless --path . --script res://tests/test_player_jump.gd
+godot --headless --path . --script res://tests/test_player_horizontal_movement.gd
+godot --headless --path . --script res://tests/test_player_wall_climb.gd
 ```
-
-Player accelerate uses a separate temporary speed boost: 0.8 seconds at 1.35x
-normal run speed, a 4-second cooldown, and a 210 px/s cap. Ordinary horizontal
-acceleration remains the rate used to reach the current run-speed target.
-Verify boost duration, cooldown, cap, normal-speed return, and player
-independence with:
-
-```sh
-godot --headless --path . --script res://tests/test_accelerate.gd
-```
-
-The control acceptance suite passed in Godot headless: defaults and simultaneous
-inputs, all 16 capture rows, rejected and duplicate keys, cancel/reset,
-save/load and damaged-file recovery, plus boost duration, cooldown, cap, and
-independent player behavior. Run the commands above to reproduce each check.
 
 Verify cape geometry, dash-availability colors, per-player transitions, reset,
 local freeze, and simulation recovery with:
@@ -216,12 +205,6 @@ local freeze, and simulation recovery with:
 ```sh
 godot --headless --path . --script res://tests/test_player_cape.gd
 ```
-
-Manual accelerate checks:
-
-- [ ] Hold a direction and press the player's **ACCELERATE** key; confirm the boost raises top speed without changing ordinary run acceleration.
-- [ ] Keep moving after 0.8 seconds and confirm normal run speed returns; press accelerate again before 4 seconds and confirm no second boost starts.
-- [ ] Confirm speed stays at or below 210 px/s during boost and the other player's accelerate action remains independent.
 
 Verify balloon contact and physics with:
 
@@ -242,7 +225,7 @@ godot --headless --path . --script res://tests/test_dash_rescue.gd
 - The server is the first eligible player. Their serve counts as the first contact; after each accepted normal or dash-rescue touch, the other player becomes eligible.
 - Touching out of turn is a fault and awards the point to the opponent. Otherwise, a point is awarded only when the balloon reaches the floor after a contact; the last valid toucher scores. A downward hit replays the serve without scoring; the same player's second consecutive downward fault deducts one point before replaying.
 - Player priority for player-to-player pushes remains separate from the expected balloon toucher.
-- The arena keeps the scoring floor, side walls, and a ceiling. The balloon bounces from the walls and ceiling; touching the floor triggers the burst and resolves the point. After each set, a short overlay shows the set winner and score. Each touch briefly marks the player contact zone and balloon, and the balloon takes the last toucher's color.
+- The arena keeps the scoring floor, side walls, and a ceiling. The balloon bounces from the walls and ceiling; touching the floor triggers the burst and resolves the point. After each set, a short overlay shows the set winner and score. Each touch briefly marks the player contact zone and balloon through the shared two-second pixel effect, and the balloon takes the last toucher's color.
 
 Verify player-velocity impact direction, speed limits, and downward-hit faults with:
 

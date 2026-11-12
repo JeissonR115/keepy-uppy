@@ -28,7 +28,7 @@ El cuerpo está en la capa 4 y colisiona con las capas 1 y 2. `PlayerContactArea
 - `contact_visualized(player, balloon_position)`: permite que la interfaz coloque los marcadores del contacto.
 - `apply_pending_contact()`: aplica un contacto reservado y devuelve la velocidad resultante para evaluar golpe descendente.
 - `reset_round()`: restablece espera, velocidad, enfriamientos y efecto de suelo.
-- `show_contact_pixel()`: dibuja el punto de impacto y lo desvanece en dos segundos.
+- `show_contact_pixel()`: instancia la escena compartida `src/scenes/ui/components/touch_pixel.tscn` en coordenadas locales del globo; el píxel conserva z-index 5 y fade de dos segundos.
 
 ## Interacciones
 

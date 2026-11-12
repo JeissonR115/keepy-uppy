@@ -1,6 +1,8 @@
 class_name BalloonController
 extends RigidBody2D
 
+const TOUCH_PIXEL_SCENE := preload("res://src/scenes/ui/components/touch_pixel.tscn")
+
 signal player_hit(player: CharacterBody2D)
 signal dash_rescued(player: CharacterBody2D, dash_direction: Vector2)
 signal contact_visualized(player: CharacterBody2D, balloon_position: Vector2)
@@ -188,19 +190,9 @@ func _play_ground_burst() -> void:
 
 
 func show_contact_pixel(world_position: Vector2) -> void:
-	var pixel := Polygon2D.new()
-	pixel.polygon = PackedVector2Array([
-		Vector2(-2.0, -2.0), Vector2(2.0, -2.0),
-		Vector2(2.0, 2.0), Vector2(-2.0, 2.0),
-	])
-	pixel.color = Color.WHITE
+	var pixel := TOUCH_PIXEL_SCENE.instantiate() as Polygon2D
 	pixel.position = to_local(world_position)
-	pixel.z_index = 5
 	add_child(pixel)
-	var tween := create_tween()
-	tween.tween_interval(1.3)
-	tween.tween_property(pixel, "modulate:a", 0.0, 0.7)
-	tween.tween_callback(pixel.queue_free)
 
 
 func _on_player_contact_area_body_entered(body: Node2D) -> void:

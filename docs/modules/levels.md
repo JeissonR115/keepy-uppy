@@ -5,7 +5,8 @@
 - `src/scenes/main/main.tscn` mantiene la raíz de la partida y abre la selección inicial.
 - `src/scenes/levels/arena.tscn` contiene jugadores, globo, cámara, marcador y gestores persistentes.
 - `src/scenes/levels/arena_classic.tscn` es Classic Court (320 × 180); `src/scenes/levels/sky_towers.tscn` es Sky Towers (480 × 270).
-- `src/managers/level_manager.gd` carga mapas desde el catálogo y aplica bounds, spawns y ajustes.
+- `src/managers/level_manager.gd` recibe `ArenaCatalog`, selecciona `ArenaData` tipado, carga mapas y aplica bounds, spawns y ajustes.
+- `src/scenes/ui/menus/player_count_menu.gd` consume las mismas entradas `ArenaData` para construir dinámicamente nombre, descripción, clasificación y vista previa.
 - `src/scenes/levels/arena_camera.gd` sigue la acción y limita la vista a los bounds seleccionados.
 - `src/resources/arena_data.gd` describe una arena; `src/resources/arena_catalog.tres` define el orden de selección.
 - `assets/sprites/arena/arena_tileset.tres` usa celdas de 16 × 16 px: colisión sólida en la capa 1, plataforma de una vía solo para jugadores en la capa 4 y trampolín en la capa 2. `trampoline_tile.svg` es el sprite del trampolín.

@@ -1,5 +1,7 @@
 extends SceneTree
 
+const SurfaceTechniques = preload("res://src/models/player/player_surface_techniques.gd")
+
 
 func _initialize() -> void:
 	call_deferred("_run_test")
@@ -74,9 +76,9 @@ func _run_test() -> void:
 		return
 	for _frame in range(45):
 		await physics_frame
-	if not _expect(player_1.is_on_floor() and player_1.call("_is_on_one_way_platform"), "Player did not land on the one-way platform."):
+	if not _expect(player_1.is_on_floor() and SurfaceTechniques.is_on_one_way_platform(player_1), "Player did not land on the one-way platform."):
 		return
-	player_1.call("_begin_platform_drop")
+	SurfaceTechniques.begin_platform_drop(player_1, 3, 0.28)
 	for _frame in range(12):
 		await physics_frame
 	if not _expect(player_1.global_position.y > 120.0, "Player did not drop through the one-way platform."):

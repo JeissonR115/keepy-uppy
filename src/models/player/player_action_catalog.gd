@@ -16,6 +16,9 @@ const PLAYERS: Array[Dictionary] = [
 		"prefix": PLAYER_ONE_PREFIX,
 		"heading": "PLAYER 1",
 		"color": Color(0.290196, 0.764706, 0.843137),
+		"run_color": Color(0.470588, 0.890196, 0.945098),
+		"rise_color": Color(0.772549, 0.960784, 0.980392),
+		"fall_color": Color(0.172549, 0.537255, 0.607843),
 		"actions": [
 			{"suffix": ACTION_LEFT, "label": "LEFT", "default_key": KEY_A},
 			{"suffix": ACTION_RIGHT, "label": "RIGHT", "default_key": KEY_D},
@@ -30,6 +33,9 @@ const PLAYERS: Array[Dictionary] = [
 		"prefix": PLAYER_TWO_PREFIX,
 		"heading": "PLAYER 2",
 		"color": Color(1.0, 0.584314, 0.427451),
+		"run_color": Color(1.0, 0.780392, 0.466667),
+		"rise_color": Color(1.0, 0.898039, 0.729412),
+		"fall_color": Color(0.690196, 0.286275, 0.270588),
 		"actions": [
 			{"suffix": ACTION_LEFT, "label": "LEFT", "default_key": KEY_LEFT},
 			{"suffix": ACTION_RIGHT, "label": "RIGHT", "default_key": KEY_RIGHT},
@@ -68,3 +74,14 @@ static func player_color(player_prefix: String) -> Color:
 		if player_data.prefix == player_prefix:
 			return player_data.color
 	return Color.WHITE
+
+
+static func player_movement_colors(player_prefix: String) -> Dictionary:
+	for player_data: Dictionary in PLAYERS:
+		if player_data.prefix == player_prefix:
+			return {
+				"run": player_data.run_color,
+				"rise": player_data.rise_color,
+				"fall": player_data.fall_color,
+			}
+	return {"run": Color.WHITE, "rise": Color.WHITE, "fall": Color.WHITE}

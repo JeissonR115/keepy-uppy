@@ -11,7 +11,7 @@ const PLAYER_COUNT_OPTIONS: Array[String] = [
 
 @onready var player_2: PlayerController = get_parent().get_node("Arena/Player2")
 @onready var match_manager: MatchManager = get_parent().get_node("Arena/MatchManager")
-@onready var level_manager: Node = get_parent().get_node("Arena/LevelManager")
+@onready var level_manager: LevelManager = get_parent().get_node("Arena/LevelManager")
 @onready var keyboard_navigator: MenuKeyboardNavigator = $KeyboardNavigator
 @onready var audio_manager: Node = get_node("/root/AudioManager")
 @onready var player_panel: PanelContainer = $Panel
@@ -31,7 +31,7 @@ const PLAYER_COUNT_OPTIONS: Array[String] = [
 ]
 var level_buttons: Array[Button] = []
 var level_options: Array[String] = []
-var arena_entries: Array[Resource] = []
+var arena_entries: Array[ArenaData] = []
 
 var selected_index: int = 0
 var showing_levels: bool = false
@@ -115,7 +115,7 @@ func _confirm_selection() -> void:
 		return
 	if showing_levels:
 		if selected_index < arena_entries.size():
-			_select_level(str(arena_entries[selected_index].get("id")))
+			_select_level(arena_entries[selected_index].id)
 		else:
 			_cancel_level_selection()
 	elif selected_index < 2:
@@ -146,7 +146,7 @@ func _select_player_count(player_count: int) -> void:
 func _select_level(level_id: String) -> void:
 	if not visible or not showing_levels:
 		return
-	if not bool(level_manager.call("select_arena", level_id)):
+	if not level_manager.select_arena(level_id):
 		return
 	audio_manager.call("play", "menu_select")
 	match_manager.restart_match()
@@ -158,22 +158,22 @@ func _select_level(level_id: String) -> void:
 
 
 func _populate_arena_options() -> void:
-	arena_entries = level_manager.call("get_available_arenas") as Array[Resource]
+	arena_entries = level_manager.get_available_arenas()
 	for child: Node in arena_list.get_children():
 		if child is Button:
 			child.free()
 	level_buttons.clear()
 	level_options.clear()
 	no_arenas_label.visible = arena_entries.is_empty()
-	for arena: Resource in arena_entries:
+	for arena: ArenaData in arena_entries:
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(104.0, 18.0)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 7)
-		button.pressed.connect(_select_level.bind(str(arena.get("id"))))
+		button.pressed.connect(_select_level.bind(arena.id))
 		arena_list.add_child(button)
 		level_buttons.append(button)
-		level_options.append(str(arena.get("display_name")))
+		level_options.append(arena.display_name)
 	level_buttons.append(back_level_button)
 	level_options.append("BACK")
 	_update_arena_details()
@@ -187,21 +187,21 @@ func _update_arena_details() -> void:
 		arena_metadata_label.text = ""
 		arena_description_label.text = "Register an ArenaData resource in arena_catalog.tres."
 		return
-	var arena: Resource = arena_entries[selected_index]
-	arena_preview.texture = arena.get("preview_texture") as Texture2D
+	var arena: ArenaData = arena_entries[selected_index]
+	arena_preview.texture = arena.preview_texture
 	preview_fallback.visible = arena_preview.texture == null
-	arena_name_label.text = str(arena.get("display_name"))
+	arena_name_label.text = arena.display_name
 	var size_labels := ["SMALL", "MEDIUM", "LARGE"]
-	var size_index := clampi(int(arena.get("size_classification")), 0, size_labels.size() - 1)
-	var bounds: Rect2 = arena.get("playable_bounds")
+	var size_index := clampi(int(arena.size_classification), 0, size_labels.size() - 1)
+	var bounds: Rect2 = arena.playable_bounds
 	arena_metadata_label.text = "%s  %d×%d  %d PLAYERS  %s" % [
 		size_labels[size_index],
 		roundi(bounds.size.x),
 		roundi(bounds.size.y),
-		int(arena.get("recommended_players")),
-		str(arena.get("theme_name")).to_upper(),
+		arena.recommended_players,
+		arena.theme_name.to_upper(),
 	]
-	arena_description_label.text = str(arena.get("description"))
+	arena_description_label.text = arena.description
 
 
 func _cancel_level_selection() -> void:
