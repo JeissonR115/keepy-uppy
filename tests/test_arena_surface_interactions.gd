@@ -52,11 +52,19 @@ func _run_test() -> void:
 
 	balloon.reset_round(Vector2(48, 88))
 	balloon.gravity_scale = 0.0
+	var climbable_wall: TileMapLayer = map.get_node("ClimbableWallTiles")
+	climbable_wall.add_to_group("scoring_ground")
 	balloon.linear_velocity = Vector2(-100, 0)
 	for _frame in range(18):
 		await physics_frame
-	if not _expect(not balloon.ground_contact_reported, "An ordinary solid climbable wall incorrectly scored the balloon."):
+	if not _expect(not balloon.ground_contact_reported, "A side collision against a scoring-ground tile incorrectly scored the balloon."):
 		return
+	if not _expect(
+		entered_bodies.any(func(entry: String) -> bool: return entry.begins_with("ClimbableWallTiles:")),
+		"Balloon did not reach the wall used to verify side-contact scoring."
+	):
+		return
+	climbable_wall.remove_from_group("scoring_ground")
 
 	balloon.reset_round(Vector2(40, 40))
 	balloon.gravity_scale = 0.0

@@ -39,6 +39,7 @@ const BALLOON_REF_SPEED := 240.0
 @onready var audio_manager: Node = get_node("/root/AudioManager")
 
 var ground_contact_reported: bool = false
+var scoring_ground_contact_from_above: bool = false
 var waiting_for_first_touch: bool = false
 var waiting_spawn_position: Vector2 = Vector2.ZERO
 var default_visual_color: Color
@@ -74,6 +75,17 @@ func _physics_process(delta: float) -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	scoring_ground_contact_from_above = false
+	for contact_index in state.get_contact_count():
+		var collider := state.get_contact_collider_object(contact_index) as Node
+		if collider == null or not collider.is_in_group("scoring_ground"):
+			continue
+		var contact_normal := state.transform.basis_xform(
+			state.get_contact_local_normal(contact_index)
+		).normalized()
+		if contact_normal.y < -0.5:
+			scoring_ground_contact_from_above = true
+			break
 	if waiting_for_first_touch:
 		state.linear_velocity = Vector2.ZERO
 		state.angular_velocity = 0.0
@@ -163,7 +175,11 @@ func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("trampoline"):
 		apply_trampoline_bounce()
 		return
-	if body.is_in_group("scoring_ground") and not ground_contact_reported:
+	if (
+		body.is_in_group("scoring_ground")
+		and scoring_ground_contact_from_above
+		and not ground_contact_reported
+	):
 		ground_contact_reported = true
 		_play_ground_burst()
 		audio_manager.call("play_gameplay_event", "balloon_explode", global_position)

@@ -9,11 +9,11 @@
 [ext_resource type="Resource" path="res://src/models/player/player_visual_profile_p1.tres" id="7_profile"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_i0oji"]
-radius = 5.0
-height = 23.0
+radius = 3.0
+height = 15.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dash_rescue"]
-size = Vector2(12, 22)
+size = Vector2(8, 15)
 
 [node name="PlayerPlaceholder" type="CharacterBody2D" unique_id=321193328 groups=["players"]]
 collision_layer = 2
@@ -38,16 +38,18 @@ color = Color(1, 0.839216, 0.317647, 0.8)
 polygon = PackedVector2Array(-9, -13, 0, -18, 9, -13, 9, 13, 0, 18, -9, 13)
 
 [node name="Visual" type="AnimatedSprite2D" parent="." unique_id=218045876]
-position = Vector2(0, -4)
+position = Vector2(1, -9.000001)
+scale = Vector2(1, 1.09375)
 sprite_frames = ExtResource("5_player_frames")
 animation = &"idle"
 autoplay = "idle"
 
-[node name="ActionEffect" type="AnimatedSprite2D" parent="." unique_id=3780146221]
-position = Vector2(0, -4)
-z_index = 1
-sprite_frames = ExtResource("6_effect_frames")
+[node name="ActionEffect" type="AnimatedSprite2D" parent="." unique_id=-514821075]
 visible = false
+z_index = 1
+position = Vector2(0, -4)
+sprite_frames = ExtResource("6_effect_frames")
+animation = &"climb"
 
 [node name="InputReader" type="Node" parent="." unique_id=1798229334]
 script = ExtResource("2_input_reader")
@@ -66,5 +68,4 @@ monitoring = false
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DashRescueArea" unique_id=976572373]
-position = Vector2(0, 1)
 shape = SubResource("RectangleShape2D_dash_rescue")

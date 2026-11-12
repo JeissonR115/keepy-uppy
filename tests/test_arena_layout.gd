@@ -52,18 +52,18 @@ func _run_test() -> void:
 	if not _expect(one_way_layer.is_in_group("one_way_platform"), "Player drop-through detection cannot identify the one-way platform layer."):
 		return
 	var tileset := scoring_floor.tile_set
-	if not _expect(tileset.tile_size == Vector2i(16, 16), "Arena TileSet cell size is not 16 × 16."):
+	if not _expect(tileset.tile_size == Vector2i(8, 8), "Arena TileSet cell size is not 8 × 8."):
 		return
 	var atlas := tileset.get_source(0) as TileSetAtlasSource
-	var solid_tile := atlas.get_tile_data(Vector2i(1, 1), 0)
-	var one_way_tile := atlas.get_tile_data(Vector2i(2, 1), 0)
+	var solid_tile := atlas.get_tile_data(Vector2i(2, 2), 0)
+	var one_way_tile := atlas.get_tile_data(Vector2i(10, 2), 0)
 	if not _expect(solid_tile.get_collision_polygons_count(0) == 1, "Solid atlas tile is missing its collision polygon."):
 		return
 	if not _expect(one_way_tile.is_collision_polygon_one_way(1, 0), "Platform atlas tile is not configured as one-way."):
 		return
 	if not _expect(one_way_tile.get_collision_polygon_one_way_margin(1, 0) == 2.0, "One-way platform margin was not configured."):
 		return
-	if not _expect(one_way_layer.get_used_cells().size() == 8, "Classic map does not contain the expected elevated platform tiles."):
+	if not _expect(one_way_layer.get_used_cells().size() == 32, "Classic map does not contain the expected 8 px elevated platform tiles."):
 		return
 
 	match_manager.restart_match()
