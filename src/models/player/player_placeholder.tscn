@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://8y6oodyt7hms" path="res://src/models/player/player_controller.gd" id="1_player_controller"]
 [ext_resource type="Script" uid="uid://d1fhghi4tptlu" path="res://src/models/player/player_input_reader.gd" id="2_input_reader"]
-[ext_resource type="PackedScene" uid="uid://cqkiko0p50gsi" path="res://src/models/player/cape.tscn" id="3_cape"]
 [ext_resource type="Script" uid="uid://ht8jd5u6v3sh" path="res://src/models/player/cpu_controller.gd" id="4_cpu_controller"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player/player_frames.tres" id="5_player_frames"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player_sweat/player_sweat_frames.tres" id="6_effect_frames"]
@@ -21,15 +20,6 @@ collision_mask = 7
 script = ExtResource("1_player_controller")
 visual_profile = ExtResource("7_profile")
 
-[node name="CapeAnchors" type="Node2D" parent="." unique_id=885826377]
-
-[node name="AnchorA" type="Marker2D" parent="CapeAnchors" unique_id=1274014201]
-position = Vector2(0, -8)
-
-[node name="AnchorB" type="Marker2D" parent="CapeAnchors" unique_id=1288452344]
-position = Vector2(-3, -6)
-
-[node name="Cape" parent="." unique_id=918249522 instance=ExtResource("3_cape")]
 
 [node name="PriorityIndicator" type="Polygon2D" parent="." unique_id=441771129]
 visible = false

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="" load_steps=4 format=3]
+[gd_resource type="Resource" format=3 uid="uid://bqtk7p0ns37bu"]
 
-[ext_resource type="Script" path="res://src/models/player/player_visual_profile.gd" id="1_profile"]
+[ext_resource type="Script" uid="uid://cmkch08vmdef7" path="res://src/models/player/player_visual_profile.gd" id="1_profile"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player/player_frames.tres" id="2_body"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player_sweat/player_sweat_frames.tres" id="3_effects"]
 
@@ -8,32 +8,25 @@
 script = ExtResource("1_profile")
 body_frames = ExtResource("2_body")
 effect_frames = ExtResource("3_effects")
-tint = Color(1, 1, 1, 1)
-anchor_a = Vector2(8, -8)
-anchor_b = Vector2(-8, -8)
-hair_enabled = false
-cape_enabled = true
-hair_anchor_a = Vector2(-4, -11)
-hair_anchor_b = Vector2(1, -11)
-hair_color = Color(0.72, 0.16, 0.22, 1)
+hair_enabled = true
 body_animation_map = {
-"idle": "idle",
-"run_slow": "runSlow",
-"run_fast": "runFast",
-"jump_start": "flip",
-"rise": "dangling",
+"climb_down": "climbPush",
+"climb_up": "climbPull",
+"climb_up_entry": "climbup",
+"dash": "dash",
 "fall": "fall",
 "fall_fast": "fallFast",
-"dash": "dash",
-"wall_slide": "wallslide",
-"climb_up": "climbPull",
-"climb_down": "climbPush",
-"climb_up_entry": "climbup"
+"idle": "idle",
+"jump_start": "flip",
+"rise": "dangling",
+"run_fast": "runFast",
+"run_slow": "runSlow",
+"wall_slide": "wallslide"
 }
 effect_animation_map = {
-"jump": "jump",
 "climb_entry": "climb",
 "climb_loop": "climbLoop",
+"danger": "danger",
 "idle_loop": "still",
-"danger": "danger"
+"jump": "jump"
 }

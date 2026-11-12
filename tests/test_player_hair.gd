@@ -24,16 +24,30 @@ func _run_test() -> void:
 	await process_frame
 	var player_1: PlayerController = main_scene.get_node("Arena/Player1")
 	var player_2: PlayerController = main_scene.get_node("Arena/Player2")
+	var hair_1: Node = player_1.get_node_or_null("PlayerHair")
 	var hair: Node = player_2.get_node_or_null("PlayerHair")
 	if not _expect(
-		player_1.get_node_or_null("PlayerHair") == null
+		hair_1 != null
 		and hair != null
+		and player_1.get_node_or_null("Cape") == null
+		and player_2.get_node_or_null("Cape") == null
+		and hair_1.find_children("*", "CollisionObject2D", true, false).is_empty()
 		and hair.find_children("*", "CollisionObject2D", true, false).is_empty()
 		and hair.get_node("StrandA") is Line2D
 		and hair.get_node("StrandB") is Line2D,
-		"Procedural hair was not attached only to P2 as cosmetic line geometry."
+		"Both players must have cosmetic Line2D hair with no collision objects."
 	):
 		return
+	if not _expect(
+		hair.get_node("StrandA").width == 2.0
+		and not hair.get_node("StrandA").antialiased
+		and hair.get_node("StrandA").texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST,
+		"Hair lines are not configured for crisp, pixel-snapped rendering."
+	):
+		return
+	for point in hair.get_node("StrandA").points:
+		if not _expect(point == point.round(), "Hair rendering contains subpixel coordinates."):
+			return
 	var initial := _hair_points(hair)
 	if not _expect(
 		initial.size() == 6
@@ -107,5 +121,5 @@ func _run_test() -> void:
 		"Hair did not recover safely from invalid movement data."
 	):
 		return
-	print("P2 hair follows acceleration, reversal, vertical motion, dash, and reset without collision nodes.")
+	print("Both players' pixel hair follows movement and dash without collision nodes.")
 	quit()

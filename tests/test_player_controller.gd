@@ -37,12 +37,10 @@ func _run_test() -> void:
 	):
 		return
 	if not _expect(
-		MovementConstants.CAPE_ROWS == 6
-		and is_equal_approx(MovementConstants.CAPE_SEGMENT, 2.5)
-		and is_equal_approx(MovementConstants.CAPE_GRAVITY, 250.0)
-		and is_equal_approx(MovementConstants.CAPE_DAMPING, 0.90)
-		and MovementConstants.CAPE_ITERATIONS == 4,
-		"Cape tuning constants do not match the movement guide."
+		MovementConstants.DASH_AFTERIMAGE_COUNT == 6
+		and is_equal_approx(MovementConstants.DASH_AFTERIMAGE_LIFETIME, 0.18)
+		and is_equal_approx(MovementConstants.DASH_AFTERIMAGE_INTERVAL, MovementConstants.DASH_TIME / 6.0),
+		"Dash afterimage tuning does not match the movement guide."
 	):
 		return
 	var main_scene: Node = load("res://src/scenes/main/main.tscn").instantiate()

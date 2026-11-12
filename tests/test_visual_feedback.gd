@@ -164,5 +164,5 @@ func _run_test() -> void:
 	):
 		return
 
-	print("Player sprite states and effects, visible cape, priority indicator, and balloon impact flash verified.")
+	print("Player sprite states and effects, pixel hair, priority indicator, and balloon impact flash verified.")
 	quit()

@@ -55,14 +55,14 @@ func _run_test() -> void:
 			and player.visual.sprite_frames.get_frame_texture("idle", 0).get_width() == 32
 			and effect.sprite_frames.get_animation_names().size() == 5
 			and not effect.sprite_frames.has_animation("idle")
-			and player.visual.position == Vector2(0, -4)
+			and player.visual.position == Vector2(1, -9.000001)
 			and effect.z_index > player.visual.z_index
-			and capsule.radius == 5.0
-			and capsule.height == 23.0
+			and capsule.radius == 3.0
+			and capsule.height == 15.0
 			and player.player_collision_shape.position == Vector2(0, 0.5)
-			and player.get_node("Cape") is PlayerCape
-			and player.cape.visible == bool(player.visual_profile.get("cape_enabled")),
-			"%s sprite resources, retained collision, or cape are incorrectly configured." % player_name
+			and player.get_node_or_null("Cape") == null
+			and player.get_node_or_null("PlayerHair") != null,
+			"%s sprite resources, retained collision, or hair are incorrectly configured." % player_name
 		):
 			return
 		for animation_name: String in [
@@ -121,9 +121,7 @@ func _run_test() -> void:
 		and player_2.visual_profile.get("body_frames") == player_2.visual.sprite_frames
 		and player_1.visual_profile.get("tint") == Color.WHITE
 		and player_2.visual_profile.get("tint") == PlayerPresentationController.PLAYER_TWO_TINT
-		and player_1.visual_profile.get("cape_enabled")
-		and not player_2.visual_profile.get("cape_enabled")
-		and not player_1.visual_profile.get("hair_enabled")
+		and player_1.visual_profile.get("hair_enabled")
 		and player_2.visual_profile.get("hair_enabled")
 		and player_1.visual.flip_h == player_2.visual.flip_h
 		and player_1.visual.modulate == Color.WHITE

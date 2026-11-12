@@ -4,16 +4,20 @@ extends RefCounted
 const MovementConstants = preload("res://src/models/player/player_movement_constants.gd")
 const TOUCH_PIXEL_SCENE = preload("res://src/scenes/ui/components/touch_pixel.tscn")
 const PLAYER_HAIR_SCENE = preload("res://src/models/player/player_hair.tscn")
+const DASH_AFTERIMAGE_SCENE = preload("res://src/models/player/player_dash_afterimage.tscn")
 const STEP_DISTANCE := 14.0
 const PLAYER_TWO_TINT := Color(1.0, 0.84, 0.70, 1.0)
 
 var visual: AnimatedSprite2D
 var action_effect: AnimatedSprite2D
-var cape_anchor_a: Marker2D
-var cape_anchor_b: Marker2D
-var cape: PlayerCape
 var profile: Resource
 var player_hair: Node2D
+var player_root: Node2D
+var dash_afterimage_tint: Color = Color(0.62, 0.82, 1.0, 0.55)
+var dash_afterimage_timer := 0.0
+var dash_afterimages_spawned := 0
+var dash_trail_rescue_hit := false
+var active_afterimages: Array[Area2D] = []
 var idle_color: Color
 var tired_blink_timer: float = 0.0
 var step_distance: float = 0.0
@@ -27,27 +31,20 @@ var was_climbing := false
 func configure(
 	player_visual: AnimatedSprite2D,
 	player_action_effect: AnimatedSprite2D,
-	anchor_a: Marker2D,
-	anchor_b: Marker2D,
-	player_cape: PlayerCape,
 	identity_color: Color,
 	player_profile: Resource,
 	player_root: Node2D
 ) -> void:
 	visual = player_visual
 	action_effect = player_action_effect
-	cape_anchor_a = anchor_a
-	cape_anchor_b = anchor_b
-	cape = player_cape
 	profile = player_profile
+	self.player_root = player_root
+	dash_afterimage_tint = profile.get("dash_afterimage_tint") as Color
 	idle_color = identity_color
 	visual.sprite_frames = profile.get("body_frames") as SpriteFrames
 	action_effect.sprite_frames = profile.get("effect_frames") as SpriteFrames
 	visual.modulate = profile.get("tint") as Color
 	action_effect.modulate = profile.get("tint") as Color
-	cape_anchor_a.position = profile.get("anchor_a") as Vector2
-	cape_anchor_b.position = profile.get("anchor_b") as Vector2
-	cape.visible = bool(profile.get("cape_enabled"))
 	if bool(profile.get("hair_enabled")):
 		player_hair = PLAYER_HAIR_SCENE.instantiate() as Node2D
 		player_root.add_child(player_hair)
@@ -62,7 +59,7 @@ func configure(
 	action_effect.visible = false
 
 func reset_visuals() -> void:
-	cape.reset_simulation()
+	clear_dash_afterimages()
 	if player_hair != null:
 		player_hair.call("reset_simulation")
 	tired_blink_timer = 0.0
@@ -77,50 +74,57 @@ func reset_visuals() -> void:
 	action_effect.stop()
 	action_effect.visible = false
 
+func update_dash_afterimages(
+	delta: float,
+	dashing: bool,
+	rescue_size: Vector2
+) -> void:
+	if not dashing or dash_afterimages_spawned >= MovementConstants.DASH_AFTERIMAGE_COUNT:
+		return
+	dash_afterimage_timer += delta
+	while (
+		dash_afterimage_timer >= MovementConstants.DASH_AFTERIMAGE_INTERVAL
+		and dash_afterimages_spawned < MovementConstants.DASH_AFTERIMAGE_COUNT
+	):
+		dash_afterimage_timer -= MovementConstants.DASH_AFTERIMAGE_INTERVAL
+		_spawn_dash_afterimage(rescue_size)
+
+func clear_dash_afterimages() -> void:
+	dash_afterimage_timer = 0.0
+	dash_afterimages_spawned = 0
+	dash_trail_rescue_hit = false
+	for afterimage in active_afterimages:
+		if is_instance_valid(afterimage):
+			afterimage.queue_free()
+	active_afterimages.clear()
+
+func _spawn_dash_afterimage(rescue_size: Vector2) -> void:
+	var afterimage := DASH_AFTERIMAGE_SCENE.instantiate() as Area2D
+	player_root.get_parent().add_child(afterimage)
+	afterimage.call("configure",
+		player_root, visual, rescue_size,
+		dash_afterimage_tint, MovementConstants.DASH_AFTERIMAGE_LIFETIME
+	)
+	afterimage.connect("expired", _on_afterimage_expired)
+	active_afterimages.append(afterimage)
+	dash_afterimages_spawned += 1
+
+func _on_afterimage_expired(afterimage: Area2D) -> void:
+	active_afterimages.erase(afterimage)
+
 func update_cosmetic_motion(
 	delta: float,
-	frozen: bool,
 	facing_direction: Vector2,
-	ducking: bool,
 	velocity: Vector2,
-	dash_available: bool,
-	is_dashing: bool,
+	dashing: bool,
 	dash_direction: Vector2,
-	dash_timer: float,
-	dashing: bool
+	frozen: bool
 ) -> void:
-	if cape.visible:
-		var facing_sign := -1.0 if facing_direction.x < 0.0 else 1.0
-		var duck_offset := MovementConstants.CAPE_DUCK_OFFSET if ducking else 0.0
-		cape_anchor_a.position = Vector2(
-			MovementConstants.CAPE_ANCHOR_A.x * facing_sign,
-			MovementConstants.CAPE_ANCHOR_A.y + duck_offset
-		)
-		cape_anchor_b.position = Vector2(
-			MovementConstants.CAPE_ANCHOR_B.x * facing_sign,
-			MovementConstants.CAPE_ANCHOR_B.y + duck_offset
-		)
-		cape.simulate(
-			delta, cape_anchor_a.global_position, cape_anchor_b.global_position,
-			velocity, get_cape_color(dash_available), frozen,
-			dash_direction if is_dashing else Vector2.ZERO,
-			(1.0 - dash_timer / MovementConstants.DASH_TIME) if is_dashing else 0.0
-		)
 	if player_hair != null:
-		player_hair.call("simulate", delta, velocity, facing_direction, dashing, dash_direction, frozen)
-
-func get_cape_color(dash_available: bool) -> Color:
-	if dash_available:
-		return Color.from_hsv(
-			idle_color.h,
-			maxf(idle_color.s, MovementConstants.CAPE_VIVID_SATURATION_MIN),
-			MovementConstants.CAPE_VIVID_VALUE_MIN
+		player_hair.call(
+			"simulate", delta, velocity, facing_direction,
+			dashing, dash_direction, frozen
 		)
-	return Color.from_hsv(
-		idle_color.h,
-		idle_color.s * MovementConstants.CAPE_DULL_SATURATION_MULT,
-		idle_color.v * MovementConstants.CAPE_DULL_VALUE_MULT
-	)
 
 func update_visual_state(
 	horizontal_input: float,

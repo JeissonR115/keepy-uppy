@@ -77,16 +77,19 @@ func _run_test() -> void:
 				break
 		if not _expect(player.is_dashing, "Dash did not activate for direction case %d." % index):
 			return
+		for _frame in range(8):
+			if player.presentation.dash_afterimages_spawned > 0:
+				break
+			await physics_frame
 		if not _expect(
 			player.dash_direction.is_equal_approx(EXPECTED_DIRECTIONS[index]),
 			"Unexpected dash direction for case %d: %s" % [index, player.dash_direction]
 		):
 			return
 		if not _expect(
-			player.cape.visible
-			and player.cape.get_node("Polygon2D").visible
-			and player.cape.positions.size() == MovementConstants.CAPE_ROWS * 2,
-			"Player cape did not provide the visible dash trail for case %d." % index
+			player.get_node_or_null("PlayerHair") != null
+			and player.presentation.dash_afterimages_spawned > 0,
+			"Pixel hair or sprite afterimage trail did not appear for dash case %d." % index
 		):
 			return
 		if not _expect(not player.dash_available, "Dash charge was not consumed immediately."):
@@ -99,8 +102,8 @@ func _run_test() -> void:
 			if not player.is_dashing and player.dash_freeze_timer <= 0.0:
 				break
 		if not _expect(
-			player.cape.visible and player.cape.get_node("Polygon2D").visible,
-			"Player cape disappeared after dash case %d." % index
+			player.get_node_or_null("PlayerHair") != null,
+			"Player hair disappeared after dash case %d." % index
 		):
 			return
 

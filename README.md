@@ -26,13 +26,12 @@ viewport.
 ## Visuals
 
 The project-wide GUI theme uses `DotGothic16-Regular.ttf` from
-`assets/fonts/DotGothic16/`. Player visuals are basic colored rectangles; the
-player cape remains procedurally simulated and follows its character anchors.
+`assets/fonts/DotGothic16/`. Both players use animated sprites and pixelated
+cosmetic hair; six tinted sprite afterimages follow each dash.
 The arena terrain uses 16-pixel tiles; previews and the HUD remain separate
 from gameplay geometry.
 
-Verify the global font, rectangle visuals, screen-effect isolation, and cape
-instances with:
+Verify the global font, player visuals, screen-effect isolation, and hair with:
 
 ```sh
 godot --headless --path . --script res://tests/test_visual_assets.gd
@@ -199,11 +198,12 @@ godot --headless --path . --script res://tests/test_player_horizontal_movement.g
 godot --headless --path . --script res://tests/test_player_wall_climb.gd
 ```
 
-Verify cape geometry, dash-availability colors, per-player transitions, reset,
+Verify pixel hair and dash afterimages, including per-player behavior, rescue,
 local freeze, and simulation recovery with:
 
 ```sh
-godot --headless --path . --script res://tests/test_player_cape.gd
+godot --headless --path . --script res://tests/test_player_hair.gd
+godot --headless --path . --script res://tests/test_player_dash_afterimages.gd
 ```
 
 Verify balloon contact and physics with:
@@ -332,12 +332,12 @@ Manual movement checks:
 - [ ] Press jump within the Coyote Time window after leaving the floor, and confirm the jump still triggers.
 - [ ] Press jump just before landing and confirm Jump Buffer triggers immediately on landing.
 - [ ] Dash in each of the eight directions and confirm an un-directed dash follows the player's facing.
-- [ ] Confirm a dash pulses faster through its middle, travels at least 55 px, and stretches the same pixelated cape behind the player.
+- [ ] Confirm a dash pulses faster through its middle, travels at least 55 px, and leaves six fading sprite afterimages.
 - [ ] Attempt to dash again during cooldown and confirm no second dash begins.
-- [ ] Dash through the balloon, verify the rescue impulse follows dash direction, and confirm the same player cape trails during the dash while the rescue zone ends with it.
+- [ ] Dash through the balloon, verify the rescue impulse follows dash direction, and confirm the sprite trail appears while the rescue zone ends with the dash.
 - [ ] Re-enter the balloon with the same dash activation and confirm it is not hit a second time.
 - [ ] Confirm the player with priority can push farther than the other player, including during dash.
 - [ ] Confirm a dash can push the other player and free a player trapped under them.
 - [ ] Confirm same-tick ties go to the non-priority player and a dash rescue takes priority over a normal hit.
 - [ ] Confirm a gold outline identifies the priority player and moves when priority changes.
-- [ ] Confirm balloon hits flash visibly and the player's cape remains visible and trails behind during dash, without relying on sound.
+- [ ] Confirm balloon hits flash visibly and both players retain pixelated hair while dash afterimages fade, without relying on sound.

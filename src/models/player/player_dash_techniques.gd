@@ -94,6 +94,7 @@ static func wall_direction_within(player: CharacterBody2D, distance: float) -> f
 
 static func begin_dash(player: CharacterBody2D, tuning: Script) -> void:
 	player.get("presentation").reset_footsteps()
+	player.get("presentation").clear_dash_afterimages()
 	player.set("dash_timer", tuning.DASH_TIME)
 	var dash_direction: Vector2 = player.get("dash_direction")
 	player.set("dash_velocity", dash_direction * tuning.DASH_SPEED)
@@ -148,6 +149,14 @@ static func handle_rescue_body(player: CharacterBody2D, body: Node2D) -> void:
 	if body is RigidBody2D and body.has_method("apply_dash_rescue"):
 		var dash_direction: Vector2 = player.get("dash_direction")
 		player.set("dash_rescue_hit", body.apply_dash_rescue(player, dash_direction))
+
+static func handle_trail_rescue_body(player: CharacterBody2D, body: Node2D) -> void:
+	var presentation := player.get("presentation") as PlayerPresentationController
+	if presentation.dash_trail_rescue_hit:
+		return
+	if body is RigidBody2D and body.has_method("apply_dash_rescue"):
+		var dash_direction: Vector2 = player.get("dash_direction")
+		presentation.dash_trail_rescue_hit = body.apply_dash_rescue(player, dash_direction)
 
 static func report_player_collisions(player: CharacterBody2D) -> void:
 	for index in player.get_slide_collision_count():

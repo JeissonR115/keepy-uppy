@@ -88,5 +88,13 @@ func _simulate_strand(
 
 
 func _update_lines() -> void:
-	strand_a.points = PackedVector2Array(points_a)
-	strand_b.points = PackedVector2Array(points_b)
+	global_position = global_position.round()
+	strand_a.points = _pixel_snap_points(points_a)
+	strand_b.points = _pixel_snap_points(points_b)
+
+
+func _pixel_snap_points(points: Array[Vector2]) -> PackedVector2Array:
+	var snapped := PackedVector2Array()
+	for point in points:
+		snapped.append(point.round())
+	return snapped

@@ -19,7 +19,7 @@ Runtime/editor dependencies visible in `project.godot` include the PixelPerfect2
 
 ## Rights and import decision
 
-The README states that Celeste asset rights belong to EXOK and that the demo uses the assets with permission. The inspected repository does not include the permission terms or a project-level code license that establishes rights to redistribute its Celeste graphics, PixelPerfect2D source, or all other resources in Keepy Uppy. Therefore no reference code, graphics, tile data, or scenes are copied by this change unless separate applicable terms are established. The demo itself contains no reference TileSet to copy. Keepy Uppy retains its pre-existing local player graphics, cape, arena TileSet, and role-based arenas; the graphics' creator and redistribution terms are not established by this audit.
+The README states that Celeste asset rights belong to EXOK and that the demo uses the assets with permission. The inspected repository does not include the permission terms or a project-level code license that establishes rights to redistribute its Celeste graphics, PixelPerfect2D source, or all other resources in Keepy Uppy. Therefore no reference code, graphics, tile data, or scenes are copied by this change unless separate applicable terms are established. The demo itself contains no reference TileSet to copy. At the time of this baseline audit, Keepy Uppy retained its local player graphics, cape, arena TileSet, and role-based arenas; the graphics' creator and redistribution terms are not established by this audit.
 
 ## Comparison with Keepy Uppy
 
@@ -36,11 +36,11 @@ The README states that Celeste asset rights belong to EXOK and that the demo use
 
 ## Current-project files reviewed
 
-- Player: `src/models/player/player_controller.gd`, `player_movement_constants.gd`, `player_input_reader.gd`, `player_jump_techniques.gd`, `player_surface_techniques.gd`, `player_dash_techniques.gd`, `player_climb_techniques.gd`, `player_presentation_controller.gd`, `cape.gd`, `player_placeholder.tscn`, `cpu_controller.gd`, and `cpu_interception_predictor.gd`.
+- Player: `src/models/player/player_controller.gd`, `player_movement_constants.gd`, `player_input_reader.gd`, `player_jump_techniques.gd`, `player_surface_techniques.gd`, `player_dash_techniques.gd`, `player_climb_techniques.gd`, `player_presentation_controller.gd`, `player_hair.gd`, `player_dash_afterimage.gd`, `player_placeholder.tscn`, `cpu_controller.gd`, and `cpu_interception_predictor.gd`.
 - Match/balloon: `src/models/balloon/balloon_controller.gd` and `src/managers/match_manager.gd`.
 - Arenas: `assets/sprites/arena/arena_tileset.tres`, `src/scenes/levels/arena_classic.tscn`, `sky_towers.tscn`, `ancient_ruins.tscn`, `src/resources/arena_data.gd`, `arena_catalog.gd`, and catalog/arena resources.
 - Existing behavior docs: `docs/modules/player.md`, `balloon.md`, `match.md`, and `levels.md`.
-- Existing regression coverage: movement/jump/dash/wall/climb, balloon rescue/contact/turns, CPU, visual feedback/cape, arena layout/surface roles/interactions, and level selection tests under `tests/`.
+- Existing regression coverage: movement/jump/dash/wall/climb, balloon rescue/contact/turns, CPU, visual feedback, arena layout/surface roles/interactions, and level selection tests under `tests/`.
 
 ## Sources inspected
 
@@ -80,7 +80,7 @@ No license or direct permission applicable to distributing repo A's Nate Kling g
 ## Implementation inventory — `complete-celeste-style-player-system`
 
 - **Modified code and scenes:** `src/models/player/player_movement_constants.gd`, `player_controller.gd`, `player_jump_techniques.gd`, `player_dash_techniques.gd`, `cpu_interception_predictor.gd`, `player_presentation_controller.gd`, `player_placeholder.tscn`, and `src/scenes/levels/arena.tscn`. The controller remains the sole `move_and_slide()` owner. The predictor bounds interception using the active `scoring_ground` TileMapLayer and balloon radius.
-- **Created profile and hair resources:** `src/models/player/player_visual_profile.gd`, `player_visual_profile_p1.tres`, `player_visual_profile_p2.tres`, `player_hair.gd`, and `player_hair.tscn`. Both profiles refer to already-present SpriteFrames; P1 keeps the cape and P2 enables hair. No reference hair, code, sprites, TileSet or arena scene was imported.
-- **Modified or added tests:** `tests/test_player_horizontal_movement.gd`, `test_player_jump.gd`, `test_player_wall_climb.gd`, `test_dash.gd`, `test_player_controller.gd`, `test_visual_assets.gd`, and `test_player_cape.gd` were extended; `tests/test_player_hair.gd` was added. `test_cpu_prediction.gd`, `test_visual_feedback.gd`, dash-rescue, match, turn, scoring and CPU-opponent tests were run without replacing their fixtures.
+- **Created profile, hair and dash-trail resources:** `src/models/player/player_visual_profile.gd`, both player profiles, `player_hair.gd`/`.tscn` and `player_dash_afterimage.gd`/`.tscn`. Both profiles refer to already-present SpriteFrames and enable cosmetic hair. No reference hair, code, sprites, TileSet or arena scene was imported.
+- **Modified or added tests:** movement, jump, wall climb, dash, controller and visual-assets tests were extended; hair and dash-afterimage tests were added. `test_cpu_prediction.gd`, `test_visual_feedback.gd`, dash-rescue, match, turn, scoring and CPU-opponent tests were run without replacing their fixtures.
 - **Modified documentation and tracking:** `docs/modules/player.md`, `docs/modules/player_animation_assets.md`, this comparison, and `openspec/changes/complete-celeste-style-player-system/tasks.md`.
-- **Deleted files:** none. The cape scene/script remains referenced by P1, the shared player scene and cape tests. Arena scenes retain scoring-ground, one-way, trampoline and climbable-wall groups. Searches found no newly created profile or hair resource without a runtime/test reference.
+- **Deleted files:** `cape.gd`, `cape.tscn`, and the cape-specific test were removed after all live references were replaced. Arena scenes retain scoring-ground, one-way, trampoline and climbable-wall groups. Searches found no newly created profile, hair or dash-trail resource without a runtime/test reference.

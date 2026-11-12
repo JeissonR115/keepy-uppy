@@ -58,9 +58,6 @@ var normal_collision_height: float = 0.0
 @onready var balloon: BalloonController = get_parent().get_node("Balloon")
 @onready var dash_rescue_area: Area2D = $DashRescueArea
 @onready var dash_rescue_shape: CollisionShape2D = $DashRescueArea/CollisionShape2D
-@onready var cape_anchor_a: Marker2D = $CapeAnchors/AnchorA
-@onready var cape_anchor_b: Marker2D = $CapeAnchors/AnchorB
-@onready var cape: PlayerCape = $Cape
 var presentation = PresentationController.new()
 
 var idle_color: Color:
@@ -70,8 +67,8 @@ var idle_color: Color:
 func _ready() -> void:
 	input_reader.configure(input_prefix)
 	presentation.configure(
-		visual, action_effect, cape_anchor_a, cape_anchor_b, cape,
-		PlayerActionCatalog.player_color(input_prefix), visual_profile, self
+		visual, action_effect, PlayerActionCatalog.player_color(input_prefix),
+		visual_profile, self
 	)
 	player_bumped.connect(presentation.on_player_bumped)
 	var capsule := player_collision_shape.shape.duplicate() as CapsuleShape2D
@@ -341,6 +338,7 @@ func _physics_process(delta: float) -> void:
 
 	DashTechniques.report_player_collisions(self)
 	_update_presentation_state(horizontal_input, is_on_floor(), delta, jumped)
+	presentation.update_dash_afterimages(delta, is_dashing, dash_rescue_half_extents * 2.0)
 	if movement_state == MovementState.DASH and dash_timer <= 0.0:
 		_end_dash()
 	_update_cosmetic_motion(delta, movement_state == MovementState.DASH and dash_freeze_timer > 0.0)
@@ -365,9 +363,8 @@ func show_touch_pixel(world_position: Vector2) -> void:
 
 func _update_cosmetic_motion(delta: float, frozen: bool) -> void:
 	presentation.update_cosmetic_motion(
-		delta, frozen, facing_direction, ducking, velocity, dash_available,
-		is_dashing, dash_direction, dash_timer,
-		movement_state == MovementState.DASH
+		delta, facing_direction, velocity, movement_state == MovementState.DASH,
+		dash_direction, frozen
 	)
 
 func _update_presentation_state(horizontal_input: float, grounded: bool, delta: float, jumped: bool = false) -> void:
@@ -377,8 +374,6 @@ func _update_presentation_state(horizontal_input: float, grounded: bool, delta: 
 		movement_state == MovementState.DASH, velocity,
 		wall_slide_timer, facing_direction, jumped
 	)
-
-func get_cape_color() -> Color: return presentation.get_cape_color(dash_available)
 
 func _end_dash(apply_exit_velocity: bool = true) -> void: DashTechniques.end_dash(self, MovementConstants, apply_exit_velocity)
 
