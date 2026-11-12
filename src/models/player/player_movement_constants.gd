@@ -2,7 +2,7 @@ class_name PlayerMovementConstants
 extends RefCounted
 
 const MAX_RUN := 130.0
-const RUN_ACCEL := 1000.0
+const RUN_ACCEL := 1500.0
 const RUN_REDUCE := 600.0
 const AIR_MULT := 0.65
 
@@ -12,9 +12,10 @@ const FAST_MAX_FALL := 330.0
 const FAST_MAX_ACCEL := 350.0
 const HALF_GRAV_THRESHOLD := 40.0
 
-const JUMP_SPEED := -200.0
+const JUMP_SPEED := -250.0
 const JUMP_H_BOOST := 50.0
 const VAR_JUMP_TIME := 0.2
+const JUMP_CUT_MULTIPLIER := 0.5
 const COYOTE_TIME := 0.1
 const JUMP_BUFFER := 0.08
 const CEILING_CORNER_CORRECTION := 4.0

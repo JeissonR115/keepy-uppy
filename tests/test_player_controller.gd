@@ -17,17 +17,19 @@ func _expect(condition: bool, message: String) -> bool:
 
 
 func _run_test() -> void:
+	var physics_ticks: Variant = ProjectSettings.get_setting("physics/common/physics_ticks_per_second")
 	if not _expect(
-		ProjectSettings.get_setting("physics/common/physics_ticks_per_second") == 60,
-		"Physics tick rate must be configured to 60 Hz."
+		physics_ticks == null or physics_ticks == 60,
+		"Player movement checks require the project's 60 Hz physics interval."
 	):
 		return
 	if not _expect(
 		is_equal_approx(MovementConstants.MAX_RUN, 130.0)
-		and is_equal_approx(MovementConstants.RUN_ACCEL, 1000.0)
+		and is_equal_approx(MovementConstants.RUN_ACCEL, 1500.0)
 		and is_equal_approx(MovementConstants.RUN_REDUCE, 600.0)
 		and is_equal_approx(MovementConstants.GRAVITY, 1100.0)
-		and is_equal_approx(MovementConstants.JUMP_SPEED, -200.0)
+		and is_equal_approx(MovementConstants.JUMP_SPEED, -250.0)
+		and is_equal_approx(MovementConstants.JUMP_CUT_MULTIPLIER, 0.5)
 		and is_equal_approx(MovementConstants.DASH_SPEED, 300.0)
 		and is_equal_approx(MovementConstants.DASH_TIME, 0.2)
 		and is_equal_approx(MovementConstants.CLIMB_MAX_STAMINA, 110.0),

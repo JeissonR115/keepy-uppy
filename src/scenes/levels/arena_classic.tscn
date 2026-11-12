@@ -1,6 +1,6 @@
-[gd_scene format=4]
+[gd_scene format=4 uid="uid://cg60wj8d6e4bf"]
 
-[ext_resource type="TileSet" path="res://assets/sprites/arena/arena_tileset.tres" id="1_pnqx1"]
+[ext_resource type="TileSet" uid="uid://dvhis7325ae76" path="res://assets/sprites/arena/arena_tileset.tres" id="1_pnqx1"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_4rb04"]
 size = Vector2(16, 180)

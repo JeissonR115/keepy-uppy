@@ -41,7 +41,7 @@ static func handle_contacts(player: CharacterBody2D, tuning: Script) -> void:
 			_play_jump(player)
 			return
 
-	if not player.is_on_floor():
+	if not player.is_on_floor() and not bool(player.get("dash_started_grounded")):
 		return
 	if ducking:
 		velocity.x = tuning.SUPER_JUMP_H * signf(facing_direction.x)
@@ -120,6 +120,7 @@ static func end_dash(
 	player.set("dash_timer", 0.0)
 	player.set("is_dashing", false)
 	player.set("movement_state", 0)
+	player.set("dash_started_grounded", false)
 	var rescue_area: Area2D = player.get("dash_rescue_area")
 	rescue_area.monitoring = false
 

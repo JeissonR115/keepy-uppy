@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/models/player/player_hair.gd" id="1_hair"]
+
+[node name="PlayerHair" type="Node2D"]
+z_index = -1
+script = ExtResource("1_hair")
+
+[node name="StrandA" type="Line2D" parent="."]
+width = 2.5
+begin_cap_mode = 2
+end_cap_mode = 2
+joint_mode = 2
+round_precision = 4
+
+[node name="StrandB" type="Line2D" parent="."]
+width = 2.0
+begin_cap_mode = 2
+end_cap_mode = 2
+joint_mode = 2
+round_precision = 4

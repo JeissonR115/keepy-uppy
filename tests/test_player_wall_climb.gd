@@ -29,6 +29,16 @@ func _run_test() -> void:
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var player_2: CharacterBody2D = main_scene.get_node("Arena/Player2")
+	var climb_wall := StaticBody2D.new()
+	climb_wall.position = Vector2(8, 80)
+	climb_wall.collision_layer = 1
+	climb_wall.add_to_group("climbable_wall")
+	var climb_wall_shape := CollisionShape2D.new()
+	var climb_wall_rectangle := RectangleShape2D.new()
+	climb_wall_rectangle.size = Vector2(2, 500)
+	climb_wall_shape.shape = climb_wall_rectangle
+	climb_wall.add_child(climb_wall_shape)
+	arena.add_child(climb_wall)
 	player_1.reset_for_round(Vector2(14, 80))
 	for _frame in range(2):
 		await physics_frame
@@ -145,7 +155,7 @@ func _run_test() -> void:
 	player_1.global_position = Vector2(160, 152)
 	player_1.velocity = Vector2.ZERO
 	player_1.climb_stamina = 10.0
-	for _frame in range(3):
+	for _frame in range(8):
 		await physics_frame
 	if not _expect(
 		player_1.is_on_floor()

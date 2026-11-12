@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://src/managers/level_manager.gd" id="5_level_manager"]
 [ext_resource type="Script" path="res://src/scenes/levels/arena_camera.gd" id="6_arena_camera"]
 [ext_resource type="Shader" path="res://src/scenes/levels/world_screen_effect.gdshader" id="7_screen_effect"]
+[ext_resource type="Resource" path="res://src/models/player/player_visual_profile_p2.tres" id="8_player_2_profile"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_world_screen_effect"]
 shader = ExtResource("7_screen_effect")
@@ -29,6 +30,7 @@ position = Vector2(72, 144)
 [node name="Player2" parent="." instance=ExtResource("1_player")]
 position = Vector2(248, 144)
 input_prefix = "player_2"
+visual_profile = ExtResource("8_player_2_profile")
 
 [node name="Balloon" parent="." instance=ExtResource("2_balloon")]
 position = Vector2(160, 48)

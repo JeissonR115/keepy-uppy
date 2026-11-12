@@ -18,6 +18,7 @@ const JumpTechniques = preload("res://src/models/player/player_jump_techniques.g
 @export_enum("player_1", "player_2") var input_prefix: String = "player_1"
 @export var bot_enabled: bool = false
 @export var dash_rescue_half_extents: Vector2 = Vector2(22.0, 10.0)
+@export var visual_profile: Resource
 var arena_speed_multiplier: float = 1.0
 
 var coyote_timer: float = 0.0
@@ -38,6 +39,7 @@ var dash_freeze_timer: float = 0.0
 var dash_refill_cooldown_timer: float = 0.0
 var dash_available: bool = true
 var dash_ultra_triggered: bool = false
+var dash_started_grounded: bool = false
 var ducking: bool = false
 var force_move_x: float = 0.0
 var force_move_timer: float = 0.0
@@ -45,7 +47,8 @@ var is_dashing: bool = false
 var dash_rescue_hit: bool = false
 var normal_collision_height: float = 0.0
 
-@onready var visual: Polygon2D = $Visual
+@onready var visual: AnimatedSprite2D = $Visual
+@onready var action_effect: AnimatedSprite2D = $ActionEffect
 @onready var priority_indicator: Polygon2D = $PriorityIndicator
 @onready var player_collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var input_reader: PlayerInputReader = $InputReader
@@ -66,11 +69,11 @@ var idle_color: Color:
 
 func _ready() -> void:
 	input_reader.configure(input_prefix)
-	var movement_colors := PlayerActionCatalog.player_movement_colors(input_prefix)
 	presentation.configure(
-		visual, cape_anchor_a, cape_anchor_b, cape,
-		PlayerActionCatalog.player_color(input_prefix), movement_colors
+		visual, action_effect, cape_anchor_a, cape_anchor_b, cape,
+		PlayerActionCatalog.player_color(input_prefix), visual_profile, self
 	)
+	player_bumped.connect(presentation.on_player_bumped)
 	var capsule := player_collision_shape.shape.duplicate() as CapsuleShape2D
 	player_collision_shape.shape = capsule
 	normal_collision_height = capsule.height
@@ -96,10 +99,10 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	dash_refill_cooldown_timer = 0.0
 	dash_available = true
 	dash_ultra_triggered = false
+	dash_started_grounded = false
 	wall_slide_timer = 0.0
 	climb_stamina = MovementConstants.CLIMB_MAX_STAMINA
-	visual.modulate.a = 1.0
-	cape.reset_simulation()
+	presentation.reset_visuals()
 	cpu_controller.reset()
 	_set_ducking(false)
 	force_move_x = 0.0
@@ -139,7 +142,7 @@ func _physics_process(delta: float) -> void:
 		dash_freeze_timer = maxf(dash_freeze_timer - delta, 0.0)
 		velocity = Vector2.ZERO
 		if dash_freeze_timer > 0.0:
-			_update_cape_presentation(delta, true)
+			_update_cosmetic_motion(delta, true)
 			_update_presentation_state(horizontal_input, grounded, delta)
 			return
 		DashTechniques.begin_dash(self, MovementConstants)
@@ -157,10 +160,11 @@ func _physics_process(delta: float) -> void:
 		dash_cooldown_timer = MovementConstants.DASH_COOLDOWN
 		dash_freeze_timer = MovementConstants.DASH_FREEZE
 		dash_ultra_triggered = false
+		dash_started_grounded = grounded
 		movement_state = MovementState.DASH
 		is_dashing = false
 		velocity = Vector2.ZERO
-		_update_cape_presentation(delta, true)
+		_update_cosmetic_motion(delta, true)
 		_update_presentation_state(horizontal_input, grounded, delta)
 		return
 
@@ -336,10 +340,10 @@ func _physics_process(delta: float) -> void:
 		wall_slide_timer = 0.0
 
 	DashTechniques.report_player_collisions(self)
-	_update_presentation_state(horizontal_input, is_on_floor(), delta)
+	_update_presentation_state(horizontal_input, is_on_floor(), delta, jumped)
 	if movement_state == MovementState.DASH and dash_timer <= 0.0:
 		_end_dash()
-	_update_cape_presentation(delta, movement_state == MovementState.DASH and dash_freeze_timer > 0.0)
+	_update_cosmetic_motion(delta, movement_state == MovementState.DASH and dash_freeze_timer > 0.0)
 
 func _wall_direction_within(distance: float) -> float: return DashTechniques.wall_direction_within(self, distance)
 
@@ -350,7 +354,8 @@ func _perform_wall_jump(wall_jump_direction: float, from_climb: bool) -> void: C
 
 func _update_variable_jump(delta: float, bot_active: bool) -> void:
 	JumpTechniques.update_variable_jump(
-		self, delta, input_reader.jump_held(bot_enabled, bot_active, var_jump_timer)
+		self, delta, input_reader.jump_held(bot_enabled, bot_active, var_jump_timer),
+		MovementConstants.JUMP_CUT_MULTIPLIER
 	)
 
 func set_priority_indicator(active: bool) -> void: priority_indicator.visible = active
@@ -358,25 +363,19 @@ func set_priority_indicator(active: bool) -> void: priority_indicator.visible = 
 func show_touch_pixel(world_position: Vector2) -> void:
 	PresentationController.add_touch_pixel(self, world_position)
 
-func _update_cape_presentation(delta: float, frozen: bool) -> void:
-	presentation.update_cape(
+func _update_cosmetic_motion(delta: float, frozen: bool) -> void:
+	presentation.update_cosmetic_motion(
 		delta, frozen, facing_direction, ducking, velocity, dash_available,
-		is_dashing, dash_direction, dash_timer
+		is_dashing, dash_direction, dash_timer,
+		movement_state == MovementState.DASH
 	)
 
-func _update_presentation_state(horizontal_input: float, grounded: bool, delta: float) -> void:
+func _update_presentation_state(horizontal_input: float, grounded: bool, delta: float, jumped: bool = false) -> void:
 	presentation.update_visual_state(
-		horizontal_input,
-		grounded,
-		delta,
-		movement_state == MovementState.CLIMB,
-		climb_stamina,
-		is_dashing,
-		ducking,
-		velocity,
-		dash_direction,
-		wall_slide_timer,
-		facing_direction
+		horizontal_input, grounded, delta,
+		movement_state == MovementState.CLIMB, climb_stamina,
+		movement_state == MovementState.DASH, velocity,
+		wall_slide_timer, facing_direction, jumped
 	)
 
 func get_cape_color() -> Color: return presentation.get_cape_color(dash_available)

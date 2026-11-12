@@ -29,6 +29,7 @@ func _run_test() -> void:
 	var other_player: PlayerController = main_scene.get_node("Arena/Player2")
 	var cape: PlayerCape = player.get_node("Cape")
 	var other_cape: PlayerCape = other_player.get_node("Cape")
+	var other_hair: Node = other_player.get_node_or_null("PlayerHair")
 	var fill: Polygon2D = cape.get_node("Polygon2D")
 	var outline: Line2D = cape.get_node("Line2D")
 	var other_fill: Polygon2D = other_cape.get_node("Polygon2D")
@@ -140,8 +141,10 @@ func _run_test() -> void:
 		return
 	player.global_position = Vector2(120, 152)
 	player.velocity = Vector2.ZERO
-	for _frame in range(3):
+	for _frame in range(12):
 		await physics_frame
+		if player.is_on_floor() and player.dash_available:
+			break
 	if not _expect(
 		player.dash_available
 		and is_equal_approx(fill.color.s, MovementConstants.CAPE_VIVID_SATURATION_MIN)
@@ -150,6 +153,8 @@ func _run_test() -> void:
 		"Landing did not restore only the landing player's vivid cape."
 	):
 		return
+	for _frame in range(20):
+		await physics_frame
 
 	for column in 2:
 		var column_length := 0.0
@@ -160,7 +165,7 @@ func _run_test() -> void:
 			)
 			if not _expect(
 				absf(segment_length - MovementConstants.CAPE_SEGMENT) < 0.25,
-				"Cape segment length drifted beyond the constraint tolerance."
+				"Cape segment length drifted beyond the constraint tolerance: column=%s row=%s length=%s." % [column, row, segment_length]
 			):
 				return
 			column_length += segment_length
@@ -250,12 +255,13 @@ func _run_test() -> void:
 	):
 		return
 	if not _expect(
-		other_cape.initialized and other_cape.positions[0].is_equal_approx(
-			other_player.get_node("CapeAnchors/AnchorA").global_position
-		),
-		"Second player's cape did not simulate independently."
+		not other_cape.visible
+		and other_hair != null
+		and other_hair.visible
+		and other_hair.find_children("*", "CollisionObject2D", true, false).is_empty(),
+		"P2 should use the cosmetic hair profile without duplicating P1's cape."
 	):
 		return
 
-	print("Cape geometry, dash palette, per-player transitions, anchors, freeze, respawn, and recovery verified.")
+	print("P1 cape geometry, dash palette, anchors, freeze, respawn, recovery, and P2 hair profile verified.")
 	quit()

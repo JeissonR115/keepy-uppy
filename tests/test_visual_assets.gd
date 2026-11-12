@@ -60,7 +60,8 @@ func _run_test() -> void:
 			and capsule.radius == 5.0
 			and capsule.height == 23.0
 			and player.player_collision_shape.position == Vector2(0, 0.5)
-			and player.get_node("Cape") is PlayerCape,
+			and player.get_node("Cape") is PlayerCape
+			and player.cape.visible == bool(player.visual_profile.get("cape_enabled")),
 			"%s sprite resources, retained collision, or cape are incorrectly configured." % player_name
 		):
 			return
@@ -91,17 +92,58 @@ func _run_test() -> void:
 					"%s effect frame %s is missing or is not 32 by 32 pixels." % [animation_name, frame_index]
 				):
 					return
+		var body_map: Dictionary = player.visual_profile.get("body_animation_map")
+		var effect_map: Dictionary = player.visual_profile.get("effect_animation_map")
+		for state_name: String in [
+			"idle", "run_slow", "run_fast", "jump_start", "rise", "fall",
+			"fall_fast", "dash", "wall_slide", "climb_up", "climb_down", "climb_up_entry"
+		]:
+			var clip_name := str(body_map.get(state_name, ""))
+			if not _expect(
+				not clip_name.is_empty() and player.visual.sprite_frames.has_animation(clip_name),
+				"%s profile has no valid body clip for state %s." % [player_name, state_name]
+			):
+				return
+		for state_name: String in ["jump", "climb_entry", "climb_loop", "idle_loop", "danger"]:
+			var clip_name := str(effect_map.get(state_name, ""))
+			if not _expect(
+				not clip_name.is_empty() and effect.sprite_frames.has_animation(clip_name),
+				"%s profile has no valid effect clip for state %s." % [player_name, state_name]
+			):
+				return
 	var player_1 := main_scene.get_node("Arena/Player1") as PlayerController
 	var player_2 := main_scene.get_node("Arena/Player2") as PlayerController
 	if not _expect(
 		player_1.visual.sprite_frames == player_2.visual.sprite_frames
 		and player_1.action_effect.sprite_frames == player_2.action_effect.sprite_frames
+		and player_1.visual_profile != player_2.visual_profile
+		and player_1.visual_profile.get("body_frames") == player_1.visual.sprite_frames
+		and player_2.visual_profile.get("body_frames") == player_2.visual.sprite_frames
+		and player_1.visual_profile.get("tint") == Color.WHITE
+		and player_2.visual_profile.get("tint") == PlayerPresentationController.PLAYER_TWO_TINT
+		and player_1.visual_profile.get("cape_enabled")
+		and not player_2.visual_profile.get("cape_enabled")
+		and not player_1.visual_profile.get("hair_enabled")
+		and player_2.visual_profile.get("hair_enabled")
 		and player_1.visual.flip_h == player_2.visual.flip_h
 		and player_1.visual.modulate == Color.WHITE
 		and player_1.get_node("ActionEffect").modulate == Color.WHITE
 		and player_2.visual.modulate == PlayerPresentationController.PLAYER_TWO_TINT
 		and player_2.get_node("ActionEffect").modulate == PlayerPresentationController.PLAYER_TWO_TINT,
-		"Player 2's body and effects do not use the subtle orange tint."
+		"P1/P2 profiles are not independently configured with the expected frames and tint."
+	):
+		return
+	var p1_capsule := player_1.player_collision_shape.shape as CapsuleShape2D
+	var p2_capsule := player_2.player_collision_shape.shape as CapsuleShape2D
+	if not _expect(
+		p1_capsule.radius == p2_capsule.radius
+		and p1_capsule.height == p2_capsule.height
+		and player_1.player_collision_shape.position == player_2.player_collision_shape.position
+		and player_1.collision_layer == player_2.collision_layer
+		and player_1.collision_mask == player_2.collision_mask
+		and player_1.dash_rescue_area.get_parent() == player_1
+		and player_2.dash_rescue_area.get_parent() == player_2,
+		"Visual profiles altered player collision geometry, layers, or rescue-area ownership."
 	):
 		return
 

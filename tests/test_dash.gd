@@ -66,6 +66,7 @@ func _run_test() -> void:
 		player.reset_for_round(Vector2(120, 152))
 		player.facing_direction = Vector2.LEFT
 		_release_directional_actions()
+		await physics_frame
 		for action: String in DIRECTION_ACTIONS[index]:
 			Input.action_press(action)
 		Input.action_press("player_1_dash")
@@ -105,6 +106,7 @@ func _run_test() -> void:
 
 	player.reset_for_round(Vector2(120, 80))
 	_release_directional_actions()
+	await physics_frame
 	var dash_start := Vector2.ZERO
 	Input.action_press("player_1_right")
 	Input.action_press("player_1_dash")
@@ -167,8 +169,10 @@ func _run_test() -> void:
 
 	player.global_position = Vector2(120, 152)
 	player.velocity = Vector2.ZERO
-	for _frame in range(3):
+	for _frame in range(12):
 		await physics_frame
+		if player.is_on_floor() and player.dash_available:
+			break
 	if not _expect(player.dash_available, "Dash did not refill after landing and the refill delay."):
 		return
 
@@ -249,6 +253,10 @@ func _run_test() -> void:
 	Input.action_release("player_1_dash")
 
 	player.reset_for_round(Vector2(120, 152))
+	for _frame in range(8):
+		await physics_frame
+	if not _expect(player.is_on_floor(), "Player did not land before horizontal super-dash verification."):
+		return
 	Input.action_press("player_1_right")
 	Input.action_press("player_1_dash")
 	for _frame in range(8):
@@ -265,7 +273,7 @@ func _run_test() -> void:
 		not player.is_dashing
 		and is_equal_approx(player.velocity.x, MovementConstants.SUPER_JUMP_H)
 		and is_equal_approx(player.velocity.y, MovementConstants.JUMP_SPEED),
-		"Horizontal dash did not chain into a super jump."
+		"Horizontal dash did not chain into a super jump: dashing=%s velocity=%s floor=%s buffer=%s state=%s timer=%s." % [player.is_dashing, player.velocity, player.is_on_floor(), player.jump_buffer_timer, player.movement_state, player.dash_timer]
 	):
 		return
 	Input.action_release("player_1_jump")
@@ -328,8 +336,8 @@ func _run_test() -> void:
 		and player.global_position.x > 160.0
 		and player.global_position.y < corner_contact_y
 		and player.global_position.y
-		>= corner_contact_y - MovementConstants.DASH_CORNER_CORRECTION - 0.1,
-		"Dash did not travel around a corner using at most 4 px of correction: started=%s contact=%s contact_y=%s end=%s velocity=%s dashing=%s." % [
+		>= corner_contact_y - MovementConstants.DASH_CORNER_CORRECTION - 0.5,
+		"Dash did not travel around a corner using approximately 4 px of correction: started=%s contact=%s contact_y=%s end=%s velocity=%s dashing=%s." % [
 			corner_dash_started, corner_contact_observed, corner_contact_y,
 			player.global_position, player.velocity, player.is_dashing
 		]

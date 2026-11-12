@@ -36,3 +36,15 @@ Ruta base: `res://assets/sprites/Animations/player_sweat/`. Tipo de recurso en j
 | `idle` | 1 | Excluido: `f0.png` es completamente transparente |
 
 El arte de jugador 2 reutiliza estos mismos recursos con modulación naranja aplicada al dibujado. La selección de clips se deriva de los estados existentes; este manifiesto no introduce estados de juego nuevos.
+
+## Perfiles visuales
+
+`player_visual_profile_p1.tres` y `player_visual_profile_p2.tres` configuran por separado las secuencias de cuerpo y efectos, el tinte, los anclajes de cape/pelo y los nombres de clip para cada estado visual. Ambos perfiles apuntan a los `SpriteFrames` que ya estaban en el proyecto; P2 conserva el matiz naranja existente. P1 activa la cape y P2 el pelo, sin duplicar adornos. Los mapas de animación son editables por perfil, aunque actualmente asignan los mismos clips a los estados compartidos. La cápsula, capas físicas y `DashRescueArea` siguen fuera del perfil y del subárbol visual.
+
+El perfil P2 agrega `PlayerHair` con dos trazos de seis segmentos, anclados independientemente del cuerpo. Su seguimiento amortiguado reacciona a velocidad, facing y dash; `reset_for_round()` restablece puntos y anclajes. No usa el pelo ni el código de la referencia y no crea objetos o señales físicas.
+
+## Fuente y autorización
+
+Las carpetas de cuerpo y efectos ya estaban en el proyecto antes de esta reimplementación; el manifiesto del repositorio no registra su creador ni una licencia de redistribución aplicable. Esta propuesta no copia ni importa sprites de los repositorios de referencia y no afirma derechos sobre los PNG locales. Los perfiles solo reasignan los `SpriteFrames` existentes. La atribución/licencia de las referencias y la decisión de no importar sus gráficos están documentadas en [reference-celeste-demo-comparison.md](../reference-celeste-demo-comparison.md).
+
+La calidad de importación, dimensiones y clips se comprueban en `tests/test_visual_assets.gd`; los estados en `tests/test_visual_feedback.gd`; la simulación procedural en `tests/test_player_hair.gd`. El inventario enumera los archivos fuente y recursos reproducidos; los GIF de vista previa no se usan en tiempo de ejecución.

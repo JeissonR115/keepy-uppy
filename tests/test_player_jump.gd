@@ -132,14 +132,14 @@ func _run_test() -> void:
 	Input.action_release("player_1_jump")
 	for _frame in range(40):
 		await physics_frame
-	player_1.global_position = Vector2(170, 80)
+	player_1.global_position = Vector2(170, 0)
 	player_1.velocity = Vector2(0.0, 100.0)
 	Input.action_press("player_1_jump")
 	await physics_frame
 	Input.action_release("player_1_jump")
 	for _frame in range(ceili(MovementConstants.JUMP_BUFFER * 60.0) + 2):
 		await physics_frame
-	for _frame in range(40):
+	for _frame in range(80):
 		await physics_frame
 		if player_1.is_on_floor():
 			break

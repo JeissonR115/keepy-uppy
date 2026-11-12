@@ -3,40 +3,81 @@ extends RefCounted
 
 const MovementConstants = preload("res://src/models/player/player_movement_constants.gd")
 const TOUCH_PIXEL_SCENE = preload("res://src/scenes/ui/components/touch_pixel.tscn")
+const PLAYER_HAIR_SCENE = preload("res://src/models/player/player_hair.tscn")
 const STEP_DISTANCE := 14.0
+const PLAYER_TWO_TINT := Color(1.0, 0.84, 0.70, 1.0)
 
-var visual: Polygon2D
+var visual: AnimatedSprite2D
+var action_effect: AnimatedSprite2D
 var cape_anchor_a: Marker2D
 var cape_anchor_b: Marker2D
 var cape: PlayerCape
+var profile: Resource
+var player_hair: Node2D
 var idle_color: Color
-var run_color: Color
-var rise_color: Color
-var fall_color: Color
-var dash_color: Color = Color.WHITE
-var run_animation_time: float = 0.0
 var tired_blink_timer: float = 0.0
 var step_distance: float = 0.0
+var current_body_animation := ""
+var body_one_shot_active := false
+var current_effect_animation := ""
+var effect_one_shot_active := false
+var effect_priority := 0
+var was_climbing := false
 
 func configure(
-	player_visual: Polygon2D,
+	player_visual: AnimatedSprite2D,
+	player_action_effect: AnimatedSprite2D,
 	anchor_a: Marker2D,
 	anchor_b: Marker2D,
 	player_cape: PlayerCape,
 	identity_color: Color,
-	movement_colors: Dictionary
+	player_profile: Resource,
+	player_root: Node2D
 ) -> void:
 	visual = player_visual
+	action_effect = player_action_effect
 	cape_anchor_a = anchor_a
 	cape_anchor_b = anchor_b
 	cape = player_cape
+	profile = player_profile
 	idle_color = identity_color
-	run_color = movement_colors.run
-	rise_color = movement_colors.rise
-	fall_color = movement_colors.fall
-	visual.color = idle_color
+	visual.sprite_frames = profile.get("body_frames") as SpriteFrames
+	action_effect.sprite_frames = profile.get("effect_frames") as SpriteFrames
+	visual.modulate = profile.get("tint") as Color
+	action_effect.modulate = profile.get("tint") as Color
+	cape_anchor_a.position = profile.get("anchor_a") as Vector2
+	cape_anchor_b.position = profile.get("anchor_b") as Vector2
+	cape.visible = bool(profile.get("cape_enabled"))
+	if bool(profile.get("hair_enabled")):
+		player_hair = PLAYER_HAIR_SCENE.instantiate() as Node2D
+		player_root.add_child(player_hair)
+		player_hair.call(
+			"configure", profile.get("hair_anchor_a"),
+			profile.get("hair_anchor_b"), profile.get("hair_color")
+		)
+	visual.animation_finished.connect(_on_body_animation_finished)
+	action_effect.animation_finished.connect(_on_effect_animation_finished)
+	current_body_animation = "idle"
+	visual.play("idle")
+	action_effect.visible = false
 
-func update_cape(
+func reset_visuals() -> void:
+	cape.reset_simulation()
+	if player_hair != null:
+		player_hair.call("reset_simulation")
+	tired_blink_timer = 0.0
+	was_climbing = false
+	body_one_shot_active = false
+	current_body_animation = "idle"
+	visual.modulate.a = 1.0
+	visual.play("idle")
+	effect_one_shot_active = false
+	effect_priority = 0
+	current_effect_animation = ""
+	action_effect.stop()
+	action_effect.visible = false
+
+func update_cosmetic_motion(
 	delta: float,
 	frozen: bool,
 	facing_direction: Vector2,
@@ -45,28 +86,28 @@ func update_cape(
 	dash_available: bool,
 	is_dashing: bool,
 	dash_direction: Vector2,
-	dash_timer: float
+	dash_timer: float,
+	dashing: bool
 ) -> void:
-	var facing_sign := -1.0 if facing_direction.x < 0.0 else 1.0
-	var duck_offset := MovementConstants.CAPE_DUCK_OFFSET if ducking else 0.0
-	cape_anchor_a.position = Vector2(
-		MovementConstants.CAPE_ANCHOR_A.x * facing_sign,
-		MovementConstants.CAPE_ANCHOR_A.y + duck_offset
-	)
-	cape_anchor_b.position = Vector2(
-		MovementConstants.CAPE_ANCHOR_B.x * facing_sign,
-		MovementConstants.CAPE_ANCHOR_B.y + duck_offset
-	)
-	cape.simulate(
-		delta,
-		cape_anchor_a.global_position,
-		cape_anchor_b.global_position,
-		velocity,
-		get_cape_color(dash_available),
-		frozen,
-		dash_direction if is_dashing else Vector2.ZERO,
-		(1.0 - dash_timer / MovementConstants.DASH_TIME) if is_dashing else 0.0
-	)
+	if cape.visible:
+		var facing_sign := -1.0 if facing_direction.x < 0.0 else 1.0
+		var duck_offset := MovementConstants.CAPE_DUCK_OFFSET if ducking else 0.0
+		cape_anchor_a.position = Vector2(
+			MovementConstants.CAPE_ANCHOR_A.x * facing_sign,
+			MovementConstants.CAPE_ANCHOR_A.y + duck_offset
+		)
+		cape_anchor_b.position = Vector2(
+			MovementConstants.CAPE_ANCHOR_B.x * facing_sign,
+			MovementConstants.CAPE_ANCHOR_B.y + duck_offset
+		)
+		cape.simulate(
+			delta, cape_anchor_a.global_position, cape_anchor_b.global_position,
+			velocity, get_cape_color(dash_available), frozen,
+			dash_direction if is_dashing else Vector2.ZERO,
+			(1.0 - dash_timer / MovementConstants.DASH_TIME) if is_dashing else 0.0
+		)
+	if player_hair != null:
+		player_hair.call("simulate", delta, velocity, facing_direction, dashing, dash_direction, frozen)
 
 func get_cape_color(dash_available: bool) -> Color:
 	if dash_available:
@@ -87,12 +128,11 @@ func update_visual_state(
 	delta: float,
 	climbing: bool,
 	climb_stamina: float,
-	is_dashing: bool,
-	ducking: bool,
+	dashing: bool,
 	velocity: Vector2,
-	dash_direction: Vector2,
 	wall_slide_timer: float,
-	facing_direction: Vector2
+	facing_direction: Vector2,
+	jumped: bool
 ) -> void:
 	if climbing and climb_stamina < MovementConstants.CLIMB_TIRED_THRESHOLD:
 		tired_blink_timer = fmod(
@@ -108,37 +148,103 @@ func update_visual_state(
 		tired_blink_timer = 0.0
 		visual.modulate.a = 1.0
 
-	visual.scale = Vector2.ONE
-	visual.rotation = 0.0
-	if is_dashing:
-		visual.color = dash_color
-		visual.scale = Vector2(1.15, 0.85)
-		visual.rotation = dash_direction.angle()
-	elif ducking:
-		visual.color = fall_color
-		visual.scale = Vector2(1.0, 0.7)
-	elif climbing:
-		visual.color = run_color
+	visual.flip_h = facing_direction.x < 0.0
+	action_effect.flip_h = visual.flip_h
+	var body_animation := _mapped_body_animation(_body_animation_for_state(
+		horizontal_input, grounded, climbing, dashing, velocity, wall_slide_timer
+	))
+	if dashing:
+		body_one_shot_active = false
+		_play_body_animation(body_animation)
+	elif jumped:
+		_play_body_animation(_mapped_body_animation("jump_start"), true)
+		play_effect_once("jump", 2)
+	elif climbing and not was_climbing and velocity.y < 0.0:
+		_play_body_animation(_mapped_body_animation("climb_up_entry"), true)
+		play_effect_once("climb_entry", 1)
+	elif climbing and not was_climbing:
+		play_effect_once("climb_entry", 1)
+	if not body_one_shot_active:
+		_play_body_animation(body_animation)
+	was_climbing = climbing
+	_update_effect_loop(
+		"climb_loop" if climbing else "idle_loop" if grounded and is_zero_approx(horizontal_input) else ""
+	)
+
+func _body_animation_for_state(
+	horizontal_input: float,
+	grounded: bool,
+	climbing: bool,
+	dashing: bool,
+	velocity: Vector2,
+	wall_slide_timer: float
+) -> String:
+	if dashing:
+		return "dash"
+	if climbing:
+		return "climb_up" if velocity.y < 0.0 else "climb_down"
+	if wall_slide_timer > 0.0 and not grounded:
+		return "wall_slide"
+	if not grounded:
 		if velocity.y < 0.0:
-			visual.rotation = -0.08
-		elif velocity.y > 0.0:
-			visual.rotation = 0.08
-	elif wall_slide_timer > 0.0 and not grounded:
-		visual.color = fall_color
-		visual.rotation = -0.08 if facing_direction.x < 0.0 else 0.08
-	elif not grounded:
-		if velocity.y < 0.0:
-			visual.color = rise_color
-		else:
-			visual.color = fall_color
-			visual.scale = Vector2(1.08, 0.92)
-	elif not is_zero_approx(horizontal_input):
-		run_animation_time += delta
-		var squash := sin(run_animation_time * 14.0) * 0.05
-		visual.color = run_color
-		visual.scale = Vector2(1.0 + squash * 0.5, 1.0 - squash * 0.5)
-	else:
-		visual.color = idle_color
+			return "rise"
+		return "fall_fast" if velocity.y >= MovementConstants.MAX_FALL else "fall"
+	if not is_zero_approx(horizontal_input):
+		return "run_fast" if absf(velocity.x) >= MovementConstants.MAX_RUN * 0.7 else "run_slow"
+	return "idle"
+
+func _mapped_body_animation(state_name: String) -> String:
+	var animation_map: Dictionary = profile.get("body_animation_map")
+	return str(animation_map.get(state_name, state_name))
+
+func _mapped_effect_animation(state_name: String) -> String:
+	var animation_map: Dictionary = profile.get("effect_animation_map")
+	return str(animation_map.get(state_name, state_name))
+
+func _play_body_animation(animation_name: String, one_shot: bool = false) -> void:
+	if body_one_shot_active and not one_shot:
+		return
+	if current_body_animation == animation_name and not one_shot:
+		return
+	current_body_animation = animation_name
+	body_one_shot_active = one_shot
+	visual.play(animation_name)
+
+func _on_body_animation_finished() -> void:
+	body_one_shot_active = false
+
+func play_effect_once(animation_name: String, priority: int) -> void:
+	animation_name = _mapped_effect_animation(animation_name)
+	if effect_one_shot_active and priority <= effect_priority:
+		return
+	effect_priority = priority
+	effect_one_shot_active = true
+	current_effect_animation = animation_name
+	action_effect.visible = true
+	action_effect.play(animation_name)
+
+func on_player_bumped(_player: CharacterBody2D, _opponent: CharacterBody2D, _while_dashing: bool) -> void:
+	play_effect_once("danger", 3)
+
+func _update_effect_loop(animation_name: String) -> void:
+	if not animation_name.is_empty():
+		animation_name = _mapped_effect_animation(animation_name)
+	if effect_one_shot_active:
+		return
+	if animation_name.is_empty():
+		current_effect_animation = ""
+		action_effect.visible = false
+		action_effect.stop()
+	elif current_effect_animation != animation_name:
+		current_effect_animation = animation_name
+		action_effect.visible = true
+		action_effect.play(animation_name)
+
+func _on_effect_animation_finished() -> void:
+	if effect_one_shot_active:
+		effect_one_shot_active = false
+		effect_priority = 0
+		current_effect_animation = ""
 
 func reset_footsteps() -> void:
 	step_distance = 0.0
