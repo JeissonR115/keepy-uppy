@@ -57,9 +57,11 @@ func _run_test() -> void:
 		return
 	var final_ghost := player.presentation.active_afterimages.back() as Area2D
 	var final_ghost_sprite := final_ghost.get_node("Sprite") as Sprite2D
+	var source_sprite := player.visual as AnimatedSprite2D
 	if not _expect(
 		final_ghost_sprite.texture != null
 		and final_ghost_sprite.modulate.a > 0.0
+		and final_ghost_sprite.z_index > source_sprite.z_index
 		and final_ghost.collision_mask == 4
 		and final_ghost.collision_layer == 0,
 		"Afterimage does not repeat the player sprite with a translucent visual-only rescue sensor."

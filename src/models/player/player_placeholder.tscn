@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://ht8jd5u6v3sh" path="res://src/models/player/cpu_controller.gd" id="4_cpu_controller"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player/player_frames.tres" id="5_player_frames"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player_sweat/player_sweat_frames.tres" id="6_effect_frames"]
-[ext_resource type="Resource" path="res://src/models/player/player_visual_profile_p1.tres" id="7_profile"]
+[ext_resource type="Resource" uid="uid://bqtk7p0ns37bu" path="res://src/models/player/player_visual_profile_p1.tres" id="7_profile"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_i0oji"]
 radius = 3.0
@@ -20,7 +20,6 @@ collision_mask = 7
 script = ExtResource("1_player_controller")
 visual_profile = ExtResource("7_profile")
 
-
 [node name="PriorityIndicator" type="Polygon2D" parent="." unique_id=441771129]
 visible = false
 z_index = -1
@@ -28,15 +27,16 @@ color = Color(1, 0.839216, 0.317647, 0.8)
 polygon = PackedVector2Array(-9, -13, 0, -18, 9, -13, 9, 13, 0, 18, -9, 13)
 
 [node name="Visual" type="AnimatedSprite2D" parent="." unique_id=218045876]
+z_index = 10
 position = Vector2(1, -9.000001)
-scale = Vector2(1, 1.09375)
 sprite_frames = ExtResource("5_player_frames")
-animation = &"idle"
+animation = &"wallslide"
 autoplay = "idle"
+frame_progress = 0.34779647
 
 [node name="ActionEffect" type="AnimatedSprite2D" parent="." unique_id=-514821075]
 visible = false
-z_index = 1
+z_index = 11
 position = Vector2(0, -4)
 sprite_frames = ExtResource("6_effect_frames")
 animation = &"climb"

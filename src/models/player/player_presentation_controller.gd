@@ -61,7 +61,7 @@ func configure(
 func reset_visuals() -> void:
 	clear_dash_afterimages()
 	if player_hair != null:
-		player_hair.call("reset_simulation")
+		player_hair.call("reset_state")
 	tired_blink_timer = 0.0
 	was_climbing = false
 	body_one_shot_active = false
@@ -122,7 +122,7 @@ func update_cosmetic_motion(
 ) -> void:
 	if player_hair != null:
 		player_hair.call(
-			"simulate", delta, velocity, facing_direction,
+			"set_motion_state", velocity, facing_direction,
 			dashing, dash_direction, frozen
 		)
 
@@ -138,6 +138,8 @@ func update_visual_state(
 	facing_direction: Vector2,
 	jumped: bool
 ) -> void:
+	if player_hair != null:
+		player_hair.call("update_state", delta, grounded, dashing, visual)
 	if climbing and climb_stamina < MovementConstants.CLIMB_TIRED_THRESHOLD:
 		tired_blink_timer = fmod(
 			tired_blink_timer + delta,

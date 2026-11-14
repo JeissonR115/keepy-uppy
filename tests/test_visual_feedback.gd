@@ -15,10 +15,23 @@ func _expect(condition: bool, message: String) -> bool:
 	return false
 
 
+func _record_test_body_animation_finished(player: CharacterBody2D) -> void:
+	player.set_meta("test_body_animation_finished", true)
+
+
+func _wait_for_test_body_animation_finished(player: CharacterBody2D) -> bool:
+	for _frame in range(60):
+		if player.get_meta("test_body_animation_finished", false):
+			return true
+		await create_timer(0.02).timeout
+	return player.get_meta("test_body_animation_finished", false)
+
+
 func _run_test() -> void:
 	var main_scene: Node = load("res://src/scenes/main/main.tscn").instantiate()
 	root.add_child(main_scene)
 	await process_frame
+	paused = false
 
 	var arena: Node = main_scene.get_node("Arena")
 	var player_1: CharacterBody2D = arena.get_node("Player1")
@@ -103,6 +116,14 @@ func _run_test() -> void:
 		"A held airborne state restarted a one-shot animation."
 	):
 		return
+	player_1.set_meta("test_body_animation_finished", false)
+	player_1.visual.animation_finished.connect(
+		_record_test_body_animation_finished.bind(player_1), CONNECT_ONE_SHOT
+	)
+	player_1._update_presentation_state(0.0, false, 1.0 / 60.0, true)
+	var player_1_one_shot_ok: bool = await _expect_body_one_shot(player_1, "P1")
+	if not player_1_one_shot_ok:
+		return
 	player_1.movement_state = PlayerController.MovementState.DASH
 	player_1._update_presentation_state(0.0, false, 1.0 / 60.0)
 	if not _expect(player_1.visual.animation == "dash", "Dash did not take priority over a jump one-shot."):
@@ -145,6 +166,14 @@ func _run_test() -> void:
 		"Player 2's action animation, facing, or orange effect tint did not match player 1's."
 	):
 		return
+	player_2.set_meta("test_body_animation_finished", false)
+	player_2.visual.animation_finished.connect(
+		_record_test_body_animation_finished.bind(player_2), CONNECT_ONE_SHOT
+	)
+	player_2._update_presentation_state(0.0, false, 1.0 / 60.0, true)
+	var player_2_one_shot_ok: bool = await _expect_body_one_shot(player_2, "P2")
+	if not player_2_one_shot_ok:
+		return
 
 	var previous_priority: CharacterBody2D = match_manager.priority_player
 	var next_priority := player_2 if previous_priority == player_1 else player_1
@@ -166,3 +195,18 @@ func _run_test() -> void:
 
 	print("Player sprite states and effects, pixel hair, priority indicator, and balloon impact flash verified.")
 	quit()
+
+
+func _expect_body_one_shot(player: PlayerController, label: String) -> bool:
+	var finished: bool = await _wait_for_test_body_animation_finished(player)
+	if not _expect(
+		finished and not player.presentation.body_one_shot_active,
+		"%s flip animation did not finish and release its one-shot gate." % label
+	):
+		return false
+	player.velocity.y = -1.0
+	player._update_presentation_state(0.0, false, 1.0 / 60.0)
+	return _expect(
+		player.visual.animation == "dangling",
+		"%s did not return to movement-state animation after flip finished." % label
+	)

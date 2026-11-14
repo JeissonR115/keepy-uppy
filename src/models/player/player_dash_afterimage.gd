@@ -27,7 +27,7 @@ func configure(
 	ghost_sprite.flip_h = source_sprite.flip_h
 	ghost_sprite.offset = source_sprite.offset
 	ghost_sprite.modulate = ghost_tint
-	ghost_sprite.z_index = source_sprite.z_index - 1
+	ghost_sprite.z_index = source_sprite.z_index + 1
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = rescue_size
 	collision_shape.shape = rectangle

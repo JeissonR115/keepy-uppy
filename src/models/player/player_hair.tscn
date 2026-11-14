@@ -1,17 +1,64 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://dcyci5sv744mk"]
 
-[ext_resource type="Script" path="res://src/models/player/player_hair.gd" id="1_hair"]
+[ext_resource type="Script" uid="uid://ckl2wq2wdhslh" path="res://src/models/player/player_hair.gd" id="1_hair"]
+[ext_resource type="Texture2D" uid="uid://cwa1i58kgb2ey" path="res://assets/sprites/player_hair/hair_strand.svg" id="2_strand"]
+[ext_resource type="Texture2D" uid="uid://ti3tgjy64yd2" path="res://assets/sprites/player_hair/hair_base.svg" id="3_base"]
 
-[node name="PlayerHair" type="Node2D"]
-z_index = -1
+[sub_resource type="Curve" id="Curve_hair"]
+_data = [Vector2(0, 0.487544), 0.0, 0.0, 0, 0, Vector2(0.549279, 1), -0.0989701, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Shader" id="Shader_outline"]
+code = "shader_type canvas_item;
+uniform vec4 outline_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+void fragment() {
+	vec4 center = texture(TEXTURE, UV);
+	float neighbor = 0.0;
+	vec2 pixel = TEXTURE_PIXEL_SIZE;
+	neighbor = max(neighbor, texture(TEXTURE, UV + vec2(pixel.x, 0.0)).a);
+	neighbor = max(neighbor, texture(TEXTURE, UV - vec2(pixel.x, 0.0)).a);
+	neighbor = max(neighbor, texture(TEXTURE, UV + vec2(0.0, pixel.y)).a);
+	neighbor = max(neighbor, texture(TEXTURE, UV - vec2(0.0, pixel.y)).a);
+	COLOR = center.a > 0.0 ? center : vec4(outline_color.rgb, neighbor * outline_color.a);
+}"
+
+[sub_resource type="ShaderMaterial" id="Material_outline"]
+shader = SubResource("Shader_outline")
+shader_parameter/outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="ViewportTexture" id="Hair_texture"]
+viewport_path = NodePath("HairViewport")
+
+[node name="PlayerHair" type="Node2D" unique_id=1389091618]
+z_index = 8
+texture_filter = 1
 script = ExtResource("1_hair")
 
-[node name="StrandA" type="Line2D" parent="."]
-texture_filter = 1
-width = 2.0
-antialiased = false
+[node name="HairViewport" type="SubViewport" parent="." unique_id=873539665]
+transparent_bg = true
+canvas_item_default_texture_filter = 1
+size = Vector2i(24, 24)
 
-[node name="StrandB" type="Line2D" parent="."]
+[node name="Strand" type="Line2D" parent="HairViewport" unique_id=549029986]
+clip_children = 2
+z_index = -1
 texture_filter = 1
-width = 2.0
-antialiased = false
+points = PackedVector2Array(12, 12, 2, 18)
+width = 6.0
+width_curve = SubResource("Curve_hair")
+texture = ExtResource("2_strand")
+texture_mode = 2
+
+[node name="HairBase" type="Sprite2D" parent="HairViewport" unique_id=1222676214]
+texture_filter = 1
+position = Vector2(12, 12)
+texture = ExtResource("3_base")
+
+[node name="HairOutput" type="Sprite2D" parent="." unique_id=1905619959]
+z_index = 0
+material = SubResource("Material_outline")
+position = Vector2(1, -20)
+texture = SubResource("Hair_texture")
+
+[node name="HairPivot" type="Marker2D" parent="." unique_id=1311783251]
+position = Vector2(1, -11)
