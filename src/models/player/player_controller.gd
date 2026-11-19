@@ -192,11 +192,19 @@ func _physics_process(delta: float) -> void:
 
 	if not bot_enabled and not input_reader.jump_button_held():
 		jump_input_blocked_until_release = false
+	var jump_available := grounded
+	if bot_enabled and bot_active and cpu_intents.jump and not grounded:
+		jump_available = _wall_direction_within(MovementConstants.WALL_CHECK_DIST) != 0.0
 	if not can_accept_gameplay_input:
 		jump_buffer_timer = 0.0
 	elif (
 		(not jump_input_blocked_until_release or bot_enabled)
-		and input_reader.jump_requested(bot_enabled, bot_active, grounded, cpu_intents.jump)
+		and input_reader.jump_requested(
+			bot_enabled,
+			bot_active,
+			jump_available,
+			cpu_intents.jump
+		)
 	):
 		if grounded and down_held and SurfaceTechniques.is_on_one_way_platform(self):
 			SurfaceTechniques.begin_platform_drop(

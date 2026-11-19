@@ -13,7 +13,9 @@ const ALLOWED_COMMANDS := [
 	"step",
 	"set_speed",
 	"get_level_geometry",
+	"probe_movement",
 	"load_nav_graph",
+	"set_nav_route",
 	"close",
 ]
 
@@ -277,9 +279,34 @@ func _validate_command_payload(command: String, payload: Dictionary) -> String:
 		"get_level_geometry":
 			if payload.has("level") and not _is_nonempty_string(payload["level"]):
 				return "get_level_geometry level must be a non-empty string when provided."
+		"probe_movement":
+			if payload.has("level") and not _is_nonempty_string(payload["level"]):
+				return "probe_movement level must be a non-empty string when provided."
+			if not ["jump", "dash"].has(payload.get("movement")):
+				return "probe_movement requires movement 'jump' or 'dash'."
+			if not _is_vector2_payload(payload.get("start_position")):
+				return "probe_movement requires a finite start_position with x and y."
+			if payload["movement"] == "jump":
+				if not _is_number(payload.get("horizontal")) or not is_finite(float(payload["horizontal"])):
+					return "Jump probe requires a finite horizontal intent."
+				if absf(float(payload["horizontal"])) > 1.0:
+					return "Jump probe horizontal intent must be between -1 and 1."
+			elif not _is_vector2_payload(payload.get("direction")):
+				return "Dash probe requires a finite direction with x and y."
+			elif Vector2(
+				float(payload["direction"]["x"]), float(payload["direction"]["y"])
+			).is_zero_approx():
+				return "Dash probe direction must not be zero."
 		"load_nav_graph":
 			if not payload.get("graph") is Dictionary:
 				return "load_nav_graph requires a graph object."
+		"set_nav_route":
+			if not _is_nonempty_string(payload.get("level")):
+				return "set_nav_route requires a non-empty level id."
+			if not _is_integer(payload.get("start_node")):
+				return "set_nav_route requires an integer start_node."
+			if not _is_integer(payload.get("destination_node")):
+				return "set_nav_route requires an integer destination_node."
 		"close":
 			pass
 	return ""
@@ -360,6 +387,18 @@ func _is_integer(value: Variant) -> bool:
 
 func _is_nonempty_string(value: Variant) -> bool:
 	return typeof(value) == TYPE_STRING and not value.strip_edges().is_empty()
+
+
+func _is_vector2_payload(value: Variant) -> bool:
+	return (
+		value is Dictionary
+		and value.has("x")
+		and value.has("y")
+		and _is_number(value["x"])
+		and _is_number(value["y"])
+		and is_finite(float(value["x"]))
+		and is_finite(float(value["y"]))
+	)
 
 
 func _send_message(message: Dictionary) -> bool:

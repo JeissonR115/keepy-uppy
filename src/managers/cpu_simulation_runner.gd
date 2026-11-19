@@ -9,6 +9,11 @@ const DEFAULT_OPTIONS := {
 }
 const VALID_MODES := ["cpu-vs-cpu", "cpu-vs-scripted"]
 const MAX_PHYSICS_TICKS_PER_SECOND := 1200
+const CPU_LEVEL_GEOMETRY_EXPORTER := preload("res://src/managers/cpu_level_geometry_exporter.gd")
+const CPU_MOVEMENT_PROBE := preload("res://src/managers/cpu_movement_probe.gd")
+const NAV_GRAPH_SCRIPT := preload("res://src/models/player/nav_graph.gd")
+const NAV_GRAPH_BRAIN_SCRIPT := preload("res://src/models/player/nav_graph_brain.gd")
+const NAV_GRAPH_OVERLAY_SCRIPT := preload("res://src/models/player/nav_graph_overlay.gd")
 
 @onready var arena: Node = get_node("Arena")
 
@@ -21,11 +26,15 @@ var _episode_rng := RandomNumberGenerator.new()
 var _match_manager: MatchManager
 var _simulation_players: Array[PlayerController] = []
 var _remote_player: PlayerController
+var _nav_graph_overlay
+var _simulation_mode: String = "cpu-vs-cpu"
 var _pause_after_setup: bool = false
 var _pending_reset_sequence: int = 0
 var _pending_reset_seed: int = 0
 var _pending_reset_level: String = ""
 var _pending_step_sequence: int = 0
+var _pending_probe_sequence: int = 0
+var _nav_graphs_by_level: Dictionary = {}
 var _requested_step_count: int = 0
 var _steps_remaining: int = 0
 var _step_start_frame: int = 0
@@ -310,6 +319,7 @@ func _configure_simulation(options: Dictionary) -> void:
 	_simulation_players = [player_1, player_2]
 	_match_manager = arena.get_node("MatchManager") as MatchManager
 	_remote_player = player_2
+	_simulation_mode = options["mode"]
 	_match_manager.round_started.connect(_on_round_started)
 	_match_manager.round_ended.connect(_on_round_ended)
 	_match_manager.downward_fault_replayed.connect(_on_downward_fault_replayed)
@@ -332,16 +342,15 @@ func _configure_simulation(options: Dictionary) -> void:
 	_bridge_server.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_bridge_server)
 	_bridge_server.command_received.connect(_on_command_received)
+	_nav_graph_overlay = NAV_GRAPH_OVERLAY_SCRIPT.new()
+	_nav_graph_overlay.name = "NavGraphOverlay"
+	arena.add_child(_nav_graph_overlay)
 	var server_error := _bridge_server.start(options["port"])
 	if server_error != OK:
 		get_tree().quit(2)
 		return
 
-	var cpu_2 := player_2.get_node("CPUController") as CPUController
-	if options["mode"] == "cpu-vs-scripted":
-		cpu_2.set_brain(ScriptedPlayerBrain.new(player_2))
-	else:
-		cpu_2.use_remote_brain(_bridge_server)
+	_set_default_player_2_brain()
 
 	_pause_after_setup = true
 	_set_player_physics_enabled(false)
@@ -352,11 +361,24 @@ func _configure_simulation(options: Dictionary) -> void:
 
 
 func _on_command_received(command: String, payload: Dictionary, sequence: int) -> void:
+	if _pending_probe_sequence != 0:
+		_bridge_server.send_protocol_error(
+			"simulation_busy", "A movement probe is still active.", sequence
+		)
+		return
 	match command:
 		"reset":
 			_reset_episode(int(payload["seed"]), payload["level"], sequence)
 		"step":
 			_begin_step(int(payload["n"]), sequence)
+		"get_level_geometry":
+			_send_level_geometry(payload.get("level", ""), sequence)
+		"load_nav_graph":
+			_load_nav_graph(payload["graph"], sequence)
+		"set_nav_route":
+			_set_nav_route(payload, sequence)
+		"probe_movement":
+			await _run_movement_probe(payload, sequence)
 		"set_speed":
 			var speed_result := _apply_speed(float(payload["speed"]))
 			if speed_result.is_empty():
@@ -376,6 +398,142 @@ func _on_command_received(command: String, payload: Dictionary, sequence: int) -
 				"Command '%s' is not available in this simulation build." % command,
 				sequence
 			)
+
+
+func _send_level_geometry(level_id: String, sequence: int) -> void:
+	var level_manager := arena.get_node("LevelManager") as LevelManager
+	var selected_level_id := level_id
+	if selected_level_id.is_empty() and level_manager.active_arena != null:
+		selected_level_id = level_manager.active_arena.id
+	var selected_arena := _find_arena_data(level_manager, selected_level_id)
+	if selected_arena == null:
+		_bridge_server.send_protocol_error(
+			"invalid_level", "Unknown or unavailable level '%s'." % selected_level_id, sequence
+		)
+		return
+	var geometry := CPU_LEVEL_GEOMETRY_EXPORTER.export_arena(selected_arena)
+	if geometry.is_empty():
+		_bridge_server.send_protocol_error(
+			"geometry_export_failed",
+			"Could not export geometry for level '%s'." % selected_level_id,
+			sequence
+		)
+		return
+	_bridge_server.send_command_result(sequence, geometry)
+
+
+func _run_movement_probe(payload: Dictionary, sequence: int) -> void:
+	if _pending_reset_sequence != 0 or _pending_step_sequence != 0:
+		_bridge_server.send_protocol_error(
+			"simulation_busy", "Cannot probe while another simulation operation is active.", sequence
+		)
+		return
+	var level_manager := arena.get_node("LevelManager") as LevelManager
+	var level_id := str(payload.get("level", level_manager.active_arena.id))
+	var selected_arena := _find_arena_data(level_manager, level_id)
+	if selected_arena == null:
+		_bridge_server.send_protocol_error(
+			"invalid_level", "Unknown or unavailable level '%s'." % level_id, sequence
+		)
+		return
+	_pending_probe_sequence = sequence
+	var result: Dictionary = await CPU_MOVEMENT_PROBE.run(get_tree(), selected_arena, payload)
+	_pending_probe_sequence = 0
+	if result.is_empty():
+		_bridge_server.send_protocol_error(
+			"movement_probe_failed", "Could not probe movement in level '%s'." % level_id, sequence
+		)
+		return
+	_bridge_server.send_command_result(sequence, result)
+
+
+func _find_arena_data(level_manager: LevelManager, level_id: String) -> ArenaData:
+	for available_arena: ArenaData in level_manager.get_available_arenas():
+		if available_arena.id == level_id:
+			return available_arena
+	return null
+
+
+func _load_nav_graph(graph_data: Dictionary, sequence: int) -> void:
+	if _pending_reset_sequence != 0 or _pending_step_sequence != 0:
+		_bridge_server.send_protocol_error(
+			"simulation_busy", "Cannot load a graph while another simulation operation is active.", sequence
+		)
+		return
+	var nav_graph: NavGraph = NAV_GRAPH_SCRIPT.new()
+	if not nav_graph.load_graph(graph_data):
+		_bridge_server.send_protocol_error("invalid_graph", nav_graph.last_error, sequence)
+		return
+	var level_manager := arena.get_node("LevelManager") as LevelManager
+	if _find_arena_data(level_manager, nav_graph.level_id) == null:
+		_bridge_server.send_protocol_error(
+			"invalid_graph",
+			"Graph level '%s' is unknown or unavailable." % nav_graph.level_id,
+			sequence
+		)
+		return
+	_nav_graphs_by_level[nav_graph.level_id] = nav_graph
+	if (
+		_nav_graph_overlay != null
+		and level_manager.active_arena != null
+		and level_manager.active_arena.id == nav_graph.level_id
+	):
+		_nav_graph_overlay.set_graph(nav_graph)
+	_bridge_server.send_command_result(
+		sequence,
+		{
+			"loaded": true,
+			"level": nav_graph.level_id,
+			"node_count": nav_graph.get_point_count(),
+			"edge_count": nav_graph.get_edge_count(),
+		}
+	)
+
+
+func _set_nav_route(payload: Dictionary, sequence: int) -> void:
+	if _pending_reset_sequence != 0 or _pending_step_sequence != 0:
+		_bridge_server.send_protocol_error(
+			"simulation_busy", "Cannot set a route while another simulation operation is active.", sequence
+		)
+		return
+	var level_id: String = payload["level"]
+	var level_manager := arena.get_node("LevelManager") as LevelManager
+	if level_manager.active_arena == null or level_manager.active_arena.id != level_id:
+		_bridge_server.send_protocol_error(
+			"invalid_level", "Route level must be the active arena.", sequence
+		)
+		return
+	var nav_graph: NavGraph = _nav_graphs_by_level.get(level_id)
+	if nav_graph == null:
+		_bridge_server.send_protocol_error(
+			"graph_not_loaded", "No navigation graph is loaded for level '%s'." % level_id, sequence
+		)
+		return
+	var brain = NAV_GRAPH_BRAIN_SCRIPT.new()
+	if not brain.configure(
+		_remote_player,
+		nav_graph,
+		int(payload["start_node"]),
+		int(payload["destination_node"])
+	):
+		_bridge_server.send_protocol_error("invalid_route", brain.last_error, sequence)
+		return
+	var cpu_controller := _remote_player.get_node("CPUController") as CPUController
+	cpu_controller.set_brain(brain)
+	_nav_graph_overlay.set_graph(nav_graph)
+	_nav_graph_overlay.set_route(brain.route)
+	var route_node_ids: Array[int] = []
+	for node_id: int in brain.route:
+		route_node_ids.append(node_id)
+	_bridge_server.send_command_result(
+		sequence,
+		{
+			"level": level_id,
+			"start_node": int(payload["start_node"]),
+			"destination_node": int(payload["destination_node"]),
+			"route_node_ids": route_node_ids,
+		}
+	)
 
 
 func _reset_episode(seed_value: int, level_id: String, sequence: int) -> void:
@@ -399,6 +557,11 @@ func _reset_episode(seed_value: int, level_id: String, sequence: int) -> void:
 	_step_events.clear()
 	_step_terminal_requested = false
 	_pause_after_setup = false
+	_set_default_player_2_brain()
+	if _nav_graphs_by_level.has(level_id):
+		_nav_graph_overlay.set_graph(_nav_graphs_by_level[level_id])
+	else:
+		_nav_graph_overlay.clear_graph()
 	get_tree().paused = false
 	_set_player_physics_enabled(false)
 	_match_manager.restart_match()
@@ -475,6 +638,16 @@ func _normalize_player_physics_state() -> void:
 		player.move_and_slide()
 		player.global_position = spawn_position
 		player.velocity = Vector2.ZERO
+
+
+func _set_default_player_2_brain() -> void:
+	if _remote_player == null or _bridge_server == null:
+		return
+	var cpu_controller := _remote_player.get_node("CPUController") as CPUController
+	if _simulation_mode == "cpu-vs-scripted":
+		cpu_controller.set_brain(ScriptedPlayerBrain.new(_remote_player))
+	else:
+		cpu_controller.use_remote_brain(_bridge_server)
 
 
 func _report_invalid_argument(message: String) -> void:

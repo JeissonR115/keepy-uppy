@@ -75,6 +75,7 @@ func _run_test() -> void:
 		"step(n) did not stop at and return its terminal point event."
 	):
 		return
+	command_sequence += 1
 
 	command_sequence = await _reset(client, session_id, command_sequence)
 	manager.match_state = MatchManager.MatchState.ROUND_OVER
@@ -183,8 +184,10 @@ func _await_command_result(client: StreamPeerTCP, sequence: int) -> Dictionary:
 			return message.get("result", {})
 		if message.get("type") == "error":
 			push_error("Bridge returned error %s: %s" % [message.get("code"), message.get("message")])
+			quit(1)
 			return {}
 	push_error("Timed out waiting for command result %d." % sequence)
+	quit(1)
 	return {}
 
 
@@ -194,6 +197,7 @@ func _read_episode_event(client: StreamPeerTCP) -> Dictionary:
 		if message.get("type") == "episode_event":
 			return message.get("event", {})
 	push_error("Timed out waiting for an episode event.")
+	quit(1)
 	return {}
 
 
@@ -224,8 +228,10 @@ func _await_observation(client: StreamPeerTCP, session_id: String) -> void:
 			return
 		if message.get("type") == "error":
 			push_error("Bridge returned error %s: %s" % [message.get("code"), message.get("message")])
+			quit(1)
 			return
 	push_error("Timed out waiting for a step observation.")
+	quit(1)
 
 
 func _send_command(
@@ -265,8 +271,10 @@ func _read_message(client: StreamPeerTCP) -> Dictionary:
 			var read_result: Array = client.get_data(available_bytes)
 			if read_result[0] != OK:
 				push_error("Episode event test could not read from server.")
+				quit(1)
 				return {}
 			_client_buffer.append_array(read_result[1])
 		await process_frame
 	push_error("Timed out waiting for an episode event message.")
+	quit(1)
 	return {}

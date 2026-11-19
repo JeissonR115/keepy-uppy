@@ -44,6 +44,61 @@ func _run_test() -> void:
 	var session_id := str(hello.get("session_id", ""))
 	var command_sequence := 1
 
+	_send_command(
+		client, session_id, command_sequence, "get_level_geometry", {"level": "sky-towers"}
+	)
+	var geometry := await _await_command_result(client, session_id, command_sequence)
+	if not _expect(
+		geometry.get("level") == "sky-towers"
+		and geometry.get("bounds", {}).get("size", {}).get("x") == 480.0
+		and geometry.get("bounds", {}).get("size", {}).get("y") == 270.0
+		and geometry.get("platforms", []).size() > 0
+		and geometry.get("movement_constants", {}).get("GRAVITY")
+		== PlayerMovementConstants.GRAVITY,
+		"Geometry command did not return the requested arena and its movement data."
+	):
+		return
+	command_sequence += 1
+
+	_send_command(
+		client,
+		session_id,
+		command_sequence,
+		"load_nav_graph",
+		{
+			"graph": {
+				"schema_version": 1,
+				"level": "classic",
+				"nodes": [
+					{"id": 1, "position": {"x": 248.0, "y": 144.0}},
+					{"id": 2, "position": {"x": 232.0, "y": 144.0}},
+					{"id": 3, "position": {"x": 200.0, "y": 110.0}},
+					{"id": 4, "position": {"x": 160.0, "y": 110.0}},
+					{"id": 5, "position": {"x": 120.0, "y": 148.0}},
+					{"id": 6, "position": {"x": 80.0, "y": 110.0}},
+				],
+				"edges": [
+					{"from": 1, "to": 2, "action": "WALK", "cost": 1.0, "bidirectional": true},
+					{"from": 2, "to": 3, "action": "JUMP", "cost": 1.2},
+					{"from": 3, "to": 4, "action": "DASH", "cost": 0.9},
+					{"from": 4, "to": 5, "action": "DROP", "cost": 1.1},
+					{"from": 5, "to": 6, "action": "WALL_JUMP", "cost": 1.8},
+					{"from": 1, "to": 6, "action": "WALK", "cost": 20.0},
+				],
+			}
+		}
+	)
+	var graph_result := await _await_command_result(client, session_id, command_sequence)
+	if not _expect(
+		graph_result.get("loaded") == true
+		and graph_result.get("level") == "classic"
+		and graph_result.get("node_count") == 6
+		and graph_result.get("edge_count") == 7,
+		"load_nav_graph did not return the validated graph summary."
+	):
+		return
+	command_sequence += 1
+
 	_send_command(client, session_id, command_sequence, "reset", {"seed": 42, "level": "classic"})
 	var first_reset := await _await_command_result(client, session_id, command_sequence)
 	if not _expect(
@@ -55,12 +110,41 @@ func _run_test() -> void:
 		return
 	var first_observation: Dictionary = first_reset["observation"]
 	command_sequence += 1
+	_send_command(
+		client,
+		session_id,
+		command_sequence,
+		"set_nav_route",
+		{"level": "classic", "start_node": 1, "destination_node": 6}
+	)
+	var route_result := await _await_command_result(client, session_id, command_sequence)
+	var overlay := simulation.get_node_or_null("Arena/NavGraphOverlay") as Node2D
+	var returned_route: Array = route_result.get("route_node_ids", [])
+	var overlay_route: PackedInt64Array = overlay.get("route") if overlay != null else PackedInt64Array()
+	var expected_route := PackedInt64Array([1, 2, 3, 4, 5, 6])
+	var returned_route_matches := returned_route.size() == expected_route.size()
+	if returned_route_matches:
+		for route_index in range(expected_route.size()):
+			if int(returned_route[route_index]) != expected_route[route_index]:
+				returned_route_matches = false
+				break
+	if not _expect(
+		returned_route_matches
+		and overlay != null
+		and overlay.visible
+		and overlay_route == expected_route,
+		"set_nav_route did not activate the requested route and debug overlay."
+	):
+		return
+	command_sequence += 1
 
-	_send_command(client, session_id, command_sequence, "step", {"n": 3})
+	_send_command(client, session_id, command_sequence, "step", {"n": 10})
 	var step_result := await _await_command_result(client, session_id, command_sequence)
 	if not _expect(
-		step_result.get("steps") == 3 and step_result.get("physics_frames_elapsed") == 3,
-		"step(n) did not advance exactly n fixed physics frames."
+		step_result.get("steps") == 10
+		and step_result.get("physics_frames_elapsed") == 10
+		and float(step_result.get("observation", {}).get("players", {}).get("player_2", {}).get("position", {}).get("x", 248.0)) < 248.0,
+		"CPU route did not move toward its next node during fixed physics steps."
 	):
 		return
 	var first_step_observation: Dictionary = step_result["observation"].duplicate(true)
@@ -78,15 +162,37 @@ func _run_test() -> void:
 		return
 	command_sequence += 1
 
-	_send_command(client, session_id, command_sequence, "step", {"n": 3})
+	_send_command(
+		client,
+		session_id,
+		command_sequence,
+		"set_nav_route",
+		{"level": "classic", "start_node": 1, "destination_node": 6}
+	)
+	var repeated_route := await _await_command_result(client, session_id, command_sequence)
+	var repeated_route_ids: Array = repeated_route.get("route_node_ids", [])
+	var repeated_route_matches := repeated_route_ids.size() == expected_route.size()
+	if repeated_route_matches:
+		for route_index in range(expected_route.size()):
+			if int(repeated_route_ids[route_index]) != expected_route[route_index]:
+				repeated_route_matches = false
+				break
+	if not _expect(
+		repeated_route_matches,
+		"Same-seed reset could not restore the same navigation route."
+	):
+		return
+	command_sequence += 1
+
+	_send_command(client, session_id, command_sequence, "step", {"n": 10})
 	var repeated_step := await _await_command_result(client, session_id, command_sequence)
 	var repeated_step_observation: Dictionary = repeated_step.get("observation", {}).duplicate(true)
 	first_step_observation.erase("tick")
 	repeated_step_observation.erase("tick")
 	if not _expect(
-		repeated_step.get("physics_frames_elapsed") == 3
+		repeated_step.get("physics_frames_elapsed") == 10
 		and first_step_observation == repeated_step_observation,
-		"Same-seed episodes with the same actions produced different states."
+		"Same-seed episodes with the same route produced different states."
 	):
 		return
 	command_sequence += 1
@@ -106,6 +212,64 @@ func _run_test() -> void:
 	if not _expect(
 		fast_step.get("steps") == 4 and fast_step.get("physics_frames_elapsed") == 4,
 		"Accelerated simulation did not preserve the requested physics step count."
+	):
+		return
+	command_sequence += 1
+
+	_send_command(client, session_id, command_sequence, "reset", {"seed": 42, "level": "sky-towers"})
+	var sky_reset := await _await_command_result(client, session_id, command_sequence)
+	if not _expect(
+		sky_reset.get("level") == "sky-towers"
+		and overlay != null
+		and not overlay.visible
+		and overlay.get("graph") == null,
+		"Switching arenas left the previous level's navigation graph visible."
+	):
+		return
+	command_sequence += 1
+
+	_send_command(
+		client,
+		session_id,
+		command_sequence,
+		"load_nav_graph",
+		{
+			"graph": {
+				"schema_version": 1,
+				"level": "sky-towers",
+				"nodes": [
+					{"id": 10, "position": {"x": 80.0, "y": 120.0}},
+					{"id": 11, "position": {"x": 120.0, "y": 120.0}},
+				],
+				"edges": [
+					{"from": 10, "to": 11, "action": "WALK", "cost": 1.0},
+				],
+			}
+		}
+	)
+	var sky_graph_result := await _await_command_result(client, session_id, command_sequence)
+	var sky_overlay_graph: NavGraph = overlay.get("graph") if overlay != null else null
+	if not _expect(
+		sky_graph_result.get("level") == "sky-towers"
+		and overlay != null
+		and overlay.visible
+		and sky_overlay_graph != null
+		and sky_overlay_graph.level_id == "sky-towers",
+		"Loading the sky-towers graph did not update the active overlay."
+	):
+		return
+	command_sequence += 1
+
+	_send_command(client, session_id, command_sequence, "reset", {"seed": 42, "level": "classic"})
+	var classic_reset := await _await_command_result(client, session_id, command_sequence)
+	var classic_overlay_graph: NavGraph = overlay.get("graph") if overlay != null else null
+	if not _expect(
+		classic_reset.get("level") == "classic"
+		and overlay != null
+		and overlay.visible
+		and classic_overlay_graph != null
+		and classic_overlay_graph.level_id == "classic",
+		"Returning to classic did not restore its level-specific navigation graph."
 	):
 		return
 	command_sequence += 1

@@ -75,10 +75,10 @@ func dash_requested(bot_enabled: bool, bot_active: bool, cpu_requested: bool) ->
 func jump_requested(
 	bot_enabled: bool,
 	bot_active: bool,
-	grounded: bool,
+	jump_available: bool,
 	cpu_requested: bool
 ) -> bool:
-	return bot_active and grounded and cpu_requested if bot_enabled else is_just_pressed(PlayerActionCatalog.ACTION_JUMP)
+	return bot_active and jump_available and cpu_requested if bot_enabled else is_just_pressed(PlayerActionCatalog.ACTION_JUMP)
 
 
 func jump_button_held() -> bool:

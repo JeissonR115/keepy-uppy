@@ -81,11 +81,54 @@ class BridgeHandler(socketserver.StreamRequestHandler):
                 "result": {"steps": 1},
             }
         )
+        probe = self._receive()
+        if (
+            probe.get("type") != "command"
+            or probe.get("command") != "probe_movement"
+            or probe.get("sequence") != 3
+            or probe.get("payload")
+            != {
+                "movement": "jump",
+                "level": "classic",
+                "start_position": {"x": 160.0, "y": 152.0},
+                "horizontal": 0.0,
+            }
+        ):
+            raise AssertionError("Client sent an invalid movement probe command.")
+        self._send(
+            {
+                "type": "command_result",
+                "protocol_version": 1,
+                "session_id": SESSION_ID,
+                "sequence": 3,
+                "ok": True,
+                "result": {"landed": True},
+            }
+        )
+        route = self._receive()
+        if (
+            route.get("type") != "command"
+            or route.get("command") != "set_nav_route"
+            or route.get("sequence") != 4
+            or route.get("payload")
+            != {"level": "classic", "start_node": 1, "destination_node": 2}
+        ):
+            raise AssertionError("Client sent an invalid navigation route command.")
+        self._send(
+            {
+                "type": "command_result",
+                "protocol_version": 1,
+                "session_id": SESSION_ID,
+                "sequence": 4,
+                "ok": True,
+                "result": {"route_node_ids": [1, 2]},
+            }
+        )
         close = self._receive()
         if (
             close.get("type") != "command"
             or close.get("command") != "close"
-            or close.get("sequence") != 3
+            or close.get("sequence") != 5
         ):
             raise AssertionError("Client sent an invalid close command.")
         self._send(
@@ -93,7 +136,7 @@ class BridgeHandler(socketserver.StreamRequestHandler):
                 "type": "command_result",
                 "protocol_version": 1,
                 "session_id": SESSION_ID,
-                "sequence": 3,
+                "sequence": 5,
                 "ok": True,
                 "result": {},
             }
@@ -146,15 +189,39 @@ class CPUBridgeClientTest(unittest.TestCase):
                 self.assertEqual(step_result["type"], "command_result")
                 self.assertEqual(step_result["sequence"], step_sequence)
 
+                probe_sequence = client.send_command(
+                    "probe_movement",
+                    {
+                        "movement": "jump",
+                        "level": "classic",
+                        "start_position": {"x": 160.0, "y": 152.0},
+                        "horizontal": 0.0,
+                    },
+                )
+                probe_result = client.receive()
+                self.assertEqual(probe_sequence, 3)
+                self.assertEqual(probe_result["sequence"], probe_sequence)
+                self.assertEqual(probe_result["result"], {"landed": True})
+
+                route_sequence = client.set_nav_route("classic", 1, 2)
+                route_result = client.receive()
+                self.assertEqual(route_sequence, 4)
+                self.assertEqual(route_result["result"], {"route_node_ids": [1, 2]})
+
                 close_sequence = client.close_session()
                 close_result = client.receive()
-                self.assertEqual(close_sequence, 3)
+                self.assertEqual(close_sequence, 5)
                 self.assertEqual(close_result["type"], "command_result")
                 self.assertEqual(close_result["sequence"], close_sequence)
         finally:
             server.shutdown()
             server.server_close()
             server_thread.join()
+
+    def test_set_nav_route_rejects_invalid_values(self):
+        client = object.__new__(CPUBridgeClient)
+        with self.assertRaises(ValueError):
+            client.set_nav_route("classic", True, 2)
 
 
 if __name__ == "__main__":

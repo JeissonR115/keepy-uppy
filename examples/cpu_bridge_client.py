@@ -15,7 +15,9 @@ COMMANDS = {
     "step",
     "set_speed",
     "get_level_geometry",
+    "probe_movement",
     "load_nav_graph",
+    "set_nav_route",
     "close",
 }
 
@@ -85,6 +87,24 @@ class CPUBridgeClient:
         if not isinstance(graph, dict):
             raise ValueError("graph must be a JSON object.")
         return self.send_command("load_nav_graph", {"graph": graph})
+
+    def set_nav_route(self, level: str, start_node: int, destination_node: int) -> int:
+        if not isinstance(level, str) or not level.strip():
+            raise ValueError("level must be a non-empty string.")
+        for name, node_id in (
+            ("start_node", start_node),
+            ("destination_node", destination_node),
+        ):
+            if isinstance(node_id, bool) or not isinstance(node_id, int):
+                raise ValueError(f"{name} must be an integer.")
+        return self.send_command(
+            "set_nav_route",
+            {
+                "level": level,
+                "start_node": start_node,
+                "destination_node": destination_node,
+            },
+        )
 
     def close_session(self) -> int:
         return self.send_command("close")

@@ -15,21 +15,21 @@
 
 - [x] 3.1 Crear la escena sin menús y el lanzador con argumentos de puerto, nivel, velocidad y semilla, además de modos CPU contra CPU y CPU contra jugador scripteado; verificar ambas configuraciones con una ejecución headless.
 - [x] 3.2 Implementar `reset(seed, level)`, `step(n)` y `set_speed` con RNG de episodio y paso físico invariable; verificar mediante pruebas que dos ejecuciones con la misma semilla/acciones coinciden y que variar velocidad no cambia el delta físico.
-- [ ] 3.3 Publicar eventos terminales con tipo, motivo, jugador, marcador y ganador a partir del ciclo real de `MatchManager`; verificar punto, falta, repetición por golpe descendente, set y partida con pruebas de episodio.
-- [ ] 3.4 Documentar en `docs/` los argumentos del lanzador, límites de repetibilidad y ejemplos de ejecución de episodios; verificar que los comandos documentados arrancan en headless.
+- [x] 3.3 Publicar eventos terminales con tipo, motivo, jugador, marcador y ganador a partir del ciclo real de `MatchManager`; verificar punto, falta, repetición por golpe descendente, set y partida con pruebas de episodio.
+- [x] 3.4 Documentar en `docs/` los argumentos del lanzador, límites de repetibilidad y ejemplos de ejecución de episodios; verificar que los comandos documentados arrancan en headless.
 
 ## 4. Geometría y sondeo de movimiento
 
-- [ ] 4.1 Exportar por id de arena límites, spawns, límites auxiliares, colisiones y polígonos de TileMap/TileSet, incluidas superficies unidireccionales, y leer constantes de `PlayerMovementConstants`; verificar geometría y constantes de todas las arenas del catálogo con pruebas.
-- [ ] 4.2 Implementar sondeos aislados de salto y dash usando la escena de jugador y física reales; verificar posición de aterrizaje y que el marcador, el globo y la partida activa no cambian.
-- [ ] 4.3 Documentar el esquema JSON de geometría y sondeo en `docs/`; verificar el ejemplo contra la exportación de una arena con plataformas unidireccionales.
+- [x] 4.1 Exportar por id de arena límites, spawns, límites auxiliares, colisiones y polígonos de TileMap/TileSet, incluidas superficies unidireccionales, y leer constantes de `PlayerMovementConstants`; verificar geometría y constantes de todas las arenas del catálogo con pruebas.
+- [x] 4.2 Implementar sondeos aislados de salto y dash usando la escena de jugador y física reales; verificar posición de aterrizaje y que el marcador, el globo y la partida activa no cambian.
+- [x] 4.3 Documentar el esquema JSON de geometría y sondeo en `docs/`; verificar el ejemplo contra la exportación de una arena con plataformas unidireccionales.
 
 ## 5. Grafo y navegación
 
-- [ ] 5.1 Implementar carga y validación del grafo versionado por nivel en `NavGraph` sobre `AStar2D`, respetando direccionalidad, costos y acciones por arista; verificar rutas ponderadas, referencias inválidas y conservación del grafo activo si falla una carga.
-- [ ] 5.2 Añadir el seguidor que traduce aristas a intenciones `CPUBrain` y el overlay de nodos, aristas y ruta; verificar recorrido CPU entre nodos con WALK, JUMP, DASH, DROP y WALL_JUMP, y cambio correcto entre arenas.
-- [ ] 5.3 Documentar en `docs/` el esquema JSON del grafo y un ejemplo con costos y acciones; verificar su carga y representación en el overlay.
+- [x] 5.1 Implementar carga y validación del grafo versionado por nivel en `NavGraph` sobre `AStar2D`, respetando direccionalidad, costos y acciones por arista; verificar rutas ponderadas, referencias inválidas y conservación del grafo activo si falla una carga.
+- [x] 5.2 Añadir el seguidor que traduce aristas a intenciones `CPUBrain` y el overlay de nodos, aristas y ruta; verificar recorrido CPU entre nodos con WALK, JUMP, DASH, DROP y WALL_JUMP, y cambio correcto entre arenas.
+- [x] 5.3 Documentar en `docs/` el esquema JSON del grafo y un ejemplo con costos y acciones; verificar su carga y representación en el overlay.
 
 ## 6. Verificación integrada
 
-- [ ] 6.1 Ejecutar una prueba end-to-end con cliente Python: resetear, intercambiar acciones/observaciones, consultar geometría, cargar y recorrer un grafo, finalizar episodios y cerrar; verificar repetibilidad con semilla y fallback tras desconexión.
+- [x] 6.1 Ejecutar una prueba end-to-end con cliente Python: resetear, intercambiar acciones/observaciones, consultar geometría, cargar y recorrer un grafo, finalizar episodios y cerrar; verificar repetibilidad con semilla y fallback tras desconexión.

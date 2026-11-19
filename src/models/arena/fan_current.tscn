@@ -1,24 +1,24 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://cl6u7wae4s1uv"]
 
-[ext_resource type="Script" path="res://src/models/arena/fan_current.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://3q2668goe3wf" path="res://src/models/arena/fan_current.gd" id="1_script"]
 
 [sub_resource type="RectangleShape2D" id="FanCurrentShape"]
-size = Vector2(88, 56)
+size = Vector2(47, 89)
 
-[node name="FanCurrent" type="Area2D" groups=["fan_current"]]
+[node name="FanCurrent" type="Area2D" unique_id=19133434 groups=["fan_current"]]
 collision_layer = 0
 collision_mask = 4
-monitoring = true
 script = ExtResource("1_script")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=143199951]
+position = Vector2(1.5, -31.5)
 shape = SubResource("FanCurrentShape")
 
-[node name="Fan" type="Polygon2D" parent="."]
+[node name="Fan" type="Polygon2D" parent="." unique_id=1029158874]
 color = Color(0.25, 0.72, 0.95, 1)
 polygon = PackedVector2Array(-14, 12, 14, 12, 10, 5, 6, 12, 2, 5, -2, 12, -6, 5, -10, 12)
 
-[node name="CurrentArrow" type="Polygon2D" parent="."]
+[node name="CurrentArrow" type="Polygon2D" parent="." unique_id=2006392114]
 position = Vector2(0, -9)
 color = Color(0.55, 0.88, 1, 0.8)
 polygon = PackedVector2Array(0, -8, -4, -1, -1.5, -1, -1.5, 4, 1.5, 4, 1.5, -1, 4, -1)
