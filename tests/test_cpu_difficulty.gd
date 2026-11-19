@@ -32,6 +32,8 @@ func _run_test() -> void:
 	manager.coin_toss_override = 0
 	manager.match_seed_override = 271828
 	manager.restart_match()
+	manager.match_state = MatchManager.MatchState.ACTIVE
+	manager.accepting_gameplay_input = true
 	manager.expected_balloon_player = player
 	balloon.waiting_for_first_touch = true
 	balloon.global_position = Vector2(160.0, 48.0)
@@ -111,6 +113,8 @@ func _run_test() -> void:
 
 	manager.match_seed_override = 314159
 	manager.restart_match()
+	manager.match_state = MatchManager.MatchState.ACTIVE
+	manager.accepting_gameplay_input = true
 	manager.expected_balloon_player = player
 	balloon.waiting_for_first_touch = true
 	balloon.global_position = Vector2(160.0, 48.0)
@@ -118,6 +122,8 @@ func _run_test() -> void:
 	cpu.update_decision(1.0)
 	var first_seed_offset := cpu.prediction_error_offset
 	manager.restart_match()
+	manager.match_state = MatchManager.MatchState.ACTIVE
+	manager.accepting_gameplay_input = true
 	manager.expected_balloon_player = player
 	balloon.waiting_for_first_touch = true
 	balloon.global_position = Vector2(160.0, 48.0)
@@ -131,6 +137,8 @@ func _run_test() -> void:
 
 	manager.match_seed_override = 314160
 	manager.restart_match()
+	manager.match_state = MatchManager.MatchState.ACTIVE
+	manager.accepting_gameplay_input = true
 	manager.expected_balloon_player = player
 	balloon.waiting_for_first_touch = true
 	balloon.global_position = Vector2(160.0, 48.0)

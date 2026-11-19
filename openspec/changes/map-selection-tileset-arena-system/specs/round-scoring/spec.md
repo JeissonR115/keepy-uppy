@@ -3,11 +3,11 @@
 ## MODIFIED Requirements
 
 ### Requirement: Ground-contact scoring
-When the balloon reaches a surface explicitly designated as scoring ground during an active round, the game SHALL award exactly one point to the opponent of the last valid player to touch the balloon; if there was no valid touch, it SHALL award the point to the opponent of the round's opening server. Contact with a non-scoring platform SHALL NOT end the round.
+When the balloon reaches a surface explicitly designated as scoring ground during an active round, the game SHALL award exactly one point to the last valid player to touch the balloon; if there was no valid touch, it SHALL award the point to the opponent of the round's opening server. Contact with a non-scoring platform SHALL NOT end the round.
 
 #### Scenario: Ground contact produces a point
 - **WHEN** the balloon touches a scoring surface after Player 1 was the last valid toucher
-- **THEN** Player 2 receives exactly one point
+- **THEN** Player 1 receives exactly one point because Player 2 did not rescue the balloon
 
 #### Scenario: No player touched the balloon
 - **WHEN** the balloon touches a scoring surface and neither player made a valid touch during the round

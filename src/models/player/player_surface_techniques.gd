@@ -8,6 +8,9 @@ static func handle_trampoline_contacts(player: CharacterBody2D, tuning: Script) 
 		var collision := player.get_slide_collision(index)
 		var collider := collision.get_collider()
 		if collider is Node and collider.is_in_group("trampoline") and collision.get_normal().y < -0.5:
+			if bool(player.get("is_dashing")):
+				player.call("_end_dash", false)
+				player.call("_set_ducking", false)
 			var velocity := player.velocity
 			velocity.y = -tuning.TRAMPOLINE_BOUNCE_SPEED
 			player.velocity = velocity

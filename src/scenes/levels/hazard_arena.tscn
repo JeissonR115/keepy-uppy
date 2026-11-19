@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://dtann8pq42yuu"]
+
+[ext_resource type="PackedScene" path="res://src/scenes/levels/sky_towers.tscn" id="1_sky_towers"]
+[ext_resource type="PackedScene" path="res://src/models/arena/spike_hazard.tscn" id="2_spikes"]
+[ext_resource type="PackedScene" path="res://src/models/arena/fan_current.tscn" id="3_fan"]
+
+[node name="HazardArenaGeometry" type="Node2D" unique_id=2054652597]
+
+[node name="SkyTowersBase" parent="." unique_id=1358147203 instance=ExtResource("1_sky_towers")]
+
+[node name="Spikes" parent="." unique_id=1159422353 instance=ExtResource("2_spikes")]
+position = Vector2(234, 234)
+
+[node name="FanCurrent" parent="." unique_id=700494402 instance=ExtResource("3_fan")]
+position = Vector2(404, 70)
+rotation = -1.570796

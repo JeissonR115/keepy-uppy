@@ -7,6 +7,7 @@ signal player_hit(player: CharacterBody2D)
 signal dash_rescued(player: CharacterBody2D, dash_direction: Vector2)
 signal contact_visualized(player: CharacterBody2D, balloon_position: Vector2)
 signal ground_touched
+signal spikes_touched
 
 @export var player_hit_impulse: float = 180.0
 @export var min_player_hit_impulse: float = 120.0
@@ -21,6 +22,7 @@ signal ground_touched
 @export_range(1.0, 600.0, 1.0) var max_fall_speed: float = 90.0
 @export_range(1.0, 900.0, 1.0) var max_hit_speed: float = 220.0
 @export var contact_interval: float = 0.1
+@export_range(0.1, 10.0, 0.1) var downward_warning_duration: float = 1.5
 @export var balloon_collision_radius: float = 9.0
 @export var player_contact_radius: float = 16.0
 @export var gravity_strength: float = 0.14
@@ -39,20 +41,28 @@ const BALLOON_REF_SPEED := 240.0
 @onready var audio_manager: Node = get_node("/root/AudioManager")
 
 var ground_contact_reported: bool = false
+var spike_contact_reported: bool = false
 var scoring_ground_contact_from_above: bool = false
 var waiting_for_first_touch: bool = false
 var waiting_spawn_position: Vector2 = Vector2.ZERO
 var default_visual_color: Color
+var current_turn_color: Color = Color.WHITE
 var impact_tween: Tween
 var burst_tween: Tween
 var player_contact_cooldowns: Dictionary = {}
 var pending_contact_impulses: Dictionary = {}
+var downward_warning_time_left: float = 0.0
+var downward_warning_elapsed: float = 0.0
+var downward_warning_color: Color = Color.WHITE
+var player_contacts_armed: bool = false
+var setup_overlap_player_ids: Dictionary = {}
 
 enum ContactType { NORMAL, DASH_RESCUE }
 
 
 func _ready() -> void:
 	default_visual_color = visual.color
+	current_turn_color = default_visual_color
 	gravity_scale = gravity_strength
 	linear_damp = 0.0
 	var physics_material := physics_material_override as PhysicsMaterial
@@ -64,9 +74,18 @@ func _ready() -> void:
 	contact_shape.radius = player_contact_radius
 	body_entered.connect(_on_body_entered)
 	player_contact_area.body_entered.connect(_on_player_contact_area_body_entered)
+	player_contact_area.body_exited.connect(_on_player_contact_area_body_exited)
 
 
 func _physics_process(delta: float) -> void:
+	if downward_warning_time_left > 0.0:
+		downward_warning_time_left = maxf(downward_warning_time_left - delta, 0.0)
+		downward_warning_elapsed += delta
+		if downward_warning_time_left <= 0.0:
+			clear_downward_warning()
+		else:
+			var flash_phase := int(floor(downward_warning_elapsed / 0.12)) % 2
+			visual.color = Color.WHITE if flash_phase == 0 else downward_warning_color
 	for player_id: int in player_contact_cooldowns.keys():
 		player_contact_cooldowns[player_id] = maxf(
 			float(player_contact_cooldowns[player_id]) - delta,
@@ -110,9 +129,15 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 
 func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) -> void:
+	clear_downward_warning()
 	if impact_tween != null and impact_tween.is_running():
 		impact_tween.kill()
 	visual.color = default_visual_color
+	visual.visible = true
+	balloon_collision_shape.set_deferred("disabled", false)
+	player_contact_area.monitoring = true
+	player_contacts_armed = false
+	setup_overlap_player_ids.clear()
 	global_position = spawn_position
 	linear_velocity = Vector2.ZERO
 	angular_velocity = 0.0
@@ -121,6 +146,7 @@ func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) ->
 	waiting_spawn_position = position
 	gravity_scale = 0.0 if wait_for_first_touch else gravity_strength
 	ground_contact_reported = false
+	spike_contact_reported = false
 	player_contact_cooldowns.clear()
 	pending_contact_impulses.clear()
 	if burst_tween != null and burst_tween.is_running():
@@ -130,8 +156,74 @@ func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) ->
 	ground_burst.modulate = Color.WHITE
 
 
+func prepare_for_round() -> void:
+	clear_downward_warning()
+	if impact_tween != null and impact_tween.is_running():
+		impact_tween.kill()
+	visual.visible = false
+	balloon_collision_shape.set_deferred("disabled", true)
+	player_contact_area.monitoring = false
+	player_contacts_armed = false
+	setup_overlap_player_ids.clear()
+	waiting_for_first_touch = true
+	gravity_scale = 0.0
+	linear_velocity = Vector2.ZERO
+	angular_velocity = 0.0
+	pending_contact_impulses.clear()
+	disarm_player_contacts()
+
+
+func disarm_player_contacts() -> void:
+	player_contacts_armed = false
+	setup_overlap_player_ids.clear()
+	player_contact_area.set_deferred("monitoring", false)
+
+
+func is_downward_warning_active() -> bool:
+	return downward_warning_time_left > 0.0
+
+
+func start_downward_warning(player_color: Color) -> void:
+	if impact_tween != null and impact_tween.is_running():
+		impact_tween.kill()
+	downward_warning_color = player_color
+	downward_warning_time_left = downward_warning_duration
+	downward_warning_elapsed = 0.0
+	visual.color = Color.WHITE
+
+
+func clear_downward_warning(restore_visual: bool = true) -> void:
+	var had_warning := downward_warning_time_left > 0.0
+	downward_warning_time_left = 0.0
+	downward_warning_elapsed = 0.0
+	if had_warning and restore_visual:
+		visual.color = current_turn_color
+
+
+func set_turn_color(color: Color) -> void:
+	current_turn_color = color
+	if (
+		not is_downward_warning_active()
+		and (impact_tween == null or not impact_tween.is_running())
+	):
+		visual.color = current_turn_color
+
+
+func arm_for_serve() -> void:
+	setup_overlap_player_ids.clear()
+	for body in player_contact_area.get_overlapping_bodies():
+		if body is CharacterBody2D and body.is_in_group("players"):
+			setup_overlap_player_ids[body.get_instance_id()] = true
+	player_contacts_armed = true
+
+
 func apply_dash_rescue(player: CharacterBody2D, dash_direction: Vector2) -> bool:
 	if not _accept_player_contact(player):
+		return false
+	if (
+		player.has_method("claim_dash_balloon_contact")
+		and not bool(player.call("claim_dash_balloon_contact"))
+	):
 		return false
 	_activate_after_first_touch()
 	var rescue_direction := dash_direction.normalized()
@@ -167,6 +259,7 @@ func _flash_impact(toucher_color: Color) -> void:
 	visual.color = Color.WHITE
 	impact_tween = create_tween()
 	impact_tween.tween_property(visual, "color", toucher_color, 0.18)
+	impact_tween.tween_callback(func() -> void: visual.color = current_turn_color)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -191,6 +284,19 @@ func apply_trampoline_bounce() -> void:
 	sleeping = false
 
 
+func explode_on_spikes() -> void:
+	if not player_contacts_armed or spike_contact_reported:
+		return
+	spike_contact_reported = true
+	ground_contact_reported = true
+	disarm_player_contacts()
+	balloon_collision_shape.set_deferred("disabled", true)
+	visual.visible = false
+	_play_ground_burst()
+	audio_manager.call("play_gameplay_event", "balloon_explode", global_position)
+	spikes_touched.emit()
+
+
 func _play_ground_burst() -> void:
 	if burst_tween != null and burst_tween.is_running():
 		burst_tween.kill()
@@ -213,7 +319,16 @@ func show_contact_pixel(world_position: Vector2) -> void:
 
 func _on_player_contact_area_body_entered(body: Node2D) -> void:
 	if body is CharacterBody2D and body.is_in_group("players"):
-		var player := body as CharacterBody2D
+		var player := body as PlayerController
+		if player == null:
+			return
+		if not player_contacts_armed:
+			return
+		if setup_overlap_player_ids.has(player.get_instance_id()):
+			return
+		if player.is_dashing:
+			apply_dash_rescue(player, player.dash_direction)
+			return
 		if not _accept_player_contact(player):
 			return
 		_activate_after_first_touch()
@@ -246,6 +361,11 @@ func _on_player_contact_area_body_entered(body: Node2D) -> void:
 		)
 
 
+func _on_player_contact_area_body_exited(body: Node2D) -> void:
+	if body != null:
+		setup_overlap_player_ids.erase(body.get_instance_id())
+
+
 func _activate_after_first_touch() -> void:
 	if not waiting_for_first_touch:
 		return
@@ -262,6 +382,7 @@ func _queue_player_contact(
 	launch_direction: Vector2,
 	approach_speed: float
 ) -> void:
+	clear_downward_warning(false)
 	var controller := player as PlayerController
 	var toucher_color := controller.idle_color if controller != null else Color.WHITE
 	visual.color = toucher_color
@@ -312,6 +433,8 @@ func clear_pending_contacts() -> void:
 
 func _accept_player_contact(player: CharacterBody2D) -> bool:
 	var player_id := player.get_instance_id()
+	if not player_contacts_armed or setup_overlap_player_ids.has(player_id):
+		return false
 	if float(player_contact_cooldowns.get(player_id, 0.0)) > 0.0:
 		return false
 	player_contact_cooldowns[player_id] = contact_interval

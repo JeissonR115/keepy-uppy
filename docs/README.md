@@ -55,6 +55,7 @@ Main
 - [Partida y puntuación](modules/match.md): saque, turnos, faltas, puntos, sets y señales de coordinación.
 - [Niveles y arena](modules/levels.md): catálogo, selector, TileSet, bounds y colisiones ambientales.
 - [Interfaz](modules/ui.md): navegación de menús, marcador, pausa, configuración y pantalla de ganador.
+- [Puente CPU–Python](cpu-ai-bridge.md): protocolo TCP, observaciones, acciones y eventos de episodio.
 
 ## Dependencias entre módulos
 

@@ -31,6 +31,12 @@ func _run_test() -> void:
 	var cpu: CPUController = cpu_player.get_node("CPUController")
 	cpu_player.bot_enabled = true
 
+	if not _expect(
+		cpu.active_brain is CPUBrain and cpu.active_brain is LocalBrain,
+		"CPUController did not use LocalBrain through the CPUBrain contract by default."
+	):
+		return
+
 	manager.expected_balloon_player = cpu_player
 	if not _expect(
 		cpu.refresh_state() == CPUController.State.CPU_TURNO_PROPIO,

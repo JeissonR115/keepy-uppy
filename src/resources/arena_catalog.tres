@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="ArenaCatalog" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ArenaCatalog" format=3 uid="uid://cthjt7ici51qs"]
 
-[ext_resource type="Resource" path="res://src/resources/arenas/classic.tres" id="1_classic"]
-[ext_resource type="Script" path="res://src/resources/arena_catalog.gd" id="2_catalog"]
-[ext_resource type="Resource" path="res://src/resources/arenas/sky_towers.tres" id="3_sky_towers"]
+[ext_resource type="Resource" path="res://src/resources/arenas/primary_flat.tres" id="1_primary_flat"]
+[ext_resource type="Script" uid="uid://dwws3ekj68brl" path="res://src/resources/arena_catalog.gd" id="2_catalog"]
+[ext_resource type="Resource" path="res://src/resources/arenas/hazard_arena.tres" id="3_hazard_arena"]
+[ext_resource type="Resource" uid="uid://bbnn6fkw6y0h3" path="res://src/resources/arenas/classic.tres" id="4_classic"]
+[ext_resource type="Resource" uid="uid://bfdlukkb2o1d8" path="res://src/resources/arenas/sky_towers.tres" id="5_sky_towers"]
 
 [resource]
 script = ExtResource("2_catalog")
-arenas = Array[Resource]([ExtResource("1_classic"), ExtResource("3_sky_towers")])
+arenas = Array[Resource]([ExtResource("1_primary_flat"), ExtResource("3_hazard_arena"), ExtResource("4_classic"), ExtResource("5_sky_towers")])

@@ -35,6 +35,7 @@ func _run_test() -> void:
 	manager.match_seed_override = 271828
 	manager.restart_match()
 	manager.match_state = MatchManager.MatchState.ACTIVE
+	manager.accepting_gameplay_input = true
 	manager.expected_balloon_player = opponent
 
 	player.global_position = Vector2(160.0, 144.0)
@@ -64,6 +65,7 @@ func _run_test() -> void:
 		return
 
 	manager.match_state = MatchManager.MatchState.ACTIVE
+	manager.accepting_gameplay_input = true
 	manager.round_faulting_player = null
 	manager.expected_balloon_player = opponent
 	player.global_position = Vector2(200.0, 144.0)

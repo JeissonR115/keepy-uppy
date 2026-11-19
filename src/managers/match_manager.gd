@@ -40,10 +40,11 @@ signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
 @onready var balloon: BalloonController = $"../Balloon"
 @onready var audio_manager: Node = get_node("/root/AudioManager")
 
-enum MatchState { ACTIVE, ROUND_OVER, COMPLETE }
+enum MatchState { SETTING_UP, ACTIVE, ROUND_OVER, COMPLETE }
 
-var match_state: MatchState = MatchState.ACTIVE
+var match_state: MatchState = MatchState.SETTING_UP
 var match_seed: int = 0
+var round_end_reason: String = ""
 var player_1_score: int = 0
 var player_2_score: int = 0
 var player_1_sets: int = 0
@@ -64,12 +65,18 @@ var pending_dash_rescues: Array[CharacterBody2D] = []
 var round_replay_requested: bool = false
 var consecutive_downward_fault_player: CharacterBody2D
 var consecutive_downward_fault_count: int = 0
+var accepting_gameplay_input: bool = false
+var setup_generation: int = 0
+var downward_warning_player: CharacterBody2D
+var pending_player_bumps: Dictionary = {}
+var player_bump_flush_scheduled: bool = false
 
 
 func _ready() -> void:
 	balloon.player_hit.connect(register_normal_hit)
 	balloon.dash_rescued.connect(register_dash_rescue)
 	balloon.ground_touched.connect(_on_ground_touched)
+	balloon.spikes_touched.connect(_on_spikes_touched)
 	player_1.player_bumped.connect(_on_player_bumped)
 	player_2.player_bumped.connect(_on_player_bumped)
 	if start_match_on_ready:
@@ -82,7 +89,10 @@ func restart_match() -> void:
 
 func _start_new_match() -> void:
 	audio_manager.call("play_gameplay_event", "match_start")
-	match_state = MatchState.ACTIVE
+	setup_generation += 1
+	match_state = MatchState.SETTING_UP
+	accepting_gameplay_input = false
+	_clear_downward_warning()
 	player_1_score = 0
 	player_2_score = 0
 	player_1_sets = 0
@@ -92,6 +102,7 @@ func _start_new_match() -> void:
 	round_has_valid_contact = false
 	round_faulting_player = null
 	round_replay_requested = false
+	round_end_reason = ""
 	consecutive_downward_fault_player = null
 	consecutive_downward_fault_count = 0
 	pending_normal_hits.clear()
@@ -99,6 +110,7 @@ func _start_new_match() -> void:
 	pending_expected_player = null
 	player_1.reset_for_round(player_1_spawn_position)
 	player_2.reset_for_round(player_2_spawn_position)
+	balloon.prepare_for_round()
 	var toss_value := randi_range(0, 1) if coin_toss_override < 0 else coin_toss_override
 	coin_toss_result = "HEADS" if toss_value == 0 else "TAILS"
 	match_seed = (
@@ -108,11 +120,10 @@ func _start_new_match() -> void:
 	)
 	var opening_player := player_1 if toss_value == 0 else player_2
 	set_next_server(opening_player)
-	balloon.reset_round(_balloon_spawn_for(opening_player), true)
 	score_changed.emit(player_1_score, player_2_score)
 	set_score_changed.emit(player_1_sets, player_2_sets)
 	coin_toss_completed.emit(coin_toss_result, opening_player)
-	round_started.emit(round_number, round_server)
+	call_deferred("_complete_round_setup", setup_generation, round_number, round_server)
 
 
 func _process(_delta: float) -> void:
@@ -128,6 +139,7 @@ func set_next_server(player: CharacterBody2D) -> void:
 	round_server = player
 	last_valid_toucher = player
 	expected_balloon_player = player
+	balloon.set_turn_color(_turn_color_for(player))
 	balloon_turn_changed.emit(expected_balloon_player)
 	opening_server_selected.emit(player)
 	_set_priority(player)
@@ -159,6 +171,7 @@ func resolve_pending_contacts() -> void:
 			offending_player = candidate
 			break
 	if offending_player != null and match_state == MatchState.ACTIVE:
+		_clear_downward_warning(false)
 		_resolve_fault(offending_player)
 		return
 
@@ -170,13 +183,19 @@ func resolve_pending_contacts() -> void:
 	)
 	if not contact_result.is_empty():
 		var resulting_velocity: Vector2 = contact_result["resulting_velocity"]
-		if resulting_velocity.y > 0.0 and match_state == MatchState.ACTIVE:
-			_resolve_downward_hit_fault(selected_player)
-			return
 		round_has_valid_contact = true
+		consecutive_downward_fault_player = null
+		consecutive_downward_fault_count = 0
+		if resulting_velocity.y > 0.0:
+			downward_warning_player = selected_player
+			var controller := selected_player as PlayerController
+			balloon.start_downward_warning(controller.idle_color if controller != null else Color.WHITE)
+		else:
+			downward_warning_player = null
 	_set_priority(selected_player)
 	last_valid_toucher = selected_player
 	expected_balloon_player = _opponent_of(selected_player)
+	balloon.set_turn_color(_turn_color_for(expected_balloon_player))
 	balloon_turn_changed.emit(expected_balloon_player)
 	_clear_pending_contacts()
 
@@ -188,13 +207,22 @@ func _clear_pending_contacts() -> void:
 	balloon.clear_pending_contacts()
 
 
+func _clear_downward_warning(restore_visual: bool = true) -> void:
+	downward_warning_player = null
+	balloon.clear_downward_warning(restore_visual)
+
+
 func _resolve_fault(faulting_player: CharacterBody2D) -> void:
 	if match_state != MatchState.ACTIVE:
 		return
 	consecutive_downward_fault_player = null
 	consecutive_downward_fault_count = 0
 	match_state = MatchState.ROUND_OVER
+	accepting_gameplay_input = false
+	balloon.disarm_player_contacts()
+	_clear_downward_warning()
 	round_faulting_player = faulting_player
+	round_end_reason = "out_of_turn_contact"
 	_clear_pending_contacts()
 	call_deferred("_finish_round")
 
@@ -222,8 +250,12 @@ func _resolve_downward_hit_fault(faulting_player: CharacterBody2D) -> void:
 		next_server = round_server
 
 	match_state = MatchState.ROUND_OVER
+	accepting_gameplay_input = false
+	balloon.disarm_player_contacts()
+	_clear_downward_warning()
 	round_faulting_player = faulting_player
 	round_replay_requested = true
+	round_end_reason = "downward_hit"
 	_clear_pending_contacts()
 	downward_fault_replayed.emit(faulting_player, point_deducted)
 	call_deferred("_finish_round")
@@ -249,15 +281,38 @@ func _on_ground_touched() -> void:
 	resolve_pending_contacts()
 	if match_state != MatchState.ACTIVE:
 		return
+	if balloon.is_downward_warning_active():
+		_resolve_downward_hit_fault(downward_warning_player)
+		return
 	if not round_has_valid_contact:
 		round_faulting_player = null
+		round_end_reason = "ground_before_valid_contact"
 		match_state = MatchState.ROUND_OVER
+		accepting_gameplay_input = false
+		balloon.disarm_player_contacts()
 		round_replay_requested = false
 		call_deferred("_finish_round")
 		return
 	consecutive_downward_fault_player = null
 	consecutive_downward_fault_count = 0
+	round_end_reason = "ball_grounded"
 	match_state = MatchState.ROUND_OVER
+	accepting_gameplay_input = false
+	balloon.disarm_player_contacts()
+	call_deferred("_finish_round")
+
+
+func _on_spikes_touched() -> void:
+	if match_state != MatchState.ACTIVE:
+		return
+	round_faulting_player = last_valid_toucher if round_has_valid_contact else null
+	round_end_reason = "spikes"
+	round_replay_requested = false
+	match_state = MatchState.ROUND_OVER
+	accepting_gameplay_input = false
+	balloon.disarm_player_contacts()
+	_clear_downward_warning()
+	_clear_pending_contacts()
 	call_deferred("_finish_round")
 
 
@@ -327,22 +382,59 @@ func _start_next_round() -> void:
 
 
 func _restart_point() -> void:
+	setup_generation += 1
+	match_state = MatchState.SETTING_UP
+	accepting_gameplay_input = false
+	_clear_downward_warning()
 	round_faulting_player = null
 	round_replay_requested = false
+	round_end_reason = ""
 	round_has_valid_contact = false
 	_clear_pending_contacts()
 	pending_normal_hits.clear()
 	pending_dash_rescues.clear()
 	player_1.reset_for_round(player_1_spawn_position)
 	player_2.reset_for_round(player_2_spawn_position)
-	match_state = MatchState.ACTIVE
+	balloon.prepare_for_round()
 	set_next_server(next_server)
-	balloon.reset_round(_balloon_spawn_for(round_server), true)
+	call_deferred("_complete_round_setup", setup_generation, round_number, round_server)
+
+
+func _complete_round_setup(
+	generation: int,
+	setup_round_number: int,
+	setup_server: CharacterBody2D
+) -> void:
+	await get_tree().physics_frame
+	if (
+		generation != setup_generation
+		or match_state != MatchState.SETTING_UP
+		or setup_round_number != round_number
+		or setup_server != round_server
+	):
+		return
+	balloon.reset_round(_balloon_spawn_for(setup_server), true)
+	await get_tree().physics_frame
+	if (
+		generation != setup_generation
+		or match_state != MatchState.SETTING_UP
+		or setup_round_number != round_number
+		or setup_server != round_server
+	):
+		return
+	balloon.arm_for_serve()
+	match_state = MatchState.ACTIVE
+	accepting_gameplay_input = true
 	round_started.emit(round_number, round_server)
 
 
 func _opponent_of(player: CharacterBody2D) -> CharacterBody2D:
 	return player_2 if player == player_1 else player_1
+
+
+func _turn_color_for(player: CharacterBody2D) -> Color:
+	var controller := player as PlayerController
+	return controller.idle_color if controller != null else Color.WHITE
 
 
 func _player_audio_event(prefix: String, player: CharacterBody2D) -> String:
@@ -358,29 +450,95 @@ func _on_player_bumped(
 	var player_2_controller := player_2 as PlayerController
 	if player != player_1 and player != player_2:
 		return
-	if player == player_2 and not while_dashing:
+	if opponent != player_1 and opponent != player_2:
 		return
-	if player == player_1 and player_2_controller.bot_enabled and not while_dashing:
+	if player == opponent or match_state != MatchState.ACTIVE:
 		return
 	if (
 		player == player_2
 		and player_2_controller.bot_enabled
-		and (match_state != MatchState.ACTIVE or expected_balloon_player != player)
+		and expected_balloon_player != player
 	):
 		return
 
-	var is_priority_player := player == priority_player
+	var player_id := player.get_instance_id()
+	var opponent_id := opponent.get_instance_id()
+	var pair_key := "%d:%d" % [mini(player_id, opponent_id), maxi(player_id, opponent_id)]
+	var bump_reports: Array = pending_player_bumps.get(pair_key, [])
+	bump_reports.append(
+		{
+			"player": player,
+			"opponent": opponent,
+			"while_dashing": while_dashing,
+			"expected_player": expected_balloon_player,
+			"setup_generation": setup_generation,
+			"round_number": round_number,
+		}
+	)
+	pending_player_bumps[pair_key] = bump_reports
+	if not player_bump_flush_scheduled:
+		player_bump_flush_scheduled = true
+		call_deferred("_flush_pending_player_bumps")
+
+
+func _flush_pending_player_bumps() -> void:
+	var bump_batches := pending_player_bumps
+	pending_player_bumps = {}
+	player_bump_flush_scheduled = false
+	for bump_reports: Array in bump_batches.values():
+		if bump_reports.is_empty():
+			continue
+		var selected_report: Dictionary = bump_reports[0]
+		for report: Dictionary in bump_reports:
+			if report["player"] == report["expected_player"]:
+				selected_report = report
+				break
+		_apply_player_bump(selected_report)
+
+
+func _apply_player_bump(report: Dictionary) -> void:
+	var player := report["player"] as CharacterBody2D
+	var opponent := report["opponent"] as CharacterBody2D
+	var player_2_controller := player_2 as PlayerController
+	if (
+		match_state != MatchState.ACTIVE
+		or report["setup_generation"] != setup_generation
+		or report["round_number"] != round_number
+	):
+		return
+	if (
+		player == player_2
+		and player_2_controller.bot_enabled
+		and report["expected_player"] != player
+	):
+		return
+
+	var is_expected_balloon_player: bool = (
+		player == (report["expected_player"] as CharacterBody2D)
+	)
 	var push_strength: float
-	if while_dashing:
-		push_strength = priority_dash_push_strength if is_priority_player else non_priority_dash_push_strength
+	if report["while_dashing"]:
+		push_strength = (
+			priority_dash_push_strength
+			if is_expected_balloon_player
+			else non_priority_dash_push_strength
+		)
 	else:
-		push_strength = priority_push_strength if is_priority_player else normal_push_strength
+		push_strength = (
+			priority_push_strength
+			if is_expected_balloon_player
+			else normal_push_strength
+		)
 
 	var push_direction := signf(opponent.global_position.x - player.global_position.x)
 	if is_zero_approx(push_direction):
 		push_direction = 1.0
-	opponent.velocity.x = clampf(
-		opponent.velocity.x + push_direction * push_strength,
-		-max_push_speed,
-		max_push_speed
+	var opponent_vertical_velocity := opponent.velocity.y
+	opponent.velocity = Vector2(
+		clampf(
+			opponent.velocity.x + push_direction * push_strength,
+			-max_push_speed,
+			max_push_speed
+		),
+		opponent_vertical_velocity
 	)

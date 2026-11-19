@@ -15,7 +15,13 @@ func get_axis(negative_action: String, positive_action: String) -> float:
 	)
 
 
-func vertical_intent() -> float:
+func vertical_intent(
+	bot_enabled: bool = false,
+	bot_active: bool = false,
+	cpu_down_intent: bool = false
+) -> float:
+	if bot_enabled:
+		return 1.0 if bot_active and cpu_down_intent else 0.0
 	return get_axis(PlayerActionCatalog.ACTION_UP, PlayerActionCatalog.ACTION_DOWN)
 
 
@@ -25,6 +31,17 @@ func is_just_pressed(action_suffix: String) -> bool:
 
 func is_pressed(action_suffix: String) -> bool:
 	return Input.is_action_pressed(PlayerActionCatalog.action_name(input_prefix, action_suffix))
+
+
+func action_held(
+	action_suffix: String,
+	bot_enabled: bool,
+	bot_active: bool,
+	cpu_intent: bool
+) -> bool:
+	if bot_enabled:
+		return bot_active and cpu_intent
+	return is_pressed(action_suffix)
 
 
 func is_just_released(action_suffix: String) -> bool:
@@ -62,6 +79,10 @@ func jump_requested(
 	cpu_requested: bool
 ) -> bool:
 	return bot_active and grounded and cpu_requested if bot_enabled else is_just_pressed(PlayerActionCatalog.ACTION_JUMP)
+
+
+func jump_button_held() -> bool:
+	return is_pressed(PlayerActionCatalog.ACTION_JUMP)
 
 
 func jump_held(bot_enabled: bool, bot_active: bool, variable_jump_timer: float) -> bool:

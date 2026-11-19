@@ -46,6 +46,7 @@ var force_move_timer: float = 0.0
 var is_dashing: bool = false
 var dash_rescue_hit: bool = false
 var normal_collision_height: float = 0.0
+var jump_input_blocked_until_release: bool = true
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var action_effect: AnimatedSprite2D = $ActionEffect
@@ -85,6 +86,7 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	movement_state = MovementState.NORMAL
 	coyote_timer = 0.0
 	jump_buffer_timer = 0.0
+	jump_input_blocked_until_release = true
 	platform_drop_timer = 0.0
 	set_collision_mask_value(PLATFORM_COLLISION_LAYER_INDEX, true)
 	var_jump_timer = 0.0
@@ -127,13 +129,24 @@ func _physics_process(delta: float) -> void:
 	var grounded := is_on_floor() and platform_drop_timer <= 0.0
 	var cpu_state := cpu_controller.update_decision(delta)
 	var bot_active := cpu_state != CPUController.State.INACTIVE
-	var horizontal_input := input_reader.horizontal_intent(bot_enabled, bot_active, cpu_controller.horizontal_intent)
+	var cpu_intents := cpu_controller.intents
+	var horizontal_input := input_reader.horizontal_intent(
+		bot_enabled, bot_active, cpu_intents.horizontal
+	)
+	var down_held := input_reader.action_held(
+		PlayerActionCatalog.ACTION_DOWN, bot_enabled, bot_active, cpu_intents.down
+	)
+	var can_accept_gameplay_input := match_manager.accepting_gameplay_input
+	if not can_accept_gameplay_input:
+		horizontal_input = 0.0
 
 	if not is_zero_approx(horizontal_input):
 		facing_direction = Vector2.RIGHT if horizontal_input > 0.0 else Vector2.LEFT
 
 	if movement_state == MovementState.DASH and dash_freeze_timer > 0.0:
-		var current_dash_input := input_reader.dash_direction(horizontal_input, bot_enabled, bot_active, cpu_controller.dash_direction)
+		var current_dash_input := input_reader.dash_direction(
+			horizontal_input, bot_enabled, bot_active, cpu_intents.dash_direction
+		)
 		if not current_dash_input.is_zero_approx():
 			dash_direction = current_dash_input.normalized()
 		dash_freeze_timer = maxf(dash_freeze_timer - delta, 0.0)
@@ -146,11 +159,14 @@ func _physics_process(delta: float) -> void:
 
 	if (
 		movement_state != MovementState.DASH
+		and can_accept_gameplay_input
 		and dash_available
 		and dash_cooldown_timer <= 0.0
-		and input_reader.dash_requested(bot_enabled, bot_active, cpu_controller.dash_requested)
+		and input_reader.dash_requested(bot_enabled, bot_active, cpu_intents.dash)
 	):
-		var requested_direction := input_reader.dash_direction(horizontal_input, bot_enabled, bot_active, cpu_controller.dash_direction)
+		var requested_direction := input_reader.dash_direction(
+			horizontal_input, bot_enabled, bot_active, cpu_intents.dash_direction
+		)
 		dash_direction = requested_direction.normalized() if not requested_direction.is_zero_approx() else facing_direction
 		dash_available = false
 		dash_refill_cooldown_timer = MovementConstants.DASH_REFILL_COOLDOWN
@@ -174,10 +190,14 @@ func _physics_process(delta: float) -> void:
 	else:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
 
-	if input_reader.jump_requested(bot_enabled, bot_active, grounded, cpu_controller.jump_requested):
-		var down_held := (
-			not bot_enabled and input_reader.is_pressed(PlayerActionCatalog.ACTION_DOWN)
-		)
+	if not bot_enabled and not input_reader.jump_button_held():
+		jump_input_blocked_until_release = false
+	if not can_accept_gameplay_input:
+		jump_buffer_timer = 0.0
+	elif (
+		(not jump_input_blocked_until_release or bot_enabled)
+		and input_reader.jump_requested(bot_enabled, bot_active, grounded, cpu_intents.jump)
+	):
 		if grounded and down_held and SurfaceTechniques.is_on_one_way_platform(self):
 			SurfaceTechniques.begin_platform_drop(
 				self, PLATFORM_COLLISION_LAYER_INDEX, PLATFORM_DROP_DURATION
@@ -186,14 +206,19 @@ func _physics_process(delta: float) -> void:
 			jump_buffer_timer = 0.0
 		else:
 			jump_buffer_timer = MovementConstants.JUMP_BUFFER
-	else:
+	elif can_accept_gameplay_input:
 		jump_buffer_timer = maxf(jump_buffer_timer - delta, 0.0)
 
 	var wall_jump_direction := _wall_direction_within(MovementConstants.WALL_CHECK_DIST)
 	var climb_wall_direction := ClimbTechniques.climbable_wall_direction_within(
 		self, MovementConstants.CLIMB_CHECK_DIST
 	)
-	var grab_held := not bot_enabled and input_reader.is_pressed(PlayerActionCatalog.ACTION_GRAB)
+	var grab_held := (
+		can_accept_gameplay_input
+		and input_reader.action_held(
+			PlayerActionCatalog.ACTION_GRAB, bot_enabled, bot_active, cpu_intents.grab
+		)
+	)
 	var wall_jump_started := false
 	if movement_state == MovementState.CLIMB:
 		if jump_buffer_timer > 0.0 and wall_jump_direction != 0.0:
@@ -203,13 +228,19 @@ func _physics_process(delta: float) -> void:
 			movement_state = MovementState.NORMAL
 		else:
 			ClimbTechniques.update_climb_state(
-				self, MovementConstants, input_reader.vertical_intent(), delta
+				self,
+				MovementConstants,
+				input_reader.vertical_intent(bot_enabled, bot_active, cpu_intents.down),
+				delta
 			)
 	elif movement_state == MovementState.NORMAL:
 		if grab_held and climb_wall_direction != 0.0 and climb_stamina > 0.0:
 			movement_state = MovementState.CLIMB
 			ClimbTechniques.update_climb_state(
-				self, MovementConstants, input_reader.vertical_intent(), delta
+				self,
+				MovementConstants,
+				input_reader.vertical_intent(bot_enabled, bot_active, cpu_intents.down),
+				delta
 			)
 		elif jump_buffer_timer > 0.0 and wall_jump_direction != 0.0:
 			ClimbTechniques.perform_wall_jump(self, MovementConstants, wall_jump_direction, false)
@@ -293,9 +324,7 @@ func _physics_process(delta: float) -> void:
 			):
 				gravity_multiplier = 0.5
 			if (
-				not bot_enabled
-				and input_reader.is_pressed(PlayerActionCatalog.ACTION_DOWN)
-				and velocity.y >= MovementConstants.MAX_FALL
+				down_held and velocity.y >= MovementConstants.MAX_FALL
 			):
 				velocity.y = move_toward(
 					velocity.y,
@@ -314,15 +343,15 @@ func _physics_process(delta: float) -> void:
 	var upward_speed := velocity.y
 	var dash_velocity_before_move := velocity
 	move_and_slide()
-	if movement_state != MovementState.DASH:
-		SurfaceTechniques.handle_trampoline_contacts(self, MovementConstants)
+	_stop_grounded_wall_motion()
 	if movement_state == MovementState.DASH:
 		DashTechniques.try_corner_correction(
 			self, dash_direction, delta, dash_velocity_before_move,
 			MovementConstants.DASH_CORNER_CORRECTION
 		)
 		DashTechniques.handle_contacts(self, MovementConstants)
-	else:
+	SurfaceTechniques.handle_trampoline_contacts(self, MovementConstants)
+	if movement_state != MovementState.DASH:
 		SurfaceTechniques.update_ceiling_contact(self, MovementConstants, delta, upward_speed)
 	_update_footsteps(delta)
 
@@ -344,6 +373,15 @@ func _physics_process(delta: float) -> void:
 	_update_cosmetic_motion(delta, movement_state == MovementState.DASH and dash_freeze_timer > 0.0)
 
 func _wall_direction_within(distance: float) -> float: return DashTechniques.wall_direction_within(self, distance)
+
+func _stop_grounded_wall_motion() -> void:
+	if not is_on_floor():
+		return
+	for collision_index in get_slide_collision_count():
+		var collision := get_slide_collision(collision_index)
+		if absf(collision.get_normal().x) > 0.7 and velocity.dot(collision.get_normal()) < 0.0:
+			velocity.x = 0.0
+			return
 
 func _climbable_wall_direction_within(distance: float) -> float:
 	return ClimbTechniques.climbable_wall_direction_within(self, distance)
@@ -381,6 +419,15 @@ func _set_ducking(active: bool) -> void: DashTechniques.set_ducking(self, Moveme
 
 func _on_dash_rescue_area_body_entered(body: Node2D) -> void:
 	DashTechniques.handle_rescue_body(self, body)
+
+func claim_dash_balloon_contact() -> bool:
+	if not is_dashing:
+		return true
+	if dash_rescue_hit:
+		return false
+	dash_rescue_hit = true
+	presentation.dash_trail_rescue_hit = true
+	return true
 
 func _update_footsteps(delta: float) -> void:
 	presentation.update_footsteps(

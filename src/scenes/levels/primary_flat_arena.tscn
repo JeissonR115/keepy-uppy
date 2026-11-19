@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_primary_floor"]
+size = Vector2(304, 12)
+
+[node name="PrimaryFlatArenaGeometry" type="Node2D"]
+
+[node name="Background" type="Polygon2D" parent="."]
+z_index = -100
+color = Color(0.075, 0.105, 0.165, 1)
+polygon = PackedVector2Array(0, 0, 320, 0, 320, 180, 0, 180)
+
+[node name="Floor" type="StaticBody2D" parent="." groups=["scoring_ground"]]
+position = Vector2(0, 0)
+
+[node name="Visual" type="Polygon2D" parent="Floor"]
+color = Color(0.29, 0.38, 0.54, 1)
+polygon = PackedVector2Array(8, 160, 312, 160, 312, 172, 8, 172)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+position = Vector2(160, 166)
+shape = SubResource("RectangleShape2D_primary_floor")

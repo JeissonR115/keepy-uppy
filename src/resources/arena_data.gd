@@ -12,6 +12,7 @@ enum SizeClassification { SMALL, MEDIUM, LARGE }
 @export var preview_texture: Texture2D
 @export var map_scene: PackedScene
 @export var playable_bounds: Rect2 = Rect2(0.0, 0.0, 320.0, 180.0)
+@export var safe_margin: Vector2 = Vector2(8.0, 8.0)
 @export var player_1_spawn: Vector2 = Vector2(72.0, 144.0)
 @export var player_2_spawn: Vector2 = Vector2(248.0, 144.0)
 @export var balloon_gravity_scale_multiplier: float = 1.0
@@ -26,6 +27,10 @@ func has_valid_metadata() -> bool:
 		and recommended_players > 0
 		and playable_bounds.size.x > 0.0
 		and playable_bounds.size.y > 0.0
+		and safe_margin.x >= 0.0
+		and safe_margin.y >= 0.0
+		and playable_bounds.size.x > safe_margin.x * 2.0
+		and playable_bounds.size.y > safe_margin.y * 2.0
 		and map_scene != null
 		and map_scene.can_instantiate()
 	)
