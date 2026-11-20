@@ -175,7 +175,7 @@ func _run_test() -> void:
 	ceiling_shape.shape = ceiling_rectangle
 	ceiling_obstacle.add_child(ceiling_shape)
 	arena.add_child(ceiling_obstacle)
-	player_1.reset_for_round(Vector2(155, 110))
+	player_1.reset_for_round(Vector2(159, 110))
 	for _frame in range(2):
 		await physics_frame
 	var ceiling_start := player_1.global_position
