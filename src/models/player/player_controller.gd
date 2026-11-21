@@ -142,7 +142,7 @@ func _physics_process(delta: float) -> void:
 	if not can_accept_gameplay_input:
 		horizontal_input = 0.0
 
-	if not is_zero_approx(horizontal_input):
+	if movement_state != MovementState.CLIMB and not is_zero_approx(horizontal_input):
 		facing_direction = Vector2.RIGHT if horizontal_input > 0.0 else Vector2.LEFT
 
 	if movement_state == MovementState.DASH and dash_freeze_timer > 0.0:
@@ -234,6 +234,7 @@ func _physics_process(delta: float) -> void:
 		if jump_buffer_timer > 0.0 and wall_jump_direction != 0.0:
 			ClimbTechniques.perform_wall_jump(self, MovementConstants, wall_jump_direction, true)
 			wall_jump_started = true
+			grounded = false
 		elif not grab_held or climb_wall_direction == 0.0 or climb_stamina <= 0.0:
 			movement_state = MovementState.NORMAL
 		else:
@@ -244,7 +245,11 @@ func _physics_process(delta: float) -> void:
 				delta
 			)
 	elif movement_state == MovementState.NORMAL:
-		if grab_held and climb_wall_direction != 0.0 and climb_stamina > 0.0:
+		if jump_buffer_timer > 0.0 and wall_jump_direction != 0.0:
+			ClimbTechniques.perform_wall_jump(self, MovementConstants, wall_jump_direction, false)
+			wall_jump_started = true
+			grounded = false
+		elif grab_held and climb_wall_direction != 0.0 and climb_stamina > 0.0:
 			movement_state = MovementState.CLIMB
 			ClimbTechniques.update_climb_state(
 				self,
@@ -252,9 +257,6 @@ func _physics_process(delta: float) -> void:
 				input_reader.vertical_intent(bot_enabled, bot_active, cpu_intents.down),
 				delta
 			)
-		elif jump_buffer_timer > 0.0 and wall_jump_direction != 0.0:
-			ClimbTechniques.perform_wall_jump(self, MovementConstants, wall_jump_direction, false)
-			wall_jump_started = true
 
 	if force_move_timer > 0.0:
 		horizontal_input = force_move_x

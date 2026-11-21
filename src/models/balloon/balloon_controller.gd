@@ -35,7 +35,8 @@ const BALLOON_REF_SPEED := 240.0
 
 @onready var player_contact_area: Area2D = $PlayerContactArea
 @onready var visual: Polygon2D = $Visual
-@onready var ground_burst: Polygon2D = $GroundBurst
+@onready var string_visual: Line2D = $String
+@onready var ground_burst: AnimatedSprite2D = $GroundBurst
 @onready var balloon_collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var player_contact_shape: CollisionShape2D = $PlayerContactArea/CollisionShape2D
 @onready var audio_manager: Node = get_node("/root/AudioManager")
@@ -48,7 +49,6 @@ var waiting_spawn_position: Vector2 = Vector2.ZERO
 var default_visual_color: Color
 var current_turn_color: Color = Color.WHITE
 var impact_tween: Tween
-var burst_tween: Tween
 var player_contact_cooldowns: Dictionary = {}
 var pending_contact_impulses: Dictionary = {}
 var downward_warning_time_left: float = 0.0
@@ -75,6 +75,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	player_contact_area.body_entered.connect(_on_player_contact_area_body_entered)
 	player_contact_area.body_exited.connect(_on_player_contact_area_body_exited)
+	ground_burst.animation_finished.connect(_on_ground_burst_animation_finished)
 
 
 func _physics_process(delta: float) -> void:
@@ -132,8 +133,10 @@ func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) ->
 	clear_downward_warning()
 	if impact_tween != null and impact_tween.is_running():
 		impact_tween.kill()
+	freeze = false
 	visual.color = default_visual_color
 	visual.visible = true
+	string_visual.visible = true
 	balloon_collision_shape.set_deferred("disabled", false)
 	player_contact_area.monitoring = true
 	player_contacts_armed = false
@@ -149,11 +152,9 @@ func reset_round(spawn_position: Vector2, wait_for_first_touch: bool = false) ->
 	spike_contact_reported = false
 	player_contact_cooldowns.clear()
 	pending_contact_impulses.clear()
-	if burst_tween != null and burst_tween.is_running():
-		burst_tween.kill()
+	ground_burst.stop()
+	ground_burst.frame = 0
 	ground_burst.visible = false
-	ground_burst.scale = Vector2.ONE
-	ground_burst.modulate = Color.WHITE
 
 
 func prepare_for_round() -> void:
@@ -161,8 +162,12 @@ func prepare_for_round() -> void:
 	if impact_tween != null and impact_tween.is_running():
 		impact_tween.kill()
 	visual.visible = false
+	string_visual.visible = false
 	balloon_collision_shape.set_deferred("disabled", true)
 	player_contact_area.monitoring = false
+	ground_burst.stop()
+	ground_burst.frame = 0
+	ground_burst.visible = false
 	player_contacts_armed = false
 	setup_overlap_player_ids.clear()
 	waiting_for_first_touch = true
@@ -273,10 +278,8 @@ func _on_body_entered(body: Node) -> void:
 		and scoring_ground_contact_from_above
 		and not ground_contact_reported
 	):
-		ground_contact_reported = true
-		_play_ground_burst()
-		audio_manager.call("play_gameplay_event", "balloon_explode", global_position)
-		ground_touched.emit()
+		if _begin_balloon_impact():
+			ground_touched.emit()
 
 
 func apply_trampoline_bounce() -> void:
@@ -285,30 +288,40 @@ func apply_trampoline_bounce() -> void:
 
 
 func explode_on_spikes() -> void:
-	if not player_contacts_armed or spike_contact_reported:
+	if not player_contacts_armed or spike_contact_reported or ground_contact_reported:
+		return
+	if not _begin_balloon_impact():
 		return
 	spike_contact_reported = true
+	spikes_touched.emit()
+
+
+func _begin_balloon_impact() -> bool:
+	if ground_contact_reported:
+		return false
 	ground_contact_reported = true
 	disarm_player_contacts()
 	balloon_collision_shape.set_deferred("disabled", true)
 	visual.visible = false
+	string_visual.visible = false
+	linear_velocity = Vector2.ZERO
+	angular_velocity = 0.0
+	gravity_scale = 0.0
+	set_deferred("freeze", true)
 	_play_ground_burst()
 	audio_manager.call("play_gameplay_event", "balloon_explode", global_position)
-	spikes_touched.emit()
+	return true
 
 
 func _play_ground_burst() -> void:
-	if burst_tween != null and burst_tween.is_running():
-		burst_tween.kill()
+	ground_burst.stop()
+	ground_burst.frame = 0
 	ground_burst.visible = true
-	ground_burst.scale = Vector2(0.25, 0.25)
-	ground_burst.modulate = Color.WHITE
-	burst_tween = create_tween()
-	burst_tween.set_parallel(true)
-	burst_tween.tween_property(ground_burst, "scale", Vector2(1.5, 1.5), 0.24)
-	burst_tween.tween_property(ground_burst, "modulate:a", 0.0, 0.24)
-	burst_tween.set_parallel(false)
-	burst_tween.tween_callback(func() -> void: ground_burst.visible = false)
+	ground_burst.play("explode")
+
+
+func _on_ground_burst_animation_finished() -> void:
+	ground_burst.visible = false
 
 
 func show_contact_pixel(world_position: Vector2) -> void:
