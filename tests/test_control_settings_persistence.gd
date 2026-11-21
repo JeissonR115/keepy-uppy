@@ -1,7 +1,7 @@
 extends SceneTree
 
 const SETTINGS_MANAGER := preload("res://src/managers/control_settings_manager.gd")
-const TEST_SETTINGS_PATH := "/tmp/keepy-controls-test.cfg"
+const TEST_SETTINGS_PATH := "user://keepy-controls-test.cfg"
 
 
 func _initialize() -> void:
@@ -39,21 +39,69 @@ func _run_test() -> void:
 		return
 	if not _expect(_has_key("player_1_left", KEY_Z), "A valid binding did not survive reload."):
 		return
+	var audio_result: Dictionary = manager.set_audio_settings({
+		"master": 0.6,
+		"music": 0.35,
+		"effects": 0.8,
+		"muted": true,
+	})
+	if not _expect(audio_result.valid, "Audio settings could not be saved: %s" % audio_result.reason):
+		return
+	if not _expect(
+		AudioServer.is_bus_mute(AudioServer.get_bus_index("Master"))
+		and is_equal_approx(
+			AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Music")),
+			linear_to_db(0.35)
+		)
+		and is_equal_approx(
+			AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX")),
+			linear_to_db(0.8)
+		),
+		"Audio settings did not update their buses immediately."
+	):
+		return
+	if not _expect(
+		reloaded_manager.load_or_restore_settings()
+		and is_equal_approx(reloaded_manager.get_audio_settings()["master"], 0.6)
+		and is_equal_approx(reloaded_manager.get_audio_settings()["music"], 0.35)
+		and is_equal_approx(reloaded_manager.get_audio_settings()["effects"], 0.8)
+		and reloaded_manager.get_audio_settings()["muted"],
+		"Saved audio levels or mute state did not survive reload."
+	):
+		return
 	var legacy_config := ConfigFile.new()
 	if not _expect(legacy_config.load(TEST_SETTINGS_PATH) == OK, "Could not load bindings for the legacy settings check."):
 		return
 	legacy_config.set_value("bindings", "player_1_accelerate", KEY_H)
 	legacy_config.set_value("bindings", "player_2_accelerate", KEY_3)
+	legacy_config.erase_section("audio")
 	if not _expect(legacy_config.save(TEST_SETTINGS_PATH) == OK, "Could not write legacy accelerate bindings."):
 		return
 	if not _expect(reloaded_manager.load_or_restore_settings(), "Legacy saved boost keys prevented current controls from loading."):
 		return
-	if not _expect(not InputMap.has_action("player_1_accelerate") and not InputMap.has_action("player_2_accelerate"), "Legacy boost keys recreated removed Input Map actions."):
+	if not _expect(
+		not InputMap.has_action("player_1_accelerate")
+		and not InputMap.has_action("player_2_accelerate"),
+		"Legacy boost keys recreated removed Input Map actions."
+	):
+		return
+	var loaded_audio: Dictionary = reloaded_manager.get_audio_settings()
+	if not _expect(
+		is_equal_approx(loaded_audio["master"], 1.0)
+		and is_equal_approx(loaded_audio["music"], 1.0)
+		and is_equal_approx(loaded_audio["effects"], 1.0)
+		and not loaded_audio["muted"],
+		"Settings without the optional audio section did not use defaults."
+	):
 		return
 
 	var config := ConfigFile.new()
 	config.set_value("settings", "version", 1)
 	config.set_value("bindings", "player_1_left", KEY_Z)
+	config.set_value("audio", "master", 0.6)
+	config.set_value("audio", "music", 0.35)
+	config.set_value("audio", "effects", 0.8)
+	config.set_value("audio", "muted", true)
 	if not _expect(config.save(TEST_SETTINGS_PATH) == OK, "Could not write the partial test configuration."):
 		return
 	if not _expect(not manager.load_or_restore_settings(), "An incomplete settings map was accepted."):
@@ -63,6 +111,20 @@ func _run_test() -> void:
 	if not _expect(_has_key("player_1_grab", KEY_R), "Recovery did not restore P1 Grab."):
 		return
 	if not _expect(_has_key("player_2_grab", KEY_4), "Recovery did not restore P2 Grab."):
+		return
+	if not _expect(
+		manager.get_audio_settings()["muted"]
+		and is_equal_approx(manager.get_audio_settings()["music"], 0.35),
+		"Binding recovery discarded the optional audio settings."
+	):
+		return
+	if not _expect(config.load(TEST_SETTINGS_PATH) == OK, "Could not reload recovered bindings."):
+		return
+	if not _expect(
+		is_equal_approx(float(config.get_value("audio", "master")), 0.6)
+		and is_equal_approx(float(config.get_value("audio", "effects")), 0.8),
+		"Binding recovery did not preserve the audio configuration section."
+	):
 		return
 
 	config = ConfigFile.new()

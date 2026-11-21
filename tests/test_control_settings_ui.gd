@@ -1,6 +1,6 @@
 extends SceneTree
 
-const TEST_SETTINGS_PATH := "/tmp/keepy-controls-keyboard-ui-test.cfg"
+const TEST_SETTINGS_PATH := "user://keepy-controls-keyboard-ui-test.cfg"
 const ACTIONS: Array[String] = [
 	"player_1_left", "player_1_right", "player_1_up", "player_1_down",
 	"player_1_jump", "player_1_dash", "player_1_grab",
@@ -32,12 +32,14 @@ func _run_test() -> void:
 	var scoreboard: CanvasLayer = main_scene.get_node("Arena/Scoreboard")
 	var pause_menu: PauseMenu = scoreboard.get_node("PauseMenu")
 	var screen: Control = scoreboard.get_node("ControlSettings")
+	var audio_settings: AudioSettings = scoreboard.get_node("AudioSettings")
 	var player_count_menu: PlayerCountMenu = main_scene.get_node("PlayerCountMenu")
 	if not _expect(
 		player_count_menu.visible and not pause_menu.visible and not screen.visible and paused,
 		"Player selection was not the only menu shown at startup."
 	):
 		return
+	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_S)
 	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_S)
 	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_S)
 	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_F)
@@ -52,10 +54,77 @@ func _run_test() -> void:
 		"Closing Keyboard Controls did not return to the player-selection menu."
 	):
 		return
+	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_S)
+	await _press_menu_key(player_count_menu.keyboard_navigator, KEY_F)
+	if not _expect(
+		audio_settings.visible and not player_count_menu.visible and not pause_menu.visible and paused,
+		"Audio Settings did not replace player selection as the only open menu."
+	):
+		return
+	var master_slider := audio_settings.get("master_slider") as HSlider
+	var mute_button := audio_settings.get("mute_button") as CheckButton
+	var preview_button := audio_settings.get("preview_button") as Button
+	master_slider.value = 0.55
+	mute_button.button_pressed = true
+	if not _expect(
+		is_equal_approx(settings_manager.get_audio_settings()["master"], 0.55)
+		and settings_manager.get_audio_settings()["muted"]
+		and AudioServer.is_bus_mute(AudioServer.get_bus_index("Master")),
+		"Audio controls did not immediately apply and persist their settings."
+	):
+		return
+	await _press_action("player_1_down")
+	await _press_action("player_1_down")
+	await _press_action("player_1_left")
+	if not _expect(
+		audio_settings.get("focused_index") == 2
+		and is_equal_approx(settings_manager.get_audio_settings()["effects"], 0.95),
+		"Audio sliders were not keyboard reachable or adjustable."
+	):
+		return
+	await _press_action("player_1_down")
+	await _press_action("player_1_down")
+	var audio_manager: Node = root.get_node("AudioManager")
+	if not _expect(
+		audio_settings.get("focused_index") == 4 and preview_button.has_focus(),
+		"Effect preview was not reachable through keyboard navigation."
+	):
+		return
+	await _press_action("player_1_jump")
+	if not _expect(
+		audio_manager._last_paths.has("jump"),
+		"Effect preview did not route through the existing jump audio event."
+	):
+		return
+	await _press_action("player_1_dash")
+	if not _expect(
+		player_count_menu.visible and not audio_settings.visible and paused,
+		"Closing Audio Settings did not return to the player-selection menu."
+	):
+		return
 	scoreboard.call("_input", _escape_event())
 	if not _expect(
 		pause_menu.visible and not player_count_menu.visible and not screen.visible and paused,
 		"Opening pause did not replace player selection as the only open menu."
+	):
+		return
+	await _press_action("player_1_down")
+	await _press_action("player_1_down")
+	await _press_action("player_1_down")
+	await _press_action("player_1_jump")
+	if not _expect(
+		audio_settings.visible
+		and pause_menu.current_screen == pause_menu.MenuScreen.AUDIO_SETTINGS
+		and paused,
+		"Audio Settings did not open over a paused game."
+	):
+		return
+	scoreboard.call("_input", _escape_event())
+	if not _expect(
+		pause_menu.visible
+		and pause_menu.current_screen == pause_menu.MenuScreen.PAUSE
+		and paused,
+		"Closing pause-menu Audio Settings did not return to the paused game menu."
 	):
 		return
 	scoreboard.call("_input", _escape_event())
@@ -253,5 +322,6 @@ func _escape_event() -> InputEventKey:
 
 
 func _remove_test_file() -> void:
-	if FileAccess.file_exists(TEST_SETTINGS_PATH):
-		DirAccess.remove_absolute(TEST_SETTINGS_PATH)
+	var absolute_path := ProjectSettings.globalize_path(TEST_SETTINGS_PATH)
+	if FileAccess.file_exists(absolute_path):
+		DirAccess.remove_absolute(absolute_path)

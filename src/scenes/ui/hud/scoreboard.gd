@@ -11,6 +11,7 @@ extends CanvasLayer
 @onready var turn_label: Label = $HUD/TurnLabel
 @onready var controls_button: Button = $HUD/ControlsButton
 @onready var control_settings: ControlSettings = $ControlSettings
+@onready var audio_settings: AudioSettings = $AudioSettings
 @onready var pause_menu: PauseMenu = $PauseMenu
 @onready var winner_overlay: Control = $WinnerOverlay
 @onready var winner_label: Label = $WinnerOverlay/WinnerPanel/Content/WinnerLabel
@@ -22,6 +23,7 @@ extends CanvasLayer
 @onready var audio_manager: Node = get_node("/root/AudioManager")
 var set_result_tween: Tween
 var controls_return_to_player_count: bool = false
+var audio_return_to_player_count: bool = false
 var player_count_suspended_by_pause: bool = false
 
 
@@ -34,11 +36,14 @@ func _ready() -> void:
 	winner_ok_button.pressed.connect(_play_menu_select)
 	winner_ok_button.pressed.connect(_return_to_player_count_menu)
 	pause_menu.controls_requested.connect(_open_control_settings)
+	pause_menu.audio_settings_requested.connect(_open_pause_audio_settings)
 	pause_menu.player_count_requested.connect(_open_player_count_menu)
 	pause_menu.opened.connect(_on_pause_menu_opened)
 	pause_menu.closed.connect(_on_pause_menu_closed)
 	control_settings.returned_to_menu.connect(_on_control_settings_returned)
+	audio_settings.returned_to_menu.connect(_on_audio_settings_returned)
 	player_count_menu.controls_requested.connect(_open_player_count_controls)
+	player_count_menu.audio_settings_requested.connect(_open_player_count_audio_settings)
 	match_manager.score_changed.connect(_on_score_changed)
 	match_manager.set_score_changed.connect(_on_set_score_changed)
 	match_manager.round_ended.connect(_on_round_ended)
@@ -72,6 +77,8 @@ func _input(event: InputEvent) -> void:
 		control_settings.cancel_capture()
 	elif control_settings.visible:
 		control_settings.close()
+	elif audio_settings.visible:
+		audio_settings.close()
 	else:
 		pause_menu.toggle_pause()
 	get_viewport().set_input_as_handled()
@@ -87,12 +94,30 @@ func _open_player_count_controls() -> void:
 	control_settings.open()
 
 
+func _open_pause_audio_settings() -> void:
+	audio_return_to_player_count = false
+	audio_settings.open()
+
+
+func _open_player_count_audio_settings() -> void:
+	audio_return_to_player_count = true
+	audio_settings.open()
+
+
 func _on_control_settings_returned() -> void:
 	if controls_return_to_player_count:
 		controls_return_to_player_count = false
 		player_count_menu.resume_menu()
 	else:
 		pause_menu.return_from_controls()
+
+
+func _on_audio_settings_returned() -> void:
+	if audio_return_to_player_count:
+		audio_return_to_player_count = false
+		player_count_menu.resume_menu()
+	else:
+		pause_menu.return_from_audio_settings()
 
 
 func _open_player_count_menu() -> void:

@@ -73,7 +73,7 @@ func _run_test() -> void:
 			and player.visual.sprite_frames.get_frame_texture("idle", 0).get_width() == 32
 			and effect.sprite_frames.get_animation_names().size() == 5
 			and not effect.sprite_frames.has_animation("idle")
-			and player.visual.position == Vector2(1, -9.000001)
+			and player.visual.position == Vector2(1, -8.000001)
 			and player.visual.scale == Vector2.ONE
 			and effect.scale == Vector2.ONE
 			and player.visual.speed_scale == 1.0
@@ -140,21 +140,38 @@ func _run_test() -> void:
 				return
 	var player_1 := main_scene.get_node("Arena/Player1") as PlayerController
 	var player_2 := main_scene.get_node("Arena/Player2") as PlayerController
+	var shared_settings := player_1.visual_profile.get("shared_settings") as PlayerVisualSettings
+	var player_1_tint := (
+		(player_1.visual_profile.get("tint") as Color).lerp(
+			PlayerActionCatalog.player_color(PlayerActionCatalog.PLAYER_ONE_PREFIX),
+			shared_settings.tint_strength
+		)
+	)
+	var player_2_tint := (
+		(player_2.visual_profile.get("tint") as Color).lerp(
+			PlayerActionCatalog.player_color(PlayerActionCatalog.PLAYER_TWO_PREFIX),
+			shared_settings.tint_strength
+		)
+	)
 	if not _expect(
 		player_1.visual.sprite_frames == player_2.visual.sprite_frames
 		and player_1.action_effect.sprite_frames == player_2.action_effect.sprite_frames
 		and player_1.visual_profile != player_2.visual_profile
 		and player_1.visual_profile.get("body_frames") == player_1.visual.sprite_frames
 		and player_2.visual_profile.get("body_frames") == player_2.visual.sprite_frames
+		and player_1.visual_profile.get("shared_settings") == shared_settings
+		and player_2.visual_profile.get("shared_settings") == shared_settings
+		and shared_settings.tint_strength > 0.0
+		and shared_settings.tint_strength < 1.0
 		and player_1.visual_profile.get("tint") == Color.WHITE
-		and player_2.visual_profile.get("tint") == PlayerPresentationController.PLAYER_TWO_TINT
+		and player_2.visual_profile.get("tint") == Color(1.0, 0.84, 0.70, 1.0)
 		and player_1.visual_profile.get("hair_enabled")
 		and player_2.visual_profile.get("hair_enabled")
 		and player_1.visual.flip_h == player_2.visual.flip_h
-		and player_1.visual.modulate == Color.WHITE
-		and player_1.get_node("ActionEffect").modulate == Color.WHITE
-		and player_2.visual.modulate == PlayerPresentationController.PLAYER_TWO_TINT
-		and player_2.get_node("ActionEffect").modulate == PlayerPresentationController.PLAYER_TWO_TINT,
+		and player_1.visual.modulate == player_1_tint
+		and player_1.get_node("ActionEffect").modulate == player_1_tint
+		and player_2.visual.modulate == player_2_tint
+		and player_2.get_node("ActionEffect").modulate == player_2_tint,
 		"P1/P2 profiles are not independently configured with expected frames and tint."
 	):
 		return

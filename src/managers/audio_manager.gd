@@ -50,6 +50,7 @@ func _create_music_player(
 	player.stream = looping_stream
 	player.volume_db = volume_db
 	player.pitch_scale = pitch_scale
+	player.bus = "Music"
 	add_child(player)
 	return player
 

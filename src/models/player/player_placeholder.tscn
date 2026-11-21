@@ -21,6 +21,7 @@ script = ExtResource("1_player_controller")
 visual_profile = ExtResource("7_profile")
 
 [node name="PriorityIndicator" type="Polygon2D" parent="." unique_id=441771129]
+visible = false
 z_index = -1
 color = Color(1, 0.839216, 0.317647, 0.8)
 polygon = PackedVector2Array(-9, -13, 0, -18, 9, -13, 9, 13, 0, 18, -9, 13)

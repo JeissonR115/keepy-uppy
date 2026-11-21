@@ -19,6 +19,7 @@ signal match_ended(winner: CharacterBody2D)
 signal coin_toss_completed(result: String, first_server: CharacterBody2D)
 signal balloon_turn_changed(player: CharacterBody2D)
 signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
+signal opening_presentation_released
 
 @export var normal_push_strength: float = 30.0
 @export var start_match_on_ready: bool = true
@@ -34,6 +35,7 @@ signal downward_fault_replayed(player: CharacterBody2D, point_deducted: bool)
 @export var player_1_spawn_position: Vector2 = Vector2(72, 144)
 @export var player_2_spawn_position: Vector2 = Vector2(248, 144)
 @export var balloon_spawn_offset: float = 30.0
+@export var opening_presentation_gate_enabled: bool = false
 
 @onready var player_1: CharacterBody2D = $"../Player1"
 @onready var player_2: CharacterBody2D = $"../Player2"
@@ -70,6 +72,7 @@ var setup_generation: int = 0
 var downward_warning_player: CharacterBody2D
 var pending_player_bumps: Dictionary = {}
 var player_bump_flush_scheduled: bool = false
+var opening_presentation_pending: bool = false
 
 
 func _ready() -> void:
@@ -92,6 +95,7 @@ func _start_new_match() -> void:
 	setup_generation += 1
 	match_state = MatchState.SETTING_UP
 	accepting_gameplay_input = false
+	opening_presentation_pending = opening_presentation_gate_enabled
 	_clear_downward_warning()
 	player_1_score = 0
 	player_2_score = 0
@@ -413,6 +417,15 @@ func _complete_round_setup(
 		or setup_server != round_server
 	):
 		return
+	if opening_presentation_pending:
+		await opening_presentation_released
+		if (
+			generation != setup_generation
+			or match_state != MatchState.SETTING_UP
+			or setup_round_number != round_number
+			or setup_server != round_server
+		):
+			return
 	balloon.reset_round(_balloon_spawn_for(setup_server), true)
 	await get_tree().physics_frame
 	if (
@@ -426,6 +439,13 @@ func _complete_round_setup(
 	match_state = MatchState.ACTIVE
 	accepting_gameplay_input = true
 	round_started.emit(round_number, round_server)
+
+
+func release_opening_presentation() -> void:
+	if not opening_presentation_pending:
+		return
+	opening_presentation_pending = false
+	opening_presentation_released.emit()
 
 
 func _opponent_of(player: CharacterBody2D) -> CharacterBody2D:

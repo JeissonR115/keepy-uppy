@@ -57,6 +57,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "  CONTROLS"
 
+[node name="AudioSettingsButton" type="Button" parent="PausePanel/Content/Options"]
+custom_minimum_size = Vector2(132, 18)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "  AUDIO SETTINGS"
+
 [node name="Hint" type="Label" parent="PausePanel/Content" unique_id=2433872]
 layout_mode = 2
 theme_override_font_sizes/font_size = 6

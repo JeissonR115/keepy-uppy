@@ -3,6 +3,7 @@ extends Resource
 @export var body_frames: SpriteFrames
 @export var effect_frames: SpriteFrames
 @export var tint: Color = Color.WHITE
+@export var shared_settings: PlayerVisualSettings
 @export var hair_enabled: bool = false
 @export var hair_anchor_a: Vector2 = Vector2(1.0, -15.0)
 @export var hair_anchor_b: Vector2 = Vector2(1.0, -15.0)

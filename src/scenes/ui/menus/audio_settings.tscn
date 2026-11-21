@@ -1,0 +1,141 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/scenes/ui/menus/audio_settings.gd" id="1_audio_settings"]
+
+[node name="AudioSettings" type="CanvasLayer"]
+visible = false
+script = ExtResource("1_audio_settings")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.02, 0.04, 0.9)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -116.0
+offset_top = -76.0
+offset_right = 116.0
+offset_bottom = 76.0
+
+[node name="Content" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Title" type="Label" parent="Panel/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "AUDIO SETTINGS"
+horizontal_alignment = 1
+
+[node name="MasterRow" type="HBoxContainer" parent="Panel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="MasterLabel" type="Label" parent="Panel/Content/MasterRow"]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "MASTER"
+
+[node name="MasterSlider" type="HSlider" parent="Panel/Content/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="MasterValue" type="Label" parent="Panel/Content/MasterRow"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "100%"
+horizontal_alignment = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="Panel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="MusicLabel" type="Label" parent="Panel/Content/MusicRow"]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "MUSIC"
+
+[node name="MusicSlider" type="HSlider" parent="Panel/Content/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="MusicValue" type="Label" parent="Panel/Content/MusicRow"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "100%"
+horizontal_alignment = 2
+
+[node name="EffectsRow" type="HBoxContainer" parent="Panel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="EffectsLabel" type="Label" parent="Panel/Content/EffectsRow"]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "EFFECTS"
+
+[node name="EffectsSlider" type="HSlider" parent="Panel/Content/EffectsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="EffectsValue" type="Label" parent="Panel/Content/EffectsRow"]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "100%"
+horizontal_alignment = 2
+
+[node name="MuteButton" type="CheckButton" parent="Panel/Content"]
+layout_mode = 2
+focus_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "MUTE: OFF"
+
+[node name="PreviewButton" type="Button" parent="Panel/Content"]
+custom_minimum_size = Vector2(120, 16)
+layout_mode = 2
+focus_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "PREVIEW EFFECT"
+
+[node name="BackButton" type="Button" parent="Panel/Content"]
+custom_minimum_size = Vector2(120, 16)
+layout_mode = 2
+focus_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "BACK"
+
+[node name="StatusLabel" type="Label" parent="Panel/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 6
+text = "W/S SELECT  A/D ADJUST  F CONFIRM  G BACK"
+horizontal_alignment = 1

@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/scenes/ui/hud/scoreboard.gd" id="1_scoreboard"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/menus/control_settings.tscn" id="2_control_settings"]
 [ext_resource type="PackedScene" path="res://src/scenes/ui/menus/pause_menu.tscn" id="3_pause_menu"]
 [ext_resource type="Script" path="res://src/scenes/ui/components/menu_keyboard_navigator.gd" id="4_keyboard_navigator"]
+[ext_resource type="PackedScene" path="res://src/scenes/ui/menus/audio_settings.tscn" id="5_audio_settings"]
 
 [node name="Scoreboard" type="CanvasLayer"]
 script = ExtResource("1_scoreboard")
@@ -154,6 +155,8 @@ text = "P1: TOUCH BALLOON"
 [node name="ControlSettings" parent="." instance=ExtResource("2_control_settings")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_pause_menu")]
+
+[node name="AudioSettings" parent="." instance=ExtResource("5_audio_settings")]
 
 [node name="WinnerNavigator" type="Node" parent="."]
 script = ExtResource("4_keyboard_navigator")

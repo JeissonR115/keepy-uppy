@@ -36,8 +36,11 @@ func _run_test() -> void:
 	if not _expect(
 		is_equal_approx(manager._menu_music.volume_db, -6.0)
 		and is_equal_approx(manager._match_music.volume_db, -4.0)
-		and is_equal_approx(manager._match_music.pitch_scale, 0.92),
-		"Music volume or the lower match pitch is not configured."
+		and is_equal_approx(manager._match_music.pitch_scale, 0.92)
+		and manager._menu_music.bus == "Music"
+		and manager._match_music.bus == "Music"
+		and AudioServer.get_bus_send(AudioServer.get_bus_index("Music")) == "Master",
+		"Music routing, volume, or the lower match pitch is not configured."
 	):
 		return
 

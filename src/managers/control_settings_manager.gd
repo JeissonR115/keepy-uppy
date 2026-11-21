@@ -7,6 +7,13 @@ const SETTINGS_VERSION := 1
 const SETTINGS_PATH := "user://controls.cfg"
 const SETTINGS_SECTION := "settings"
 const BINDINGS_SECTION := "bindings"
+const AUDIO_SECTION := "audio"
+const AUDIO_DEFAULTS := {
+	"master": 1.0,
+	"music": 1.0,
+	"effects": 1.0,
+	"muted": false,
+}
 
 const RESERVED_KEYS: Array[int] = [
 	KEY_ESCAPE,
@@ -29,6 +36,7 @@ const RESERVED_KEYS: Array[int] = [
 ]
 
 var settings_path: String = SETTINGS_PATH
+var audio_settings: Dictionary = AUDIO_DEFAULTS.duplicate()
 
 
 func _enter_tree() -> void:
@@ -92,8 +100,12 @@ func load_or_restore_settings() -> bool:
 	var config := ConfigFile.new()
 	var load_error := config.load(settings_path)
 	if load_error != OK:
+		audio_settings = AUDIO_DEFAULTS.duplicate()
+		_apply_audio_settings()
 		_restore_default_bindings("Settings were missing or unreadable; defaults were restored.")
 		return false
+	_load_audio_settings(config)
+	_apply_audio_settings()
 	if not config.has_section_key(SETTINGS_SECTION, "version"):
 		_restore_default_bindings("Settings version is missing; defaults were restored.")
 		return false
@@ -128,6 +140,32 @@ func load_or_restore_settings() -> bool:
 	return true
 
 
+func get_audio_settings() -> Dictionary:
+	return audio_settings.duplicate()
+
+
+func set_audio_settings(settings: Dictionary) -> Dictionary:
+	var candidate := AUDIO_DEFAULTS.duplicate()
+	for key: String in ["master", "music", "effects"]:
+		var value: Variant = settings.get(key, audio_settings[key])
+		if typeof(value) != TYPE_INT and typeof(value) != TYPE_FLOAT:
+			return _invalid("Audio levels must be numeric.")
+		candidate[key] = clampf(float(value), 0.0, 1.0)
+	var mute_value: Variant = settings.get("muted", audio_settings["muted"])
+	if typeof(mute_value) != TYPE_BOOL:
+		return _invalid("Audio mute state must be boolean.")
+	candidate["muted"] = mute_value
+	var previous_settings := audio_settings
+	audio_settings = candidate
+	var save_error := _save_audio_settings()
+	if save_error != OK:
+		audio_settings = previous_settings
+		_apply_audio_settings()
+		return _invalid("Could not save the audio settings.")
+	_apply_audio_settings()
+	return {"valid": true, "reason": "", "conflicting_action": ""}
+
+
 func restore_default_bindings() -> Dictionary:
 	var previous_bindings := _read_current_bindings()
 	var defaults := _build_default_bindings()
@@ -149,6 +187,59 @@ func _restore_default_bindings(reason: String) -> void:
 	settings_recovered.emit(reason)
 	if _save_bindings() != OK:
 		settings_recovered.emit("Defaults are active but could not be saved.")
+
+
+func _load_audio_settings(config: ConfigFile) -> void:
+	audio_settings = AUDIO_DEFAULTS.duplicate()
+	for key: String in ["master", "music", "effects"]:
+		if not config.has_section_key(AUDIO_SECTION, key):
+			continue
+		var value: Variant = config.get_value(AUDIO_SECTION, key)
+		if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+			audio_settings[key] = clampf(float(value), 0.0, 1.0)
+	if config.has_section_key(AUDIO_SECTION, "muted"):
+		var mute_value: Variant = config.get_value(AUDIO_SECTION, "muted")
+		if typeof(mute_value) == TYPE_BOOL:
+			audio_settings["muted"] = mute_value
+
+
+func _apply_audio_settings() -> void:
+	_set_bus_level("Master", float(audio_settings["master"]))
+	_set_bus_level("Music", float(audio_settings["music"]))
+	var effects_level := _audio_level_db(float(audio_settings["effects"]))
+	for bus_name: String in ["SFX", "UI"]:
+		var bus_index := AudioServer.get_bus_index(bus_name)
+		if bus_index < 0:
+			push_error("ControlSettingsManager: audio bus '%s' is missing." % bus_name)
+			continue
+		AudioServer.set_bus_volume_db(bus_index, effects_level)
+	var master_index := AudioServer.get_bus_index("Master")
+	if master_index < 0:
+		push_error("ControlSettingsManager: audio bus 'Master' is missing.")
+	else:
+		AudioServer.set_bus_mute(master_index, bool(audio_settings["muted"]))
+
+
+func _set_bus_level(bus_name: String, level: float) -> void:
+	var bus_index := AudioServer.get_bus_index(bus_name)
+	if bus_index < 0:
+		push_error("ControlSettingsManager: audio bus '%s' is missing." % bus_name)
+		return
+	AudioServer.set_bus_volume_db(bus_index, _audio_level_db(level))
+
+
+func _audio_level_db(level: float) -> float:
+	return linear_to_db(maxf(level, 0.0001))
+
+
+func _save_audio_settings() -> Error:
+	var config := ConfigFile.new()
+	var load_error := config.load(settings_path)
+	if load_error != OK and load_error != ERR_FILE_NOT_FOUND:
+		return load_error
+	for key: String in ["master", "music", "effects", "muted"]:
+		config.set_value(AUDIO_SECTION, key, audio_settings[key])
+	return config.save(settings_path)
 
 
 func _build_default_bindings() -> Dictionary:
@@ -176,12 +267,17 @@ func _apply_bindings(bindings: Dictionary) -> void:
 
 func _save_bindings() -> Error:
 	var config := ConfigFile.new()
+	var load_error := config.load(settings_path)
+	if load_error != OK and load_error != ERR_FILE_NOT_FOUND:
+		config = ConfigFile.new()
 	config.set_value(SETTINGS_SECTION, "version", SETTINGS_VERSION)
 	for action_name: String in PlayerActionCatalog.action_names():
 		var event := _get_binding_event(action_name)
 		if event == null:
 			return ERR_INVALID_DATA
 		config.set_value(BINDINGS_SECTION, action_name, int(event.physical_keycode))
+	for key: String in ["master", "music", "effects", "muted"]:
+		config.set_value(AUDIO_SECTION, key, audio_settings[key])
 	return config.save(settings_path)
 
 

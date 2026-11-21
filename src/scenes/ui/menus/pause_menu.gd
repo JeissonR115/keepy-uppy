@@ -4,12 +4,13 @@ extends CanvasLayer
 signal opened
 signal closed
 signal controls_requested
+signal audio_settings_requested
 signal player_count_requested
 
-enum MenuScreen { HIDDEN, PAUSE, RESTART_CONFIRMATION, CONTROLS }
+enum MenuScreen { HIDDEN, PAUSE, RESTART_CONFIRMATION, CONTROLS, AUDIO_SETTINGS }
 
 const PAUSE_LAYER := 127
-const PAUSE_OPTIONS: Array[String] = ["RESUME", "RESTART", "CONTROLS"]
+const PAUSE_OPTIONS: Array[String] = ["RESUME", "RESTART", "CONTROLS", "AUDIO SETTINGS"]
 const CONFIRMATION_OPTIONS: Array[String] = ["YES, RESTART", "NO, GO BACK"]
 
 @onready var pause_panel: PanelContainer = $PausePanel
@@ -18,6 +19,7 @@ const CONFIRMATION_OPTIONS: Array[String] = ["YES, RESTART", "NO, GO BACK"]
 	$PausePanel/Content/Options/ResumeButton,
 	$PausePanel/Content/Options/RestartButton,
 	$PausePanel/Content/Options/ControlsButton,
+	$PausePanel/Content/Options/AudioSettingsButton,
 ]
 @onready var confirmation_buttons: Array[Button] = [
 	$ConfirmationPanel/Content/Options/ConfirmButton,
@@ -98,6 +100,22 @@ func return_from_controls() -> void:
 	_set_pause_selection()
 
 
+func open_audio_settings() -> void:
+	if current_screen != MenuScreen.PAUSE:
+		return
+	current_screen = MenuScreen.AUDIO_SETTINGS
+	visible = false
+	audio_settings_requested.emit()
+
+
+func return_from_audio_settings() -> void:
+	current_screen = MenuScreen.PAUSE
+	selected_index = 3
+	get_tree().paused = true
+	_show_panel(pause_panel)
+	_set_pause_selection()
+
+
 func is_open() -> bool:
 	return current_screen != MenuScreen.HIDDEN
 
@@ -169,6 +187,8 @@ func _on_pause_option_pressed(index: int) -> void:
 			_set_confirmation_selection()
 		2:
 			open_controls()
+		3:
+			open_audio_settings()
 
 
 func _on_confirmation_pressed(index: int) -> void:

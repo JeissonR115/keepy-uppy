@@ -27,6 +27,8 @@ func _run_test() -> void:
 	main_scene.get_node("PlayerCountMenu")._select_level("classic")
 
 	var arena: Node = main_scene.get_node("Arena")
+	var balloon: BalloonController = arena.get_node("Balloon")
+	balloon.prepare_for_round()
 	var player_1: CharacterBody2D = arena.get_node("Player1")
 	var player_2: CharacterBody2D = main_scene.get_node("Arena/Player2")
 	var climb_wall := StaticBody2D.new()
@@ -212,7 +214,15 @@ func _run_test() -> void:
 		player_1.movement_state == PlayerController.MovementState.NORMAL
 		and upward_climb_ticks >= 141
 		and upward_climb_ticks <= 150,
-		"Upward climbing duration did not match the approximately 2.4 second stamina budget."
+		"Upward climbing duration did not match the approximately 2.4 second stamina budget: ticks=%s state=%s stamina=%s velocity=%s position=%s wall=%s grab=%s." % [
+			upward_climb_ticks,
+			player_1.movement_state,
+			player_1.climb_stamina,
+			player_1.velocity,
+			player_1.global_position,
+			player_1._climbable_wall_direction_within(MovementConstants.CLIMB_CHECK_DIST),
+			Input.is_action_pressed("player_1_grab"),
+		]
 	):
 		return
 	Input.action_release("player_1_grab")
@@ -239,5 +249,96 @@ func _run_test() -> void:
 		"Stationary climbing duration did not match the approximately 11 second stamina budget."
 	):
 		return
-	print('Wall slide/jump, climb stamina, corner correction, and stamina endurance verified.')
+
+	Input.action_release("player_1_left")
+	Input.action_release("player_1_right")
+	player_1.reset_for_round(Vector2(14, 152))
+	for _frame in range(2):
+		await physics_frame
+	Input.action_press("player_1_left")
+	for _frame in range(8):
+		await physics_frame
+	if not _expect(
+		player_1.is_on_floor()
+		and player_1.global_position.x >= 11.0
+		and player_1.velocity.x <= 0.0,
+		"Grounded wall contact caused a passive rebound or failed to stop at the wall."
+	):
+		return
+	Input.action_release("player_1_left")
+	Input.action_press("player_1_grab")
+	Input.action_press("player_1_jump")
+	for _frame in range(3):
+		await physics_frame
+		if player_1.velocity.x > 0.0:
+			break
+	if not _expect(
+		not player_1.is_on_floor()
+		and player_1.movement_state == PlayerController.MovementState.NORMAL
+		and is_equal_approx(player_1.velocity.x, MovementConstants.WALL_JUMP_H)
+		and is_equal_approx(player_1.velocity.y, MovementConstants.JUMP_SPEED),
+		"Grounded wall jump failed: state=%s velocity=%s floor=%s position=%s wall_direction=%s jump_buffer=%s." % [
+			player_1.movement_state,
+			player_1.velocity,
+			player_1.is_on_floor(),
+			player_1.global_position,
+			player_1._wall_direction_within(MovementConstants.WALL_CHECK_DIST),
+			player_1.jump_buffer_timer,
+		]
+	):
+		return
+	Input.action_release("player_1_jump")
+	Input.action_release("player_1_grab")
+
+	player_1.reset_for_round(Vector2(14, 80))
+	for _frame in range(2):
+		await physics_frame
+	Input.action_press("player_1_grab")
+	for _frame in range(3):
+		await physics_frame
+		if player_1.movement_state == PlayerController.MovementState.CLIMB:
+			break
+	if not _expect(
+		player_1.movement_state == PlayerController.MovementState.CLIMB,
+		"Grab did not enter climb for the facing-lock regression."
+	):
+		return
+	var facing_before_climb: Vector2 = player_1.facing_direction
+	var opposite_horizontal_action := (
+		"player_1_left"
+		if facing_before_climb.x > 0.0
+		else "player_1_right"
+	)
+	Input.action_press(opposite_horizontal_action)
+	await physics_frame
+	if not _expect(
+		player_1.movement_state == PlayerController.MovementState.CLIMB
+		and player_1.facing_direction == facing_before_climb
+		and player_1.visual.flip_h == (facing_before_climb.x < 0.0),
+		"Opposite horizontal input flipped the player while climbing."
+	):
+		return
+	Input.action_press("player_1_jump")
+	for _frame in range(3):
+		await physics_frame
+		if player_1.movement_state != PlayerController.MovementState.CLIMB:
+			break
+	if not _expect(
+		player_1.movement_state == PlayerController.MovementState.NORMAL
+		and player_1.facing_direction == facing_before_climb,
+		"Facing changed before the player left the climbing state."
+	):
+		return
+	Input.action_release("player_1_grab")
+	Input.action_release("player_1_jump")
+	await physics_frame
+	if not _expect(
+		player_1.facing_direction.x == -facing_before_climb.x
+		and player_1.visual.flip_h == (player_1.facing_direction.x < 0.0),
+		"Facing did not respond to horizontal input after leaving the climbing state."
+	):
+		return
+	Input.action_release(opposite_horizontal_action)
+
+	print('Grounded wall jump, climb facing lock, wall slide, stamina, and corner correction verified.')
 	quit()

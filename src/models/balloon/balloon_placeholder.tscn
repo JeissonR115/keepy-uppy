@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dn4srepj42unf"]
 
 [ext_resource type="Script" uid="uid://dey8rns3rkrw0" path="res://src/models/balloon/balloon_controller.gd" id="1_balloon_controller"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/ballow/balloon_explosion_frames.tres" id="2_explosion_frames"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_balloon"]
 friction = 0.3
@@ -27,11 +28,12 @@ script = ExtResource("1_balloon_controller")
 color = Color(0.972549, 0.443137, 0.482353, 1)
 polygon = PackedVector2Array(0, -9, 7, -8, 9, 0, 6, 7, 0, 10, -6, 7, -9, 0, -7, -8)
 
-[node name="GroundBurst" type="Polygon2D" parent="." unique_id=160337997]
+[node name="GroundBurst" type="AnimatedSprite2D" parent="." unique_id=160337997]
 visible = false
 z_index = 2
-color = Color(1, 0.843137, 0.372549, 1)
-polygon = PackedVector2Array(0, -14, 3, -6, 10, -10, 7, -3, 14, 0, 7, 3, 10, 10, 3, 6, 0, 14, -3, 6, -10, 10, -7, 3, -14, 0, -7, -3, -10, -10, -3, -7)
+sprite_frames = ExtResource("2_explosion_frames")
+animation = &"explode"
+frame = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1011081987]
 shape = SubResource("CircleShape2D_balloon")
