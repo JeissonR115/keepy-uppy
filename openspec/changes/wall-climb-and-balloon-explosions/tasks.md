@@ -12,4 +12,4 @@
 
 ## 3. Integrated verification
 
-- [ ] 3.1 Run the focused wall-climb, balloon-burst, and visual-asset tests, then run `openspec validate`; verify all targeted tests pass and the change validates without warnings.
+- [x] 3.1 Run the focused wall-climb, balloon-burst, and visual-asset tests, then run `openspec validate`; verify all targeted tests pass and the change validates without warnings.
