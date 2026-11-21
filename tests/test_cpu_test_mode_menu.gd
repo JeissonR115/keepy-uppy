@@ -28,7 +28,7 @@ func _run_test() -> void:
 	):
 		return
 	if not _expect(
-		menu.menu_buttons.size() == 4
+		menu.menu_buttons.size() == 5
 		and menu.menu_buttons[2].text.contains("TEST CPU"),
 		"Main menu does not offer a Test CPU option."
 	):

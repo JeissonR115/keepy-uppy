@@ -2,18 +2,28 @@ class_name PythonPolicyLauncherConfig
 extends RefCounted
 
 const SETTINGS_PATH := "user://python-policy.cfg"
+const EXAMPLE_SETTINGS_PATH := "user://python-policy.cfg.example"
 const SETTINGS_SECTION := "python_policy"
+const EXAMPLE_SETTINGS_CONTENT := (
+	"[python_policy]\n"
+	+ "enabled=true\n"
+	+ "executable=\"/absolute/path/to/uv\"\n"
+	+ "ai_project_path=\"/absolute/path/to/keepy-uppy-ai\"\n"
+	+ "bridge_port=8766\n"
+	+ "startup_timeout=5.0\n"
+)
 
 var settings_path: String = SETTINGS_PATH
+var example_settings_path: String = EXAMPLE_SETTINGS_PATH
 
 
 func load_config() -> Dictionary:
 	var config := ConfigFile.new()
 	var load_error := config.load(settings_path)
 	if load_error == ERR_FILE_NOT_FOUND:
-		return _invalid("Python policy configuration is missing.")
+		return _missing_configuration()
 	if load_error != OK:
-		return _invalid("Python policy configuration could not be read.")
+		return _unreadable_configuration(load_error)
 	if not config.has_section_key(SETTINGS_SECTION, "enabled"):
 		return _invalid("Python policy configuration is missing the enabled setting.")
 	if typeof(config.get_value(SETTINGS_SECTION, "enabled", false)) != TYPE_BOOL:
@@ -120,3 +130,47 @@ static func build_launch_args(
 
 func _invalid(reason: String) -> Dictionary:
 	return {"valid": false, "reason": reason, "enabled": false}
+
+
+func _missing_configuration() -> Dictionary:
+	var expected_path := ProjectSettings.globalize_path(settings_path)
+	var example_path := ProjectSettings.globalize_path(example_settings_path)
+	var example_error := _create_example_config()
+	var reason := "Python policy configuration is missing. Expected file: %s." % expected_path
+	if example_error.is_empty():
+		reason += " Edit %s and save it as python-policy.cfg." % example_path
+	else:
+		reason += " Could not create the example at %s: %s" % [example_path, example_error]
+	push_warning(reason)
+	return _invalid(reason)
+
+
+func _unreadable_configuration(load_error: Error) -> Dictionary:
+	var config_path := ProjectSettings.globalize_path(settings_path)
+	var example_path := ProjectSettings.globalize_path(example_settings_path)
+	var example_error := _create_example_config()
+	var reason := "Python policy configuration at %s could not be read: %s." % [
+		config_path,
+		error_string(load_error),
+	]
+	if load_error == ERR_PARSE_ERROR:
+		reason += " Quote string values such as executable and ai_project_path."
+	if example_error.is_empty():
+		reason += " Use the example at %s." % example_path
+	else:
+		reason += " Could not create the example at %s: %s" % [example_path, example_error]
+	push_warning(reason)
+	return _invalid(reason)
+
+
+func _create_example_config() -> String:
+	if FileAccess.file_exists(example_settings_path):
+		return ""
+	var example := FileAccess.open(example_settings_path, FileAccess.WRITE)
+	if example == null:
+		return error_string(FileAccess.get_open_error())
+	var write_succeeded := example.store_string(EXAMPLE_SETTINGS_CONTENT)
+	example.close()
+	if not write_succeeded:
+		return "The example file was not written completely."
+	return ""

@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var player_2_sets_label: Label = $HUD/SetScoreRow/Player2Sets
 @onready var competitive_label: Label = $HUD/CompetitiveLabel
 @onready var status_label: Label = $HUD/StatusLabel
+@onready var python_status_button: Button = $HUD/ScoreRow/PythonStatusButton
 @onready var turn_label: Label = $HUD/TurnLabel
 @onready var controls_button: Button = $HUD/ControlsButton
 @onready var control_settings: ControlSettings = $ControlSettings
@@ -29,6 +30,14 @@ var player_count_suspended_by_pause: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	python_status_button.pressed.connect(_on_python_status_pressed)
+	_set_python_status(false)
+	if player_count_menu.python_policy_coordinator != null:
+		player_count_menu.python_policy_coordinator.connection_state_changed.connect(
+			_set_python_status
+		)
+		if player_count_menu.python_policy_coordinator.is_ready():
+			_set_python_status(true)
 	winner_navigator.confirmed.connect(_return_to_player_count_menu)
 	winner_navigator.cancelled.connect(_return_to_player_count_menu)
 	controls_button.pressed.connect(_on_controls_pressed)
@@ -253,6 +262,39 @@ func _return_to_player_count_menu() -> void:
 func _on_controls_pressed() -> void:
 	audio_manager.call("play", "menu_select")
 	pause_menu.open_pause()
+
+
+func _set_python_status(active: bool) -> void:
+	if active:
+		python_status_button.add_theme_color_override(
+			"font_color",
+			Color(0.25, 1.0, 0.45),
+		)
+		python_status_button.tooltip_text = "Python AI connected. Press to reconnect."
+	else:
+		python_status_button.add_theme_color_override(
+			"font_color",
+			Color(1.0, 0.25, 0.25),
+		)
+		python_status_button.tooltip_text = "Python AI inactive. Press to retry connection."
+
+
+func _on_python_status_pressed() -> void:
+	status_label.text = "RECONNECTING PYTHON..."
+	var coordinator: PythonPolicyMatchCoordinator = (
+		player_count_menu.python_policy_coordinator
+		as PythonPolicyMatchCoordinator
+	)
+	if coordinator == null:
+		_set_python_status(false)
+		status_label.text = "PYTHON COORDINATOR UNAVAILABLE"
+		return
+	var ready := await coordinator.reconnect_for_match()
+	status_label.text = (
+		"PYTHON CPU CONNECTED"
+		if ready
+		else "PYTHON CPU INACTIVE"
+	)
 
 
 func _play_menu_select() -> void:

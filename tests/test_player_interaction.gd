@@ -99,10 +99,12 @@ func _run_test() -> void:
 	match_manager.set_next_server(player_1)
 	player_2.velocity.x = 0.0
 	player_1.player_bumped.emit(player_1, player_2, false)
+	await process_frame
 	var priority_normal_push := player_2.velocity.x
 	player_2.velocity.x = 0.0
 	match_manager.set_next_server(player_2)
 	player_1.player_bumped.emit(player_1, player_2, false)
+	await process_frame
 	var non_priority_normal_push := player_2.velocity.x
 	if not _expect(
 		priority_normal_push > non_priority_normal_push,
@@ -111,6 +113,7 @@ func _run_test() -> void:
 		return
 	player_2.velocity.x = 500.0
 	player_1.player_bumped.emit(player_1, player_2, false)
+	await process_frame
 	if not _expect(
 		absf(player_2.velocity.x) <= match_manager.max_push_speed,
 		"Player collision push exceeded its configured speed cap."
@@ -120,10 +123,12 @@ func _run_test() -> void:
 	player_2.velocity.x = 0.0
 	match_manager.set_next_server(player_1)
 	player_1.player_bumped.emit(player_1, player_2, true)
+	await process_frame
 	var priority_dash_push := player_2.velocity.x
 	player_2.velocity.x = 0.0
 	match_manager.set_next_server(player_2)
 	player_1.player_bumped.emit(player_1, player_2, true)
+	await process_frame
 	var non_priority_dash_push := player_2.velocity.x
 	if not _expect(
 		priority_dash_push > non_priority_dash_push,

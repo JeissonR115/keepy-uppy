@@ -4,6 +4,7 @@ const CONFIG_SCRIPT := preload(
 	"res://src/managers/python_policy_launcher_config.gd"
 )
 const TEST_SETTINGS_PATH := "user://keepy-python-policy-test.cfg"
+const TEST_EXAMPLE_PATH := "user://keepy-python-policy-test.cfg.example"
 
 
 func _initialize() -> void:
@@ -22,11 +23,59 @@ func _run_test() -> void:
 	_remove_test_file()
 	var config := CONFIG_SCRIPT.new()
 	config.settings_path = TEST_SETTINGS_PATH
+	config.example_settings_path = TEST_EXAMPLE_PATH
 	var missing := config.load_config()
 	if not _expect(
-		not missing.valid and missing.reason.contains("missing"),
+		not missing.valid
+		and missing.reason.contains("missing")
+		and missing.reason.contains(ProjectSettings.globalize_path(TEST_SETTINGS_PATH))
+		and FileAccess.file_exists(TEST_EXAMPLE_PATH),
 		"A missing Python policy configuration was accepted.",
 	):
+		return
+	var example := ConfigFile.new()
+	if not _expect(
+		example.load(TEST_EXAMPLE_PATH) == OK
+		and example.get_value("python_policy", "enabled", false)
+		and example.get_value("python_policy", "executable", "").contains("absolute/path"),
+		"Missing configuration did not generate an editable valid example file.",
+	):
+		return
+	var manual_config := FileAccess.open(TEST_SETTINGS_PATH, FileAccess.WRITE)
+	if not _expect(manual_config != null, "Could not create a manual config fixture."):
+		return
+	var manual_ai_project := ProjectSettings.globalize_path("res://").path_join(
+		"../keepy-uppy-ai"
+	).simplify_path()
+	manual_config.store_string(
+		"[python_policy]\n"
+		+ "enabled=true\n"
+		+ "executable=/usr/bin/python3\n"
+		+ "ai_project_path=%s\n" % manual_ai_project
+		+ "bridge_port=8766\n"
+		+ "startup_timeout=5.0\n"
+	)
+	manual_config.close()
+	var unquoted := config.load_config()
+	if not _expect(
+		not unquoted.valid and unquoted.reason.contains("Quote string values"),
+		"Unquoted path values were not diagnosed with actionable guidance.",
+	):
+		return
+	manual_config = FileAccess.open(TEST_SETTINGS_PATH, FileAccess.WRITE)
+	if not _expect(manual_config != null, "Could not write a quoted config fixture."):
+		return
+	manual_config.store_string(
+		"[python_policy]\n"
+		+ "enabled=true\n"
+		+ "executable=\"/usr/bin/python3\"\n"
+		+ "ai_project_path=\"%s\"\n" % manual_ai_project
+		+ "bridge_port=8766\n"
+		+ "startup_timeout=5.0\n"
+	)
+	manual_config.close()
+	var manually_written := config.load_config()
+	if not _expect(manually_written.valid, "A quoted manual config could not be loaded."):
 		return
 	var invalid_port := config.validate({
 		"enabled": true,
@@ -93,12 +142,33 @@ func _run_test() -> void:
 		"Python policy launch arguments were not a fixed safe argument vector.",
 	):
 		return
+	var fake_pid := OS.create_process("/bin/true", launch_args)
+	if not _expect(fake_pid > 0, "A fake executable launch did not start successfully."):
+		return
+	for _frame in range(10):
+		if not OS.is_process_running(fake_pid):
+			break
+		await process_frame
+	var missing_pid := OS.create_process(
+		"/definitely/missing/python-policy-fake",
+		launch_args,
+	)
+	for _frame in range(10):
+		if missing_pid <= 0 or not OS.is_process_running(missing_pid):
+			break
+		await process_frame
+	if not _expect(
+		missing_pid <= 0 or not OS.is_process_running(missing_pid),
+		"A missing executable launch did not report an error.",
+	):
+		return
 	_remove_test_file()
 	print("Python policy launcher configuration validation verified.")
 	quit()
 
 
 func _remove_test_file() -> void:
-	var absolute_path := ProjectSettings.globalize_path(TEST_SETTINGS_PATH)
-	if FileAccess.file_exists(absolute_path):
-		DirAccess.remove_absolute(absolute_path)
+	for settings_path in [TEST_SETTINGS_PATH, TEST_EXAMPLE_PATH]:
+		var absolute_path := ProjectSettings.globalize_path(settings_path)
+		if FileAccess.file_exists(absolute_path):
+			DirAccess.remove_absolute(absolute_path)

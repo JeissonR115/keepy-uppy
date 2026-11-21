@@ -25,19 +25,23 @@ The balloon SHALL receive a configurable impulse from valid player contacts, wit
 - **THEN** the balloon receives one readable impulse based on the contact direction and configured hit strength
 
 ### Requirement: Dash rescue zone
-Each dash SHALL create a temporary, configurable balloon-interaction zone associated with the dash trajectory, separate from its visual trail.
+Each dash SHALL create a temporary, configurable balloon-interaction zone associated with the dash trajectory, separate from its visual trail, and SHALL produce at most one rescue hit per dash activation.
 
 #### Scenario: Balloon enters an active dash zone
-- **WHEN** the balloon contacts the zone during its active interval
-- **THEN** the balloon receives a rescue impulse that takes the dash direction into account
+- **WHEN** the balloon contacts the zone during its active interval and that dash activation has not rescued it
+- **THEN** the balloon receives one rescue impulse that takes the dash direction into account
 
 #### Scenario: One dash overlaps the balloon repeatedly
 - **WHEN** the same dash activation remains in contact with or re-enters the balloon
-- **THEN** that activation does not apply additional rescue hits unless the approved design explicitly enables them
+- **THEN** that activation does not apply additional rescue hits
+
+#### Scenario: Dash zone and afterimage both overlap the balloon
+- **WHEN** the balloon contacts both the active dash zone and one or more afterimages from the same dash activation
+- **THEN** at most one rescue impulse is applied across all of those contacts
 
 #### Scenario: Trail and interaction are presented
 - **WHEN** a dash is displayed
-- **THEN** its visual trail can be rendered independently of the interaction zone
+- **THEN** its visual trail can be rendered independently of the interaction zone and does not create an additional rescue hit
 
 ### Requirement: Priority-aware player interference
 The game SHALL maintain one player priority state that changes after a valid balloon contact and SHALL use that state to configure relative player-displacement strength. An opening coin toss SHALL assign the first serve and priority, and simultaneous contacts SHALL resolve by the approved priority policy.
@@ -69,3 +73,29 @@ The game SHALL maintain one player priority state that changes after a valid bal
 #### Scenario: Priority changes
 - **WHEN** the priority player changes
 - **THEN** the new priority state is available to presentation so players can identify the advantage
+
+### Requirement: Fault visual feedback
+The balloon SHALL provide a brief white flash when a gameplay fault is confirmed, then return to its regular appearance without changing the match's fault-resolution outcome.
+
+#### Scenario: Confirmed gameplay fault
+- **WHEN** the match confirms a gameplay fault
+- **THEN** the balloon visibly flashes white and then returns to its regular appearance
+
+### Requirement: Shared balloon impact animation
+The balloon SHALL use the same one-shot explosion effect for scoring-floor and spike impacts, while the balloon itself disappears as soon as either impact is registered.
+
+#### Scenario: Balloon impacts the scoring floor
+- **WHEN** the balloon makes a valid scoring-floor contact
+- **THEN** the balloon visual disappears immediately, the shared explosion plays, and one ground-contact event is reported
+
+#### Scenario: Balloon impacts spikes
+- **WHEN** an armed balloon contacts spikes
+- **THEN** the balloon visual disappears immediately, the same explosion plays, and one spike-contact event is reported
+
+#### Scenario: An impact is reported more than once
+- **WHEN** further floor or spike contacts occur after the round's impact has been registered
+- **THEN** the explosion and corresponding contact event are not triggered again
+
+#### Scenario: A new round begins
+- **WHEN** the balloon is reset for a new round
+- **THEN** the balloon visual and its collision behavior are restored and the prior explosion is no longer visible

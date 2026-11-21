@@ -37,9 +37,17 @@ func _run_test() -> void:
 
 	menu.call("_select_player_count", 2)
 	var level_buttons: Array = menu.get("level_buttons")
-	if not _expect(level_buttons.size() == 3, "Arena selection did not build entries from the catalog plus Back."):
+	var expected_level_buttons := entries.size() + 1
+	if not _expect(
+		level_buttons.size() == expected_level_buttons,
+		"Arena selection did not build entries from the catalog plus Back.",
+	):
 		return
-	if not _expect(level_buttons[0].text.contains("Classic Court"), "Classic arena was not listed by metadata."):
+	var first_arena_name: String = str(entries[0].get("display_name"))
+	if not _expect(
+		level_buttons[0].text.strip_edges().trim_prefix("> ").trim_prefix("  ") == first_arena_name,
+		"First arena was not listed by catalog metadata.",
+	):
 		return
 	if not _expect(menu.get_node("LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent/ArenaPreview").texture != null, "Classic arena preview texture did not load."):
 		return
@@ -51,8 +59,11 @@ func _run_test() -> void:
 		return
 	if not _expect(menu.get_node("LevelPanel/Content/SelectionRow/ArenaDetails/DetailsContent/PreviewFallback").visible, "Missing preview did not show its fallback."):
 		return
-	menu.call("_move_selection", 1)
-	if not _expect(menu.get("selected_index") == 2, "Keyboard navigation did not reach the Back option."):
+	menu.call("_move_selection", entries.size() - 1)
+	if not _expect(
+		menu.get("selected_index") == entries.size(),
+		"Keyboard navigation did not reach the Back option.",
+	):
 		return
 	menu.call("_cancel_level_selection")
 	if not _expect(not menu.get("showing_levels") and menu.get_node("Panel").visible, "Cancelling arena selection did not return to player count."):

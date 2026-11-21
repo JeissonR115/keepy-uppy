@@ -68,6 +68,13 @@ theme_override_colors/font_color = Color(1, 0.584314, 0.517647, 1)
 theme_override_font_sizes/font_size = 10
 text = "P2"
 
+[node name="PythonStatusButton" type="Button" parent="HUD/ScoreRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(8, 8)
+mouse_filter = 0
+theme_override_font_sizes/font_size = 8
+text = "●"
+
 [node name="SetScoreRow" type="HBoxContainer" parent="HUD"]
 layout_mode = 0
 anchor_left = 1.0

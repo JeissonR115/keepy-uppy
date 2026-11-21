@@ -2,6 +2,8 @@ class_name PythonPolicyMatchCoordinator
 extends Node
 
 signal status_changed(reason: String)
+signal connection_state_changed(active: bool)
+signal shutdown_completed
 
 const CONFIG_SCRIPT := preload("res://src/managers/python_policy_launcher_config.gd")
 const GEOMETRY_EXPORTER := preload("res://src/managers/cpu_level_geometry_exporter.gd")
@@ -14,14 +16,17 @@ var player_2: PlayerController
 var geometry_ready: bool = false
 var active_level: String = ""
 var fallback_reason: String = ""
-var _stopping: bool = false
+var _shutdown_pid: int = -1
+var _shutdown_in_progress: bool = false
 
 
 func start_for_match(
 	arena_level_manager: LevelManager,
 	bot_player: PlayerController,
 ) -> bool:
-	stop()
+	await stop_and_wait()
+	fallback_reason = ""
+	connection_state_changed.emit(false)
 	level_manager = arena_level_manager
 	player_2 = bot_player
 	active_level = str(level_manager.get_selected_arena().get("id"))
@@ -43,7 +48,7 @@ func start_for_match(
 	if error != OK:
 		fallback_reason = "Could not start the Python bridge on port %d." % port
 		status_changed.emit(fallback_reason)
-		stop()
+		await stop_and_wait()
 		return false
 	var args := CONFIG_SCRIPT.build_launch_args(
 		config_result,
@@ -55,32 +60,97 @@ func start_for_match(
 	if child_pid <= 0:
 		fallback_reason = "Could not launch the configured Python client."
 		status_changed.emit(fallback_reason)
-		stop()
+		await stop_and_wait()
 		return false
 	status_changed.emit("Starting Python CPU policy...")
 	return await _wait_for_ready(float(config_result.startup_timeout))
 
 
+func reconnect_for_match() -> bool:
+	if level_manager == null or not is_instance_valid(level_manager):
+		status_changed.emit("Python policy has no active match to reconnect.")
+		connection_state_changed.emit(false)
+		return false
+	if player_2 == null or not is_instance_valid(player_2):
+		status_changed.emit("Python policy has no active bot to reconnect.")
+		connection_state_changed.emit(false)
+		return false
+	var ready := await start_for_match(level_manager, player_2)
+	if ready:
+		player_2.cpu_controller.use_remote_brain(bridge_server, 0.25)
+		connection_state_changed.emit(true)
+	else:
+		player_2.cpu_controller.use_local_brain()
+		connection_state_changed.emit(false)
+	return ready
+
+
 func stop() -> void:
-	if _stopping:
-		return
-	_stopping = true
 	geometry_ready = false
-	if bridge_server != null:
-		bridge_server.stop()
-		bridge_server.queue_free()
-		bridge_server = null
-	if child_pid > 0:
-		var pid := child_pid
-		var grace_timer := get_tree().create_timer(3.0)
-		grace_timer.process_mode = Node.PROCESS_MODE_ALWAYS
-		grace_timer.timeout.connect(
-			func() -> void:
-				if OS.is_process_running(pid):
-					OS.kill(pid)
-		)
-		child_pid = -1
-	_stopping = false
+	_close_bridge()
+	if child_pid <= 0 or _shutdown_in_progress:
+		return
+	_shutdown_pid = child_pid
+	child_pid = -1
+	if not is_inside_tree():
+		_kill_child(_shutdown_pid)
+		_shutdown_pid = -1
+		return
+	_shutdown_in_progress = true
+	call_deferred("_wait_for_child_shutdown", _shutdown_pid)
+
+
+func stop_and_wait() -> void:
+	if not _shutdown_in_progress:
+		stop()
+	if _shutdown_in_progress:
+		await shutdown_completed
+
+
+func stop_immediately() -> void:
+	geometry_ready = false
+	_close_bridge()
+	var pid := child_pid if child_pid > 0 else _shutdown_pid
+	child_pid = -1
+	_shutdown_pid = -1
+	_shutdown_in_progress = false
+	if pid > 0:
+		_kill_child(pid)
+
+
+func _close_bridge() -> void:
+	if bridge_server == null:
+		return
+	bridge_server.stop()
+	bridge_server.queue_free()
+	bridge_server = null
+
+
+func _wait_for_child_shutdown(pid: int) -> void:
+	var graceful_deadline := Time.get_ticks_msec() + 3000
+	while OS.is_process_running(pid) and Time.get_ticks_msec() < graceful_deadline:
+		await get_tree().process_frame
+	if OS.is_process_running(pid):
+		_kill_child(pid)
+	var termination_deadline := Time.get_ticks_msec() + 1000
+	while OS.is_process_running(pid) and Time.get_ticks_msec() < termination_deadline:
+		await get_tree().process_frame
+	if OS.is_process_running(pid):
+		child_pid = pid
+		fallback_reason = "Python client process %d did not exit after termination." % pid
+		status_changed.emit(fallback_reason)
+		push_error(fallback_reason)
+	_shutdown_pid = -1
+	_shutdown_in_progress = false
+	shutdown_completed.emit()
+
+
+func _kill_child(pid: int) -> void:
+	if not OS.is_process_running(pid):
+		return
+	var error := OS.kill(pid)
+	if error != OK and OS.is_process_running(pid):
+		push_error("Could not terminate Python client process %d: %s" % [pid, error_string(error)])
 
 
 func is_ready() -> bool:
@@ -93,15 +163,16 @@ func _wait_for_ready(timeout_seconds: float) -> bool:
 		if child_pid > 0 and not OS.is_process_running(child_pid) and not bridge_server.is_client_connected():
 			fallback_reason = "Python client exited during startup."
 			status_changed.emit(fallback_reason)
-			stop()
+			await stop_and_wait()
 			return false
 		if is_ready():
 			status_changed.emit("Python CPU policy connected.")
+			connection_state_changed.emit(true)
 			return true
 		await get_tree().process_frame
 	fallback_reason = "Python policy startup timed out."
 	status_changed.emit(fallback_reason)
-	stop()
+	await stop_and_wait()
 	return false
 
 
@@ -110,8 +181,9 @@ func _on_client_connected(_session_id: String) -> void:
 
 
 func _on_client_disconnected() -> void:
-	if geometry_ready:
-		status_changed.emit("Python CPU policy disconnected; using LocalBrain.")
+	geometry_ready = false
+	connection_state_changed.emit(false)
+	status_changed.emit("Python CPU policy disconnected; using LocalBrain.")
 
 
 func _on_command_received(command: String, payload: Dictionary, sequence: int) -> void:

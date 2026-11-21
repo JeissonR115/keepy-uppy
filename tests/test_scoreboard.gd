@@ -27,15 +27,26 @@ func _run_test() -> void:
 	var scoreboard: CanvasLayer = arena.get_node("Scoreboard")
 	var hud: Control = scoreboard.get_node("HUD")
 	var competitive_label: Label = hud.get_node("CompetitiveLabel")
+	var python_status_button: Button = hud.get_node("ScoreRow/PythonStatusButton")
 	if not _expect(
 		hud.get_node("ScoreRow/Player1Score").text == "0"
 		and hud.get_node("ScoreRow/Player2Score").text == "0"
 		and hud.get_node("SetScoreRow/Player1Sets").text == "0"
 		and hud.get_node("SetScoreRow/Player2Sets").text == "0"
+		and python_status_button != null
+		and python_status_button.text == "●"
 		and competitive_label.text.contains("HEADS")
 		and competitive_label.text.contains("NEXT P1")
 		and competitive_label.text.contains("PRI P1"),
 		"Scoreboard did not display points, sets, toss, server, and priority at match start."
+	):
+		return
+
+	python_status_button.pressed.emit()
+	await process_frame
+	if not _expect(
+		hud.get_node("StatusLabel").text == "PYTHON CPU INACTIVE",
+		"Python status button did not attempt reconnection and report inactive state.",
 	):
 		return
 

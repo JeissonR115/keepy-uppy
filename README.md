@@ -21,25 +21,64 @@ first.
 The normal one-player match can use the sibling Python policy after it is
 configured in `user://python-policy.cfg`:
 
+Create the file in Godot's per-user data directory, not in either project
+folder. The default locations are:
+
+- Linux: `~/.local/share/godot/app_userdata/Keepy Uppy/python-policy.cfg`
+- Windows: `%APPDATA%\Godot\app_userdata\Keepy Uppy\python-policy.cfg`
+
+If the configuration is missing or unreadable, the game reports the exact
+path it checked and creates `python-policy.cfg.example` beside it. Edit that
+example with your local paths, then save a copy as `python-policy.cfg`.
+
+Use the absolute paths for `uv` and the sibling `keepy-uppy-ai` project in the
+configuration. Quote both path values as shown below; Godot's config parser
+requires strings to be quoted. For example, on Linux:
+
 ```ini
 [python_policy]
 enabled=true
-executable=/absolute/path/to/uv
-ai_project_path=/absolute/path/to/keepy-uppy-ai
+executable="/home/your-user/.local/bin/uv"
+ai_project_path="/home/your-user/Dev/keepy-uppy-ai"
 bridge_port=8766
 startup_timeout=5.0
 ```
 
-The game launches the client as separate arguments, equivalent to:
+On Windows, use forward slashes in the absolute paths:
+
+```ini
+[python_policy]
+enabled=true
+executable="C:/Users/your-user/.local/bin/uv.exe"
+ai_project_path="C:/Users/your-user/Dev/keepy-uppy-ai"
+bridge_port=8766
+startup_timeout=5.0
+```
+
+Restart the game after creating or changing this file. To test the equivalent
+command manually:
 
 ```sh
-uv run --project /absolute/path/to/keepy-uppy-ai run-live \
-  --host 127.0.0.1 --port 8766 --level classic
+uv run --project "/home/your-user/Dev/keepy-uppy-ai" run-live --host 127.0.0.1 --port 8766 --level classic
+```
+
+In Windows PowerShell:
+
+```powershell
+uv run --project "C:/Users/your-user/Dev/keepy-uppy-ai" run-live --host 127.0.0.1 --port 8766 --level classic
 ```
 
 If the configuration is missing or invalid, or Python cannot connect within
 the startup timeout, the match continues with `LocalBrain` and displays the
 fallback reason.
+
+Verify live control, fallback, port release, and process cleanup with:
+
+```sh
+godot --headless --path . --script res://tests/test_python_policy_match_integration.gd
+godot --headless --path . --script res://tests/test_python_policy_fallback.gd
+godot --headless --path . --script res://tests/test_python_policy_live_integration.gd
+```
 
 ## Display
 

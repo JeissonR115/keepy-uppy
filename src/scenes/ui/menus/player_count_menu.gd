@@ -58,7 +58,7 @@ func _ready() -> void:
 	python_policy_coordinator = PYTHON_POLICY_COORDINATOR_SCRIPT.new()
 	python_policy_coordinator.name = "PythonPolicyMatchCoordinator"
 	python_policy_coordinator.status_changed.connect(_on_python_policy_status)
-	get_parent().add_child(python_policy_coordinator)
+	add_child(python_policy_coordinator)
 	audio_manager.call("play_menu_music")
 	keyboard_navigator.moved.connect(_move_selection)
 	keyboard_navigator.confirmed.connect(_confirm_selection)
@@ -82,7 +82,8 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	_stop_python_policy()
+	if python_policy_coordinator != null:
+		python_policy_coordinator.stop_immediately()
 
 
 func open_menu() -> void:
@@ -238,8 +239,15 @@ func _select_level(level_id: String) -> void:
 			)
 		else:
 			player_2.cpu_controller.use_local_brain()
+	else:
+		await python_policy_coordinator.stop_and_wait()
 	audio_manager.call("play", "menu_select")
 	match_manager.restart_match()
+	if python_policy_requested and not python_policy_coordinator.is_ready():
+		call_deferred(
+			"_show_fallback_status_after_match_start",
+			python_policy_coordinator.fallback_reason,
+		)
 	audio_manager.call("play_match_music")
 	showing_levels = false
 	keyboard_navigator.enabled = false
@@ -247,6 +255,12 @@ func _select_level(level_id: String) -> void:
 	get_tree().paused = false
 	if test_cpu_mode:
 		_start_test_cpu_debug()
+
+
+func _show_fallback_status_after_match_start(reason: String) -> void:
+	while match_manager.match_state == MatchManager.MatchState.SETTING_UP:
+		await get_tree().physics_frame
+	_on_python_policy_status(reason)
 
 
 func on_test_cpu_exited() -> void:
