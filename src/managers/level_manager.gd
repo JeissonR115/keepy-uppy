@@ -2,6 +2,7 @@ class_name LevelManager
 extends Node
 
 const DEFAULT_CATALOG := preload("res://src/resources/arena_catalog.tres")
+const NAV_GRAPH_REPOSITORY := preload("res://src/models/player/nav_graph_repository.gd")
 const SAFE_BOUNDARY_THICKNESS := 8.0
 
 @export var catalog: ArenaCatalog = DEFAULT_CATALOG
@@ -15,6 +16,8 @@ const SAFE_BOUNDARY_THICKNESS := 8.0
 
 var active_arena: ArenaData
 var active_map: Node2D
+var active_nav_graph: NavGraph
+var active_nav_graph_error: String = ""
 var base_balloon_gravity: float
 var base_balloon_speed: float
 
@@ -61,6 +64,9 @@ func _activate_arena(arena: ArenaData) -> bool:
 	map_root.add_child(map_instance)
 	active_map = map_instance as Node2D
 	active_arena = arena
+	var graph_result: Dictionary = NAV_GRAPH_REPOSITORY.load_for_level(arena.id)
+	active_nav_graph = graph_result.get("graph") as NavGraph
+	active_nav_graph_error = str(graph_result.get("error", ""))
 	match_manager.player_1_spawn_position = arena.player_1_spawn
 	match_manager.player_2_spawn_position = arena.player_2_spawn
 	var gravity_multiplier := maxf(arena.balloon_gravity_scale_multiplier, 0.0)

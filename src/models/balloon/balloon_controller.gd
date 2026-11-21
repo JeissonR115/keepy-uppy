@@ -332,32 +332,13 @@ func _on_player_contact_area_body_entered(body: Node2D) -> void:
 		if not _accept_player_contact(player):
 			return
 		_activate_after_first_touch()
-		var impulse_direction := global_position - player.global_position
-		if impulse_direction.is_zero_approx():
-			impulse_direction = Vector2.UP
-		impulse_direction = impulse_direction.normalized()
-		var approach_speed := maxf(
-			player.velocity.dot(impulse_direction)
-			- linear_velocity.dot(impulse_direction),
-			0.0
-		)
-		var launch_direction := (
-			impulse_direction
-			+ player.velocity.normalized() * movement_direction_factor
-		).normalized()
-		var impulse_strength := clampf(
-			player_hit_impulse
-			+ approach_speed * impact_speed_factor
-			+ player.velocity.length() * movement_impulse_factor,
-			min_player_hit_impulse,
-			max_player_hit_impulse
-		)
+		var prediction := predict_normal_contact_result(player)
 		_queue_player_contact(
 			player,
 			ContactType.NORMAL,
-			launch_direction * impulse_strength,
-			launch_direction,
-			approach_speed
+			prediction["impulse"],
+			prediction["direction"],
+			prediction["approach_speed"]
 		)
 
 
@@ -427,11 +408,53 @@ func apply_pending_contact(player: CharacterBody2D, contact_type: ContactType) -
 	}
 
 
+func predict_normal_contact_result(player: PlayerController) -> Dictionary:
+	var impulse_direction := global_position - player.global_position
+	if impulse_direction.is_zero_approx():
+		impulse_direction = Vector2.UP
+	impulse_direction = impulse_direction.normalized()
+	var balloon_velocity := Vector2.ZERO if waiting_for_first_touch else linear_velocity
+	var approach_speed := maxf(
+		player.velocity.dot(impulse_direction) - balloon_velocity.dot(impulse_direction),
+		0.0
+	)
+	var launch_direction := (
+		impulse_direction + player.velocity.normalized() * movement_direction_factor
+	).normalized()
+	var impulse_strength := clampf(
+		player_hit_impulse
+		+ approach_speed * impact_speed_factor
+		+ player.velocity.length() * movement_impulse_factor,
+		min_player_hit_impulse,
+		max_player_hit_impulse
+	)
+	var resulting_velocity := _clamp_resulting_velocity(
+		balloon_velocity + launch_direction * impulse_strength / maxf(mass, 0.001)
+	)
+	return {
+		"direction": launch_direction,
+		"impulse": launch_direction * impulse_strength,
+		"approach_speed": approach_speed,
+		"resulting_velocity": resulting_velocity,
+	}
+
+
+func _clamp_resulting_velocity(resulting_velocity: Vector2) -> Vector2:
+	resulting_velocity = resulting_velocity.limit_length(max_hit_speed)
+	resulting_velocity.x = clampf(
+		resulting_velocity.x, -max_horizontal_speed, max_horizontal_speed
+	)
+	resulting_velocity.y = clampf(resulting_velocity.y, -max_hit_speed, max_fall_speed)
+	return resulting_velocity
+
+
 func clear_pending_contacts() -> void:
 	pending_contact_impulses.clear()
 
 
 func _accept_player_contact(player: CharacterBody2D) -> bool:
+	if player is PlayerController and (player as PlayerController).cpu_balloon_contact_suppressed:
+		return false
 	var player_id := player.get_instance_id()
 	if not player_contacts_armed or setup_overlap_player_ids.has(player_id):
 		return false

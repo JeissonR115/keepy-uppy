@@ -5,6 +5,8 @@ const CPUBrainScript = preload("res://src/models/player/cpu_brain.gd")
 const DEFAULT_PREDICTION_HORIZON := LocalBrain.DEFAULT_PREDICTION_HORIZON
 const State = CPUBrainScript.State
 
+signal decision_snapshot_updated(snapshot: Variant)
+
 @export_range(0.0, 2.0, 0.01) var reaction_time: float = 0.1:
 	set(value):
 		reaction_time = clampf(value, 0.0, 2.0)
@@ -85,6 +87,9 @@ func update_decision(delta: float = 1.0 / 60.0) -> int:
 		_intents = CPUIntent.new()
 		return State.INACTIVE
 	_intents = _active_brain.decide(delta)
+	var snapshot: Variant = _active_brain.get_decision_snapshot()
+	if snapshot != null:
+		decision_snapshot_updated.emit(snapshot)
 	if _intents == null:
 		push_error("CPUBrain returned no intent.")
 		_intents = CPUIntent.new()

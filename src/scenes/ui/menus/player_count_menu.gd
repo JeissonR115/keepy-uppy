@@ -6,8 +6,13 @@ signal controls_requested
 const PLAYER_COUNT_OPTIONS: Array[String] = [
 	"1 PLAYER  |  VS BOT",
 	"2 PLAYERS",
+	"TEST CPU",
 	"KEYBOARD CONTROLS",
 ]
+const TEST_CPU_BRAIN_SCRIPT := preload("res://src/models/player/test_cpu_brain.gd")
+const NAV_GRAPH_OVERLAY_SCRIPT := preload("res://src/models/player/nav_graph_overlay.gd")
+const CPU_DEBUG_PANEL_SCRIPT := preload("res://src/scenes/ui/debug/cpu_debug_panel.gd")
+const CPU_TEST_DEBUG_CONTROLLER_SCRIPT := preload("res://src/managers/cpu_test_debug_controller.gd")
 
 @onready var player_2: PlayerController = get_parent().get_node("Arena/Player2")
 @onready var match_manager: MatchManager = get_parent().get_node("Arena/MatchManager")
@@ -27,6 +32,7 @@ const PLAYER_COUNT_OPTIONS: Array[String] = [
 @onready var menu_buttons: Array[Button] = [
 	$Panel/MenuScroll/Margins/Content/OnePlayerButton,
 	$Panel/MenuScroll/Margins/Content/TwoPlayersButton,
+		$Panel/MenuScroll/Margins/Content/TestCPUButton,
 	$Panel/MenuScroll/Margins/Content/ControlsButton,
 ]
 var level_buttons: Array[Button] = []
@@ -35,6 +41,7 @@ var arena_entries: Array[ArenaData] = []
 
 var selected_index: int = 0
 var showing_levels: bool = false
+var test_cpu_mode: bool = false
 
 
 func _ready() -> void:
@@ -47,6 +54,8 @@ func _ready() -> void:
 	for index in range(menu_buttons.size()):
 		if index < 2:
 			menu_buttons[index].pressed.connect(_select_player_count.bind(index + 1))
+		elif index == 2:
+			menu_buttons[index].pressed.connect(_select_test_cpu_mode)
 		else:
 			menu_buttons[index].pressed.connect(_open_controls)
 	back_level_button.pressed.connect(_cancel_level_selection)
@@ -59,6 +68,12 @@ func _ready() -> void:
 
 
 func open_menu() -> void:
+	if test_cpu_mode:
+		var debug_controller: CPUTestDebugController = get_parent().get_node(
+			"CPUTestDebugController"
+		)
+		debug_controller.exit_test_mode()
+		return
 	audio_manager.call("play_menu_music")
 	showing_levels = false
 	player_panel.visible = true
@@ -120,6 +135,8 @@ func _confirm_selection() -> void:
 			_cancel_level_selection()
 	elif selected_index < 2:
 		_select_player_count(selected_index + 1)
+	elif selected_index == 2:
+		_select_test_cpu_mode()
 	else:
 		_open_controls()
 
@@ -134,7 +151,19 @@ func _open_controls() -> void:
 
 func _select_player_count(player_count: int) -> void:
 	audio_manager.call("play", "menu_select")
+	test_cpu_mode = false
 	player_2.bot_enabled = player_count == 1
+	_show_arena_selection()
+
+
+func _select_test_cpu_mode() -> void:
+	audio_manager.call("play", "menu_select")
+	test_cpu_mode = true
+	player_2.bot_enabled = true
+	_show_arena_selection()
+
+
+func _show_arena_selection() -> void:
 	showing_levels = true
 	selected_index = 0
 	player_panel.visible = false
@@ -148,6 +177,11 @@ func _select_level(level_id: String) -> void:
 		return
 	if not level_manager.select_arena(level_id):
 		return
+	if test_cpu_mode:
+		player_2.bot_enabled = true
+		player_2.cpu_controller.set_brain(
+			TEST_CPU_BRAIN_SCRIPT.new(player_2, level_manager.active_nav_graph)
+		)
 	audio_manager.call("play", "menu_select")
 	match_manager.restart_match()
 	audio_manager.call("play_match_music")
@@ -155,6 +189,40 @@ func _select_level(level_id: String) -> void:
 	keyboard_navigator.enabled = false
 	visible = false
 	get_tree().paused = false
+	if test_cpu_mode:
+		_start_test_cpu_debug()
+
+
+func on_test_cpu_exited() -> void:
+	test_cpu_mode = false
+	player_2.cpu_balloon_contact_suppressed = false
+	player_2.cpu_controller.use_local_brain()
+	player_2.bot_enabled = false
+	var scoreboard := get_parent().get_node("Arena/Scoreboard")
+	var winner_overlay := scoreboard.get_node("WinnerOverlay") as Control
+	if winner_overlay.visible:
+		scoreboard.call("_return_to_player_count_menu")
+		return
+	var pause_menu := scoreboard.get_node("PauseMenu") as PauseMenu
+	if pause_menu.current_screen != PauseMenu.MenuScreen.HIDDEN:
+		pause_menu.close_pause()
+	open_menu()
+
+
+func _start_test_cpu_debug() -> void:
+	var arena := get_parent().get_node("Arena")
+	var overlay: NavGraphOverlay = NAV_GRAPH_OVERLAY_SCRIPT.new()
+	overlay.name = "CPUTestNavGraphOverlay"
+	arena.add_child(overlay)
+	overlay.set_graph(level_manager.active_nav_graph)
+	overlay.visible = true
+	var debug_panel = CPU_DEBUG_PANEL_SCRIPT.new()
+	debug_panel.name = "CPUTestDebugPanel"
+	get_parent().add_child(debug_panel)
+	var debug_controller = CPU_TEST_DEBUG_CONTROLLER_SCRIPT.new()
+	debug_controller.name = "CPUTestDebugController"
+	get_parent().add_child(debug_controller)
+	debug_controller.configure(arena, player_2, self, overlay, debug_panel)
 
 
 func _populate_arena_options() -> void:

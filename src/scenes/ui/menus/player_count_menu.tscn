@@ -67,6 +67,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "  2 PLAYERS"
 
+[node name="TestCPUButton" type="Button" parent="Panel/MenuScroll/Margins/Content"]
+custom_minimum_size = Vector2(152, 20)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "  TEST CPU"
+
 [node name="ControlsButton" type="Button" parent="Panel/MenuScroll/Margins/Content" unique_id=950316354]
 custom_minimum_size = Vector2(152, 20)
 layout_mode = 2

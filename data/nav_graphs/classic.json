@@ -1,0 +1,1359 @@
+{
+  "edges": [
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 1,
+      "to": 3
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 2,
+      "to": 1
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 2,
+      "to": 3
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 2,
+      "to": 4
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 3,
+      "to": 2
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 3,
+      "to": 5
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 4,
+      "to": 5
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 4,
+      "to": 6
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 4,
+      "to": 7
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 5,
+      "to": 4
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 5,
+      "to": 7
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 6,
+      "to": 7
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 6,
+      "to": 11
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 7,
+      "to": 6
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 7,
+      "to": 8
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 8,
+      "to": 9
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 9,
+      "to": 10
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 10,
+      "to": 12
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 11,
+      "to": 12
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 11,
+      "to": 14
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 11,
+      "to": 15
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 12,
+      "to": 16
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 11
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 12
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 14
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 15
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 16
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 17
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 13,
+      "to": 18
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 13,
+      "to": 20
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 14,
+      "to": 11
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 14,
+      "to": 12
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 14,
+      "to": 13
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 14,
+      "to": 15
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 14,
+      "to": 16
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 14,
+      "to": 17
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 14,
+      "to": 18
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 14,
+      "to": 21
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 15,
+      "to": 12
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 15,
+      "to": 14
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 15,
+      "to": 16
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 15,
+      "to": 42
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 16,
+      "to": 17
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 17,
+      "to": 18
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 18,
+      "to": 19
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 18,
+      "to": 21
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 19,
+      "to": 21
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 19,
+      "to": 22
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 20,
+      "to": 18
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 20,
+      "to": 19
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 20,
+      "to": 21
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 20,
+      "to": 22
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 20,
+      "to": 23
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 20,
+      "to": 24
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 21,
+      "to": 18
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 21,
+      "to": 19
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 21,
+      "to": 20
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 21,
+      "to": 22
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 21,
+      "to": 23
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 21,
+      "to": 24
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 22,
+      "to": 21
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 22,
+      "to": 23
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 22,
+      "to": 35
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 23,
+      "to": 24
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 23,
+      "to": 35
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 24,
+      "to": 25
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 25,
+      "to": 26
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 26,
+      "to": 27
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 27,
+      "to": 28
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 27,
+      "to": 35
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 28,
+      "to": 29
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 29,
+      "to": 21
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 29,
+      "to": 30
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 30,
+      "to": 31
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 31,
+      "to": 32
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 32,
+      "to": 33
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 33,
+      "to": 21
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 33,
+      "to": 36
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 34,
+      "to": 32
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 34,
+      "to": 33
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 34,
+      "to": 35
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 34,
+      "to": 36
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 34,
+      "to": 37
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 34,
+      "to": 38
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 34,
+      "to": 40
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 35,
+      "to": 32
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 35,
+      "to": 33
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 35,
+      "to": 34
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 35,
+      "to": 36
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 35,
+      "to": 37
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 35,
+      "to": 38
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 35,
+      "to": 41
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 36,
+      "to": 21
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 36,
+      "to": 35
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 36,
+      "to": 37
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 37,
+      "to": 35
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 37,
+      "to": 38
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 38,
+      "to": 35
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 38,
+      "to": 39
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 39,
+      "to": 43
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 38
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 39
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 41
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 42
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 43
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 44
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 40,
+      "to": 45
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 41,
+      "to": 38
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 41,
+      "to": 39
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 41,
+      "to": 40
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 41,
+      "to": 42
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 41,
+      "to": 43
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 41,
+      "to": 44
+    },
+    {
+      "action": "DROP",
+      "bidirectional": false,
+      "cost": 1.1,
+      "from": 41,
+      "to": 45
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 42,
+      "to": 41
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 42,
+      "to": 43
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 42,
+      "to": 44
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 43,
+      "to": 45
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 44,
+      "to": 41
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 44,
+      "to": 45
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 44,
+      "to": 49
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 45,
+      "to": 46
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 46,
+      "to": 47
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 47,
+      "to": 48
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 48,
+      "to": 50
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 49,
+      "to": 50
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 49,
+      "to": 51
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 50,
+      "to": 49
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 50,
+      "to": 52
+    },
+    {
+      "action": "JUMP",
+      "bidirectional": false,
+      "cost": 1.2,
+      "from": 51,
+      "to": 50
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 51,
+      "to": 52
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 51,
+      "to": 53
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 52,
+      "to": 51
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 52,
+      "to": 54
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 53,
+      "to": 54
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 53,
+      "to": 55
+    },
+    {
+      "action": "DASH",
+      "bidirectional": false,
+      "cost": 0.9,
+      "from": 54,
+      "to": 53
+    },
+    {
+      "action": "WALK",
+      "bidirectional": true,
+      "cost": 1.0,
+      "from": 54,
+      "to": 55
+    }
+  ],
+  "level": "classic",
+  "nodes": [
+    {
+      "id": 1,
+      "position": {
+        "x": 16.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 2,
+      "position": {
+        "x": 24.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 3,
+      "position": {
+        "x": 24.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 4,
+      "position": {
+        "x": 32.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 5,
+      "position": {
+        "x": 32.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 6,
+      "position": {
+        "x": 40.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 7,
+      "position": {
+        "x": 40.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 8,
+      "position": {
+        "x": 48.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 9,
+      "position": {
+        "x": 56.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 10,
+      "position": {
+        "x": 64.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 11,
+      "position": {
+        "x": 72.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 12,
+      "position": {
+        "x": 72.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 13,
+      "position": {
+        "x": 80.0,
+        "y": 96.0
+      }
+    },
+    {
+      "id": 14,
+      "position": {
+        "x": 80.0,
+        "y": 104.0
+      }
+    },
+    {
+      "id": 15,
+      "position": {
+        "x": 80.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 16,
+      "position": {
+        "x": 80.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 17,
+      "position": {
+        "x": 88.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 18,
+      "position": {
+        "x": 96.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 19,
+      "position": {
+        "x": 104.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 20,
+      "position": {
+        "x": 112.0,
+        "y": 96.0
+      }
+    },
+    {
+      "id": 21,
+      "position": {
+        "x": 112.0,
+        "y": 104.0
+      }
+    },
+    {
+      "id": 22,
+      "position": {
+        "x": 112.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 23,
+      "position": {
+        "x": 120.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 24,
+      "position": {
+        "x": 128.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 25,
+      "position": {
+        "x": 136.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 26,
+      "position": {
+        "x": 144.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 27,
+      "position": {
+        "x": 152.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 28,
+      "position": {
+        "x": 160.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 29,
+      "position": {
+        "x": 168.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 30,
+      "position": {
+        "x": 176.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 31,
+      "position": {
+        "x": 184.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 32,
+      "position": {
+        "x": 192.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 33,
+      "position": {
+        "x": 200.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 34,
+      "position": {
+        "x": 208.0,
+        "y": 96.0
+      }
+    },
+    {
+      "id": 35,
+      "position": {
+        "x": 208.0,
+        "y": 104.0
+      }
+    },
+    {
+      "id": 36,
+      "position": {
+        "x": 208.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 37,
+      "position": {
+        "x": 216.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 38,
+      "position": {
+        "x": 224.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 39,
+      "position": {
+        "x": 232.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 40,
+      "position": {
+        "x": 240.0,
+        "y": 96.0
+      }
+    },
+    {
+      "id": 41,
+      "position": {
+        "x": 240.0,
+        "y": 104.0
+      }
+    },
+    {
+      "id": 42,
+      "position": {
+        "x": 240.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 43,
+      "position": {
+        "x": 240.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 44,
+      "position": {
+        "x": 248.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 45,
+      "position": {
+        "x": 248.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 46,
+      "position": {
+        "x": 256.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 47,
+      "position": {
+        "x": 264.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 48,
+      "position": {
+        "x": 272.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 49,
+      "position": {
+        "x": 280.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 50,
+      "position": {
+        "x": 280.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 51,
+      "position": {
+        "x": 288.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 52,
+      "position": {
+        "x": 288.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 53,
+      "position": {
+        "x": 296.0,
+        "y": 144.0
+      }
+    },
+    {
+      "id": 54,
+      "position": {
+        "x": 296.0,
+        "y": 152.0
+      }
+    },
+    {
+      "id": 55,
+      "position": {
+        "x": 304.0,
+        "y": 152.0
+      }
+    }
+  ],
+  "schema_version": 1
+}

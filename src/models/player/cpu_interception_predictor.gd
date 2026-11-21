@@ -42,9 +42,6 @@ static func predict(
 	)
 	var horizon := minf(horizon_seconds, max_steps * step)
 	var gravity := float(ProjectSettings.get_setting("physics/2d/default_gravity", 980.0))
-	var left_bound := arena_bounds.position.x
-	var right_bound := arena_bounds.end.x
-	var ceiling_bound := arena_bounds.position.y
 	var ground_bound := scoring_ground_bound
 	var elapsed := 0.0
 	var previous_position := current_position
@@ -53,39 +50,14 @@ static func predict(
 		var delta := minf(step, horizon - elapsed)
 		if delta <= 0.0:
 			break
-		var air_retention := 1.0 + maxf(balloon.air_resistance, 0.0) * delta
-		current_velocity /= air_retention
-		current_velocity.x /= 1.0 + maxf(balloon.horizontal_damping, 0.0) * delta
-		current_velocity.x = clampf(
-			current_velocity.x,
-			-balloon.max_horizontal_speed,
-			balloon.max_horizontal_speed
-		)
-		current_velocity.y = clampf(
-			current_velocity.y,
-			-balloon.max_hit_speed,
-			balloon.max_fall_speed
-		)
-		current_velocity.y += gravity * balloon.gravity_scale * delta
-		current_velocity.y = clampf(
-			current_velocity.y,
-			-balloon.max_hit_speed,
-			balloon.max_fall_speed
-		)
 		previous_position = current_position
-		current_position += current_velocity * delta
+		var step_result := _simulate_step(
+			balloon, current_position, current_velocity, arena_bounds, ground_bound, gravity, delta
+		)
+		current_position = step_result["position"]
+		current_velocity = step_result["velocity"]
 		elapsed += delta
-
-		if current_position.x < left_bound:
-			current_position.x = left_bound
-			current_velocity.x = absf(current_velocity.x) * balloon.rebound_strength
-		elif current_position.x > right_bound:
-			current_position.x = right_bound
-			current_velocity.x = -absf(current_velocity.x) * balloon.rebound_strength
-		if current_position.y < ceiling_bound:
-			current_position.y = ceiling_bound
-			current_velocity.y = absf(current_velocity.y) * balloon.rebound_strength
-		elif current_position.y >= ground_bound:
+		if step_result["grounded"]:
 			return {"found": false, "position": safe_target, "time": elapsed}
 
 		if previous_position.y <= target_y and current_position.y >= target_y:
@@ -106,6 +78,79 @@ static func predict(
 			}
 
 	return {"found": false, "position": safe_target, "time": horizon}
+
+
+## Returns the bounded balloon trajectory used by prediction, including its initial point.
+static func trace(
+	balloon: BalloonController,
+	arena_bounds: Rect2,
+	horizon_seconds: float = DEFAULT_PREDICTION_HORIZON
+) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	if (
+		balloon == null
+		or balloon.waiting_for_first_touch
+		or not is_finite(horizon_seconds)
+		or horizon_seconds <= 0.0
+		or not balloon.global_position.is_finite()
+		or not balloon.linear_velocity.is_finite()
+	):
+		return points
+	var physics_hz := float(ProjectSettings.get_setting(
+		"physics/common/physics_ticks_per_second", 60
+	))
+	var step := 1.0 / maxf(physics_hz, 1.0)
+	var max_steps := mini(ceili(horizon_seconds / step), MAX_PREDICTION_STEPS)
+	var horizon := minf(horizon_seconds, max_steps * step)
+	var ground_bound := _scoring_ground_bound(balloon, arena_bounds)
+	var gravity := float(ProjectSettings.get_setting("physics/2d/default_gravity", 980.0))
+	var position := balloon.global_position
+	var velocity := balloon.linear_velocity
+	points.append(position)
+	var elapsed := 0.0
+	for _step_index in range(max_steps):
+		var delta := minf(step, horizon - elapsed)
+		if delta <= 0.0:
+			break
+		var result := _simulate_step(
+			balloon, position, velocity, arena_bounds, ground_bound, gravity, delta
+		)
+		position = result["position"]
+		velocity = result["velocity"]
+		elapsed += delta
+		points.append(position)
+		if result["grounded"]:
+			break
+	return points
+
+
+static func _simulate_step(
+	balloon: BalloonController,
+	position: Vector2,
+	velocity: Vector2,
+	arena_bounds: Rect2,
+	ground_bound: float,
+	gravity: float,
+	delta: float
+) -> Dictionary:
+	velocity /= 1.0 + maxf(balloon.air_resistance, 0.0) * delta
+	velocity.x /= 1.0 + maxf(balloon.horizontal_damping, 0.0) * delta
+	velocity.x = clampf(velocity.x, -balloon.max_horizontal_speed, balloon.max_horizontal_speed)
+	velocity.y = clampf(velocity.y, -balloon.max_hit_speed, balloon.max_fall_speed)
+	velocity.y += gravity * balloon.gravity_scale * delta
+	velocity.y = clampf(velocity.y, -balloon.max_hit_speed, balloon.max_fall_speed)
+	position += velocity * delta
+	if position.x < arena_bounds.position.x:
+		position.x = arena_bounds.position.x
+		velocity.x = absf(velocity.x) * balloon.rebound_strength
+	elif position.x > arena_bounds.end.x:
+		position.x = arena_bounds.end.x
+		velocity.x = -absf(velocity.x) * balloon.rebound_strength
+	if position.y < arena_bounds.position.y:
+		position.y = arena_bounds.position.y
+		velocity.y = absf(velocity.y) * balloon.rebound_strength
+	var grounded := position.y >= ground_bound
+	return {"position": position, "velocity": velocity, "grounded": grounded}
 
 
 static func _scoring_ground_bound(balloon: BalloonController, arena_bounds: Rect2) -> float:

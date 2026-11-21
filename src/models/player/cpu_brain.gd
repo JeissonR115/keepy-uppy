@@ -13,3 +13,7 @@ func decide(_delta: float) -> CPUIntent:
 
 func reset() -> void:
 	state = State.INACTIVE
+
+
+func get_decision_snapshot() -> Variant:
+	return null

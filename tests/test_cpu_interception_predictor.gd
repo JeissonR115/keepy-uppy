@@ -1,5 +1,7 @@
 extends SceneTree
 
+const INTERCEPTION_PREDICTOR := preload("res://src/models/player/cpu_interception_predictor.gd")
+
 
 func _initialize() -> void:
 	call_deferred("_run_test")
@@ -67,6 +69,33 @@ func _run_test() -> void:
 	if not _expect(
 		wall_prediction["found"] and wall_prediction["position"].x < balloon_bounds.end.x,
 		"Predictor did not constrain the interception after a side-wall rebound."
+	):
+		return
+	var wall_trace := INTERCEPTION_PREDICTOR.trace(balloon, balloon_bounds, 0.5)
+	var wall_trace_finite := true
+	for trace_point: Vector2 in wall_trace:
+		wall_trace_finite = wall_trace_finite and trace_point.is_finite()
+	if not _expect(
+		wall_trace.size() > 2
+		and wall_trace[0] == balloon.global_position
+		and wall_trace[-1].x <= balloon_bounds.end.x
+		and wall_trace_finite,
+		"Predicted trajectory did not include a finite, bounded wall-rebound path."
+	):
+		return
+	balloon.global_position = Vector2(160.0, 48.0)
+	balloon.linear_velocity = Vector2(5000.0, 0.0)
+	var capped_trace := INTERCEPTION_PREDICTOR.trace(balloon, balloon_bounds, 0.2)
+	var capped_trace_in_bounds := true
+	for trace_point: Vector2 in capped_trace:
+		capped_trace_in_bounds = (
+			capped_trace_in_bounds
+			and trace_point.x >= balloon_bounds.position.x
+			and trace_point.x <= balloon_bounds.end.x
+		)
+	if not _expect(
+		capped_trace.size() > 2 and capped_trace_in_bounds,
+		"Predicted trajectory exceeded the horizontal speed or arena bounds."
 	):
 		return
 

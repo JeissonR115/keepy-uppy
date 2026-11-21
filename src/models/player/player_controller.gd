@@ -45,6 +45,7 @@ var force_move_x: float = 0.0
 var force_move_timer: float = 0.0
 var is_dashing: bool = false
 var dash_rescue_hit: bool = false
+var cpu_balloon_contact_suppressed: bool = false
 var normal_collision_height: float = 0.0
 var jump_input_blocked_until_release: bool = true
 
@@ -108,6 +109,7 @@ func reset_for_round(spawn_position: Vector2) -> void:
 	force_move_timer = 0.0
 	is_dashing = false
 	dash_rescue_hit = false
+	cpu_balloon_contact_suppressed = false
 	presentation.reset_footsteps()
 	dash_rescue_area.monitoring = false
 
