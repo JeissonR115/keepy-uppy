@@ -79,6 +79,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = " CONTROLS"
 
+[node name="AudioSettingsButton" type="Button" parent="Panel/MenuScroll/Margins/Content"]
+custom_minimum_size = Vector2(152, 20)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = " AUDIO SETTINGS"
+
 [node name="LevelPanel" type="PanelContainer" parent="." unique_id=1781627362]
 visible = false
 anchors_preset = 8

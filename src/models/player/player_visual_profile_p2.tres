@@ -3,11 +3,13 @@
 [ext_resource type="Script" uid="uid://cmkch08vmdef7" path="res://src/models/player/player_visual_profile.gd" id="1_profile"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player/player_frames.tres" id="2_body"]
 [ext_resource type="SpriteFrames" path="res://assets/sprites/Animations/player_sweat/player_sweat_frames.tres" id="3_effects"]
+[ext_resource type="Resource" path="res://src/models/player/player_visual_settings.tres" id="4_shared_settings"]
 
 [resource]
 script = ExtResource("1_profile")
 body_frames = ExtResource("2_body")
 effect_frames = ExtResource("3_effects")
+shared_settings = ExtResource("4_shared_settings")
 tint = Color(1, 0.84, 0.7, 1)
 hair_enabled = true
 dash_afterimage_tint = Color(1, 0.7, 0.58, 0.55)

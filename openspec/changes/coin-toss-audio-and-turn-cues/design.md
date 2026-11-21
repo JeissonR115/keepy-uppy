@@ -10,6 +10,7 @@ See `proposal.md` for motivation and the capability deltas for user-visible beha
 - The coin art is four separate RGBA PNGs (`1.png`–`4.png`), each 128×128, not a sprite sheet. No separate heads/tails mapping is documented; the player labels, not an inferred coin side, will communicate the authoritative outcome.
 - The bus layout has `Master`, `SFX`, and `UI`; music players currently use `Master` with local levels of -6 dB and -4 dB. `ControlSettingsManager` stores version-1 bindings in `user://controls.cfg`, and its current save path rewrites the file. The optional `[audio]` section must survive control saves and recovery.
 - Player identity colors live in `PlayerActionCatalog`. Player tint is currently supplied by separate visual profiles, while dash afterimages have a separate tint. The settings screen and scoreboard already use keyboard navigation and match signals.
+- Primary dash and afterimage contacts currently share a rescue guard and per-player cooldown, which prevents a trail contact from supplying the specified additional rescue after a successful primary contact.
 
 ## Goals / Non-Goals
 
@@ -19,10 +20,11 @@ See `proposal.md` for motivation and the capability deltas for user-visible beha
 - Keep visuals and any presentation gate out of CPU simulation and at zero duration when no display is available.
 - Reuse existing audio assets and buses while retaining current relative music and effect mixing.
 - Make player tint adjustable once and keep the turn cue tied to authoritative turn state.
+- Allow one extra, independently bounded balloon rescue through an active dash afterimage.
 
 **Non-Goals:**
 
-- Change toss selection, match seeds, scoring, turns, CPU behavior, episode events, or simulation timing.
+- Change any match behavior except the explicitly bounded additional dash-afterimage rescue; do not change toss selection, match seeds, scoring, turns, CPU behavior, episode events, or simulation timing.
 - Add music or sound effects, replace placeholder audio, or add pointer-dependent settings navigation.
 - Repeat the coin presentation for points, rounds, or sets.
 
@@ -42,6 +44,10 @@ The same main-scene presentation controller listens to `balloon_turn_changed`. I
 
 Add one shared visual-settings resource with the exported tint-strength parameter and reference it from both player profiles. Blend each profile's existing sprite tint toward its `PlayerActionCatalog` identity color. Apply that blend to the body and action-effect sprites in one place; apply the same identity color to afterimage RGB while preserving the configured afterimage alpha and fade. This is preferred to per-player strength values, which could drift. Arrow geometry and motion use named constants or exported settings, never hard-coded player colors.
 
+### Bounded additional dash-trail rescue
+
+Keep the primary dash rescue and trail rescue as separate one-per-dash opportunities. A successful primary rescue must not consume the trail opportunity. An active afterimage may apply one additional rescue even during the cooldown created by the primary contact, while still respecting other eligibility checks such as armed balloon contacts and setup-overlap protection. All afterimages from one dash share the single trail-rescue limit; starting a new dash resets it. Do not change any other contact, scoring, turn, or simulation behavior.
+
 ### Audio routing and settings storage
 
 Add a `Music` bus sending to `Master`; retain existing `Master`, `SFX`, and `UI` buses and their sends. Assign the existing music players to `Music` without changing their local -6 dB/-4 dB levels. The effects slider adjusts both `SFX` and `UI`, since both contain non-music effects and neither bus is a child of the other. The mute switch mutes `Master` without overwriting the selected levels.
@@ -53,6 +59,7 @@ Add an `AUDIO SETTINGS` entry to `PlayerCountMenu` that opens a separate keyboar
 - Extend coin-toss tests to cover both overridden toss outcomes, displayed server, a blocked visible start until completion, and no repeated presentation after a point/round.
 - Exercise headless/main-scene and CPU simulation setup to verify no additional wait or episode events.
 - Extend settings persistence tests for audio round-trip, mute, old files without audio data, and preservation of audio values during binding saves/recovery.
+- Verify one afterimage rescue can follow the primary dash rescue, that further afterimage contacts from the same dash are rejected, and that the limit resets on a new dash.
 - Test that each turn change points the cue to the new expected player, that it is hidden before the first contact and outside active play, and that tint reaches state sprites and afterimages.
 - Verify the new bus and unchanged music local levels, then run the existing focused match, audio, CPU bridge, and simulation tests.
 
@@ -62,6 +69,7 @@ Add an `AUDIO SETTINGS` entry to `PlayerCountMenu` that opens a separate keyboar
 - [The existing `jump` WAV is a silent placeholder, as documented in `audio/PENDIENTES.md`] → Reuse the existing event as requested and do not add an effect; the preview will become audible when the placeholder is replaced.
 - [Changing bus routing could alter the current mix] → Keep existing sends and music player gains; default bus levels preserve the current output.
 - [A tint strong enough to identify a player could obscure sprite art] → Keep the strength in one shared resource and validate both player profiles, including faces and afterimages.
+- [A second dash rescue could increase the force applied to the balloon] → Limit the added rescue to one per dash and preserve all existing contact eligibility checks other than the primary-contact cooldown.
 
 ## Migration Plan
 

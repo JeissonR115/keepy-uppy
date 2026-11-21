@@ -6,7 +6,6 @@ const TOUCH_PIXEL_SCENE = preload("res://src/scenes/ui/components/touch_pixel.ts
 const PLAYER_HAIR_SCENE = preload("res://src/models/player/player_hair.tscn")
 const DASH_AFTERIMAGE_SCENE = preload("res://src/models/player/player_dash_afterimage.tscn")
 const STEP_DISTANCE := 14.0
-const PLAYER_TWO_TINT := Color(1.0, 0.84, 0.70, 1.0)
 
 var visual: AnimatedSprite2D
 var action_effect: AnimatedSprite2D
@@ -41,10 +40,25 @@ func configure(
 	self.player_root = player_root
 	dash_afterimage_tint = profile.get("dash_afterimage_tint") as Color
 	idle_color = identity_color
+	var visual_settings := profile.get("shared_settings") as PlayerVisualSettings
+	if visual_settings == null:
+		push_error("PlayerPresentationController: visual profile is missing shared settings.")
+		return
+	var profile_tint := profile.get("tint") as Color
+	var blended_tint := profile_tint.lerp(identity_color, visual_settings.tint_strength)
+	var blended_afterimage := dash_afterimage_tint.lerp(
+		identity_color, visual_settings.tint_strength
+	)
+	dash_afterimage_tint = Color(
+		blended_afterimage.r,
+		blended_afterimage.g,
+		blended_afterimage.b,
+		dash_afterimage_tint.a
+	)
 	visual.sprite_frames = profile.get("body_frames") as SpriteFrames
 	action_effect.sprite_frames = profile.get("effect_frames") as SpriteFrames
-	visual.modulate = profile.get("tint") as Color
-	action_effect.modulate = profile.get("tint") as Color
+	visual.modulate = blended_tint
+	action_effect.modulate = blended_tint
 	if bool(profile.get("hair_enabled")):
 		player_hair = PLAYER_HAIR_SCENE.instantiate() as Node2D
 		player_root.add_child(player_hair)

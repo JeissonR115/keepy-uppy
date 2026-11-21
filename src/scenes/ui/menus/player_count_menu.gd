@@ -2,12 +2,14 @@ class_name PlayerCountMenu
 extends CanvasLayer
 
 signal controls_requested
+signal audio_settings_requested
 
 const PLAYER_COUNT_OPTIONS: Array[String] = [
 	"1 PLAYER  |  VS BOT",
 	"2 PLAYERS",
 	"TEST CPU",
 	"KEYBOARD CONTROLS",
+	"AUDIO SETTINGS",
 ]
 const TEST_CPU_BRAIN_SCRIPT := preload("res://src/models/player/test_cpu_brain.gd")
 const NAV_GRAPH_OVERLAY_SCRIPT := preload("res://src/models/player/nav_graph_overlay.gd")
@@ -32,8 +34,9 @@ const CPU_TEST_DEBUG_CONTROLLER_SCRIPT := preload("res://src/managers/cpu_test_d
 @onready var menu_buttons: Array[Button] = [
 	$Panel/MenuScroll/Margins/Content/OnePlayerButton,
 	$Panel/MenuScroll/Margins/Content/TwoPlayersButton,
-		$Panel/MenuScroll/Margins/Content/TestCPUButton,
+	$Panel/MenuScroll/Margins/Content/TestCPUButton,
 	$Panel/MenuScroll/Margins/Content/ControlsButton,
+	$Panel/MenuScroll/Margins/Content/AudioSettingsButton,
 ]
 var level_buttons: Array[Button] = []
 var level_options: Array[String] = []
@@ -56,8 +59,10 @@ func _ready() -> void:
 			menu_buttons[index].pressed.connect(_select_player_count.bind(index + 1))
 		elif index == 2:
 			menu_buttons[index].pressed.connect(_select_test_cpu_mode)
-		else:
+		elif index == 3:
 			menu_buttons[index].pressed.connect(_open_controls)
+		else:
+			menu_buttons[index].pressed.connect(_open_audio_settings)
 	back_level_button.pressed.connect(_cancel_level_selection)
 	_populate_arena_options()
 	level_panel.visible = false
@@ -137,8 +142,10 @@ func _confirm_selection() -> void:
 		_select_player_count(selected_index + 1)
 	elif selected_index == 2:
 		_select_test_cpu_mode()
-	else:
+	elif selected_index == 3:
 		_open_controls()
+	else:
+		_open_audio_settings()
 
 
 func _open_controls() -> void:
@@ -147,6 +154,14 @@ func _open_controls() -> void:
 	audio_manager.call("play", "menu_select")
 	suspend_menu()
 	controls_requested.emit()
+
+
+func _open_audio_settings() -> void:
+	if not visible:
+		return
+	audio_manager.call("play", "menu_select")
+	suspend_menu()
+	audio_settings_requested.emit()
 
 
 func _select_player_count(player_count: int) -> void:

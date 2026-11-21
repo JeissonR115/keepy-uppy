@@ -86,7 +86,8 @@ func _run_test() -> void:
 	player_1._update_presentation_state(0.0, false, 1.0 / 60.0)
 	if not _expect(
 		player_1.visual.animation == "climbPull"
-		and player_1.action_effect.animation == "climb",
+		and player_1.action_effect.animation == "climb"
+		and player_1.action_effect.modulate == player_1.visual.modulate,
 		"Upward climbing did not select its loop and entry effect."
 	):
 		return
@@ -162,8 +163,8 @@ func _run_test() -> void:
 		and player_2.visual.flip_h
 		and player_2.action_effect.flip_h
 		and player_2.action_effect.animation == "jump"
-		and player_2.action_effect.modulate == PlayerPresentationController.PLAYER_TWO_TINT,
-		"Player 2's action animation, facing, or orange effect tint did not match player 1's."
+		and player_2.action_effect.modulate == player_2.visual.modulate,
+		"Player 2's action animation, facing, or identity tint did not persist into its action effect."
 	):
 		return
 	player_2.set_meta("test_body_animation_finished", false)
