@@ -26,6 +26,7 @@ var _session_id: String = ""
 var _last_command_sequence: int = 0
 var _next_action_sequence: int = 1
 var _pending_action_sequences: Dictionary = {}
+var _live_match_mode: bool = false
 
 
 func _ready() -> void:
@@ -54,6 +55,10 @@ func stop() -> void:
 	set_process(false)
 	_server.stop()
 	_close_client(false)
+
+
+func set_live_match_mode(enabled: bool) -> void:
+	_live_match_mode = enabled
 
 
 func is_client_connected() -> bool:
@@ -241,6 +246,13 @@ func _handle_command(message: Dictionary) -> void:
 	if typeof(command) != TYPE_STRING or not ALLOWED_COMMANDS.has(command):
 		send_protocol_error(
 			"unknown_command", "Command name is missing or unsupported.", command_sequence
+		)
+		return
+	if _live_match_mode and not command in ["get_level_geometry", "close"]:
+		send_protocol_error(
+			"unsupported_in_live_mode",
+			"Simulation-control command '%s' is unavailable in live match mode." % command,
+			command_sequence,
 		)
 		return
 	var payload: Variant = message.get("payload", {})

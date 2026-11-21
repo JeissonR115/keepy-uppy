@@ -15,6 +15,9 @@ const TEST_CPU_BRAIN_SCRIPT := preload("res://src/models/player/test_cpu_brain.g
 const NAV_GRAPH_OVERLAY_SCRIPT := preload("res://src/models/player/nav_graph_overlay.gd")
 const CPU_DEBUG_PANEL_SCRIPT := preload("res://src/scenes/ui/debug/cpu_debug_panel.gd")
 const CPU_TEST_DEBUG_CONTROLLER_SCRIPT := preload("res://src/managers/cpu_test_debug_controller.gd")
+const PYTHON_POLICY_COORDINATOR_SCRIPT := preload(
+	"res://src/managers/python_policy_match_coordinator.gd"
+)
 
 @onready var player_2: PlayerController = get_parent().get_node("Arena/Player2")
 @onready var match_manager: MatchManager = get_parent().get_node("Arena/MatchManager")
@@ -45,11 +48,17 @@ var arena_entries: Array[ArenaData] = []
 var selected_index: int = 0
 var showing_levels: bool = false
 var test_cpu_mode: bool = false
+var python_policy_requested: bool = false
+var python_policy_coordinator: Node
 
 
 func _ready() -> void:
 	layer = 10
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	python_policy_coordinator = PYTHON_POLICY_COORDINATOR_SCRIPT.new()
+	python_policy_coordinator.name = "PythonPolicyMatchCoordinator"
+	python_policy_coordinator.status_changed.connect(_on_python_policy_status)
+	get_parent().add_child(python_policy_coordinator)
 	audio_manager.call("play_menu_music")
 	keyboard_navigator.moved.connect(_move_selection)
 	keyboard_navigator.confirmed.connect(_confirm_selection)
@@ -72,6 +81,10 @@ func _ready() -> void:
 	keyboard_navigator.enabled = true
 
 
+func _exit_tree() -> void:
+	_stop_python_policy()
+
+
 func open_menu() -> void:
 	if test_cpu_mode:
 		var debug_controller: CPUTestDebugController = get_parent().get_node(
@@ -79,6 +92,7 @@ func open_menu() -> void:
 		)
 		debug_controller.exit_test_mode()
 		return
+	_stop_python_policy()
 	audio_manager.call("play_menu_music")
 	showing_levels = false
 	player_panel.visible = true
@@ -93,6 +107,18 @@ func open_menu() -> void:
 func suspend_menu() -> void:
 	visible = false
 	keyboard_navigator.enabled = false
+
+
+func _stop_python_policy() -> void:
+	if python_policy_coordinator != null:
+		python_policy_coordinator.stop()
+	player_2.cpu_controller.use_local_brain()
+
+
+func _on_python_policy_status(reason: String) -> void:
+	var scoreboard := get_parent().get_node_or_null("Arena/Scoreboard")
+	if scoreboard != null and scoreboard.has_node("HUD/StatusLabel"):
+		scoreboard.get_node("HUD/StatusLabel").text = reason
 
 
 func resume_menu() -> void:
@@ -167,14 +193,18 @@ func _open_audio_settings() -> void:
 func _select_player_count(player_count: int) -> void:
 	audio_manager.call("play", "menu_select")
 	test_cpu_mode = false
+	python_policy_requested = player_count == 1
 	player_2.bot_enabled = player_count == 1
+	_stop_python_policy()
 	_show_arena_selection()
 
 
 func _select_test_cpu_mode() -> void:
 	audio_manager.call("play", "menu_select")
 	test_cpu_mode = true
+	python_policy_requested = false
 	player_2.bot_enabled = true
+	_stop_python_policy()
 	_show_arena_selection()
 
 
@@ -197,6 +227,17 @@ func _select_level(level_id: String) -> void:
 		player_2.cpu_controller.set_brain(
 			TEST_CPU_BRAIN_SCRIPT.new(player_2, level_manager.active_nav_graph)
 		)
+	elif python_policy_requested:
+		player_2.bot_enabled = true
+		player_2.cpu_controller.use_local_brain()
+		var ready: bool = await python_policy_coordinator.start_for_match(level_manager, player_2)
+		if ready:
+			player_2.cpu_controller.use_remote_brain(
+				python_policy_coordinator.bridge_server,
+				0.25,
+			)
+		else:
+			player_2.cpu_controller.use_local_brain()
 	audio_manager.call("play", "menu_select")
 	match_manager.restart_match()
 	audio_manager.call("play_match_music")

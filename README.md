@@ -16,6 +16,31 @@ Player 2 and moves to intercept the balloon on its turn. If Player 1 is close
 to the balloon on the bot's turn, it tries to challenge and push Player 1 away
 first.
 
+## Optional Python CPU
+
+The normal one-player match can use the sibling Python policy after it is
+configured in `user://python-policy.cfg`:
+
+```ini
+[python_policy]
+enabled=true
+executable=/absolute/path/to/uv
+ai_project_path=/absolute/path/to/keepy-uppy-ai
+bridge_port=8766
+startup_timeout=5.0
+```
+
+The game launches the client as separate arguments, equivalent to:
+
+```sh
+uv run --project /absolute/path/to/keepy-uppy-ai run-live \
+  --host 127.0.0.1 --port 8766 --level classic
+```
+
+If the configuration is missing or invalid, or Python cannot connect within
+the startup timeout, the match continues with `LocalBrain` and displays the
+fallback reason.
+
 ## Display
 
 The logical viewport is 320x180 and displays at 960x540 while preserving its

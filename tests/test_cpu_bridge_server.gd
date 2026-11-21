@@ -152,6 +152,24 @@ func _run_test() -> void:
 	):
 		return
 
+	server.set_live_match_mode(true)
+	_send_command(client, session_id, 2, "reset", {"seed": 42, "level": "classic"})
+	var live_control_error := await _read_message(client)
+	if not _expect(
+		live_control_error.get("code") == "unsupported_in_live_mode",
+		"Live match bridge accepted a simulation-control reset command.",
+	):
+		return
+	_send_command(client, session_id, 3, "get_level_geometry", {"level": "classic"})
+	for _frame in range(3):
+		await process_frame
+	if not _expect(
+		received_commands.size() == 2
+		and received_commands[1]["command"] == "get_level_geometry",
+		"Live match bridge did not preserve the geometry command.",
+	):
+		return
+
 	server.stop()
 	client.disconnect_from_host()
 	server.queue_free()
